@@ -263,7 +263,7 @@
                     <option value="cinematográfico e dramático">Cinematográfico / Dramático</option>
                     <option value="acelerado, hiperenergético, cheio de ganchos e reviravoltas, com frases curtas e quase sem pausas, no estilo de resumo de dorama/novela viral do TikTok" data-turbo="true">🔥 Turbo TikTok / Dorama (acelerado, muitos cortes)</option>
                 </select>
-                <p id="toneTurboHint" style="display:none;font-size:0.75rem;color:var(--text-muted);margin:4px 0 0;">Roteiro com mais cortes curtos, ganchos e reviravoltas a cada poucos segundos, e narração falada mais rápido — pensado pra prender a atenção como um resumo de dorama que viraliza no TikTok.</p>
+                <p id="toneTurboHint" style="display:none;font-size:0.75rem;color:var(--text-muted);margin:4px 0 0;">Roteiro com mais cortes curtos, ganchos e reviravoltas a cada poucos segundos, e narração falada mais rápido.</p>
             </div>
         </div>
 
@@ -283,7 +283,7 @@
                 <input type="checkbox" id="skipNarration" style="width:auto;">
                 🔇 Não gerar narração — manter o áudio original do vídeo em todas as cenas
             </label>
-            <p id="skipNarrationHint" style="display:none;font-size:0.75rem;color:var(--text-muted);margin:4px 0 0;">Pula a etapa de narração sintética (economiza tempo e cota da API): o roteiro/tabela de cortes ainda é gerado normalmente, mas o corte final mantém o som original do vídeo em toda cena.</p>
+            <p id="skipNarrationHint" style="display:none;font-size:0.75rem;color:var(--text-muted);margin:4px 0 0;">Pula a etapa de narração sintética (economiza tempo e cota da API).</p>
         </div>
 
         <div class="form-group" style="margin-top: 15px;">
@@ -294,7 +294,6 @@
                 <option value="4:5">Retrato 4:5 — Feed do Instagram</option>
                 <option value="1:1">Quadrado 1:1 — Feed</option>
             </select>
-            <p style="font-size:0.75rem;color:var(--text-muted);margin:4px 0 0;">Formatos diferentes do original cortam as bordas laterais/topo-baixo (crop central) para preencher a proporção escolhida.</p>
         </div>
 
         <div class="form-group" style="margin-top: 15px;">
@@ -356,7 +355,7 @@
     });
     document.getElementById('cancelBtn').addEventListener('click', () => {
         cancelRequested = true;
-        document.getElementById('status').innerText = 'Cancelando... (aguardando a etapa atual)';
+        document.getElementById('status').innerText = 'Cancelando...';
     });
     document.getElementById('cancelCutBtn').addEventListener('click', () => {
         cancelRequested = true;
@@ -994,10 +993,6 @@ Regras:
         return withRetries(() => generateNarrationAudio(ai, text, voiceName, tone), { attempts: 3, baseDelayMs: 1500, shouldRetry: () => true });
     }
 
-    function audioCodecForExt(ext) {
-        return ext === 'webm' ? 'libopus' : 'aac';
-    }
-
     function computeCropFilter(srcWidth, srcHeight, aspectRatio) {
         if (!aspectRatio || aspectRatio === 'original' || !srcWidth || !srcHeight) return null;
         const [rw, rh] = aspectRatio.split(':').map(Number);
@@ -1009,15 +1004,6 @@ Regras:
         cropW -= cropW % 2;
         cropH -= cropH % 2;
         return (cropW <= 0 || cropH <= 0) ? null : `crop=${cropW}:${cropH}:(iw-${cropW})/2:(ih-${cropH})/2`;
-    }
-
-    function videoEncodeArgs(ext, filters, forceReencode) {
-        const activeFilters = (filters || []).filter(Boolean);
-        if (activeFilters.length === 0 && !forceReencode) return ['-c:v', 'copy'];
-        const vf = ['setpts=PTS-STARTPTS', ...activeFilters].join(',');
-        return ext === 'webm'
-            ? ['-vf', vf, '-c:v', 'libvpx', '-b:v', '2M']
-            : ['-vf', vf, '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '24'];
     }
 
     const CAPTION_FONT_URL = 'https://cdn.jsdelivr.net/gh/JulietaUla/Montserrat/fonts/ttf/Montserrat-Bold.ttf';
@@ -1039,7 +1025,7 @@ Regras:
         return chunks;
     }
 
-    async function buildCaptionFilters(ff, narrationText, sceneDuration, filePrefix, trackedFiles) {
+    async function buildCaptionFilters(ff, narrationText, sceneDuration, filePrefix, sceneFilesTracker) {
         const chunks = splitIntoCaptionChunks(narrationText, 5);
         if (chunks.length === 0) return [];
         const filters = [];
@@ -1049,17 +1035,17 @@ Regras:
             const end = (j + 1) * durPerChunk;
             const fileName = `${filePrefix}_${j}.txt`;
             await ff.writeFile(fileName, chunks[j]);
-            if (trackedFiles) trackedFiles.push(fileName);
+            sceneFilesTracker.push(fileName);
             filters.push(`drawtext=fontfile=${CAPTION_FONT_NAME}:textfile=${fileName}:fontsize=w/20:fontcolor=white:borderw=4:bordercolor=black@0.9:box=1:boxcolor=black@0.38:boxborderw=18:x=(w-text_w)/2:y=h-h/4.2:enable='between(t,${start.toFixed(2)},${end.toFixed(2)})'`);
         }
         return filters;
     }
 
-    async function buildHookFilter(ff, hookText, filePrefix, trackedFiles) {
+    async function buildHookFilter(ff, hookText, filePrefix, sceneFilesTracker) {
         if (!hookText?.trim()) return null;
         const fileName = `${filePrefix}_hook.txt`;
         await ff.writeFile(fileName, hookText.trim());
-        if (trackedFiles) trackedFiles.push(fileName);
+        sceneFilesTracker.push(fileName);
         return `drawtext=fontfile=${CAPTION_FONT_NAME}:textfile=${fileName}:fontsize=w/14:fontcolor=#FFE600:borderw=6:bordercolor=black:box=1:boxcolor=black@0.45:boxborderw=24:x=(w-text_w)/2:y=h*0.14:enable='between(t,0,2.6)'`;
     }
 
@@ -1114,6 +1100,13 @@ Regras:
         try { await ff.deleteFile(name); } catch (e) {}
     }
 
+    /* 
+       MECANISMO DE CORTE: STREAMING MPEG-TS RESILIENTE
+       - Gera cada cena em formato .ts
+       - Remove os temporários da cena imediatamente do WASM
+       - Armazena os buffers das cenas na memória JS padrão (fora do WASM)
+       - Une tudo em um fluxo contínuo sem estourar o MEMFS
+    */
     async function cortarVideo() {
         const cutProgress = document.getElementById('cutProgress');
         const btnSim = document.getElementById('btnSimCortar');
@@ -1160,28 +1153,25 @@ Regras:
 
             await ff.writeFile(inputName, inputBytes.slice());
 
-            const audioCodec = audioCodecForExt(ext);
-            const needsCleanJoin = currentCuts.length > 1;
-            const tempFiles = [inputName];
+            const tsChunks = [];
 
-            let concatList = '';
-
+            // 1. Processamento unitário com limpeza imediata de FS
             for (let i = 0; i < currentCuts.length; i++) {
                 checkCancelled();
                 const cut = currentCuts[i];
                 const start = timeToSeconds(cut.inicio);
                 const end = timeToSeconds(cut.fim);
                 const duration = Math.max(end - start, 0.1);
-                const segName = `seg_${i}.${ext}`;
                 const hasNarration = !!(currentNarrationAudios[i]?.length);
+                const sceneFiles = [];
 
                 const sceneFilters = [];
                 if (cropFilter) sceneFilters.push(cropFilter);
                 if (captionsAvailable) {
-                    const cFilters = await buildCaptionFilters(ff, cut.narracao, duration, `c_${i}`, tempFiles);
+                    const cFilters = await buildCaptionFilters(ff, cut.narracao, duration, `c_${i}`, sceneFiles);
                     sceneFilters.push(...cFilters);
                     if (i === 0) {
-                        const hFilter = await buildHookFilter(ff, cut.gancho, `c_${i}`, tempFiles);
+                        const hFilter = await buildHookFilter(ff, cut.gancho, `c_${i}`, sceneFiles);
                         if (hFilter) sceneFilters.push(hFilter);
                     }
                     sceneFilters.push(buildProgressBarFilter(offsetsAcumulados[i], totalDuration));
@@ -1189,16 +1179,21 @@ Regras:
 
                 cutProgress.innerText = `Processando cena ${i + 1} de ${currentCuts.length}...`;
 
+                const vf = ['setpts=PTS-STARTPTS', ...sceneFilters].join(',');
+                const segTs = `seg.ts`;
+
                 if (hasNarration) {
-                    const videoOnly = `v_${i}.${ext}`;
-                    const audioName = `a_${i}.pcm`;
+                    const videoOnly = `v.mp4`;
+                    const audioName = `a.pcm`;
+                    sceneFiles.push(videoOnly, audioName, segTs);
 
                     await ff.exec([
                         '-ss', String(start),
                         '-i', inputName,
                         '-t', String(duration),
                         '-an',
-                        ...videoEncodeArgs(ext, sceneFilters, needsCleanJoin),
+                        '-vf', vf,
+                        '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '24',
                         '-avoid_negative_ts', 'make_zero',
                         videoOnly
                     ]);
@@ -1216,59 +1211,74 @@ Regras:
                         '-map', '0:v:0',
                         '-map', '1:a:0',
                         '-c:v', 'copy',
-                        '-c:a', audioCodec,
+                        '-c:a', 'aac',
                         '-b:a', '128k',
                         '-af', audioFilter,
                         '-t', String(duration),
-                        segName
+                        '-f', 'mpegts',
+                        segTs
                     ]);
-
-                    await safeDeleteFile(ff, videoOnly);
-                    await safeDeleteFile(ff, audioName);
                 } else {
-                    const audioArgs = (sceneFilters.length > 0 || needsCleanJoin)
-                        ? ['-af', 'asetpts=PTS-STARTPTS', '-c:a', audioCodec, '-b:a', '128k']
-                        : ['-c:a', 'copy'];
-
+                    sceneFiles.push(segTs);
                     await ff.exec([
                         '-ss', String(start),
                         '-i', inputName,
                         '-t', String(duration),
-                        ...videoEncodeArgs(ext, sceneFilters, needsCleanJoin),
-                        ...audioArgs,
+                        '-vf', vf,
+                        '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '24',
+                        '-af', 'asetpts=PTS-STARTPTS',
+                        '-c:a', 'aac',
+                        '-b:a', '128k',
                         '-avoid_negative_ts', 'make_zero',
-                        segName
+                        '-f', 'mpegts',
+                        segTs
                     ]);
                 }
 
-                concatList += `file '${segName}'\n`;
-                tempFiles.push(segName);
+                // Armazena no JS e limpa o FS do WebAssembly IMEDIATAMENTE
+                const data = await ff.readFile(segTs);
+                tsChunks.push(data);
+
+                for (const f of sceneFiles) {
+                    await safeDeleteFile(ff, f);
+                }
             }
 
-            // Desaloca o arquivo original da memória antes de iniciar o merge
+            // Libera o vídeo original da memória antes da montagem final
             await safeDeleteFile(ff, inputName);
+            cutProgress.innerText = 'Montando vídeo final...';
 
-            cutProgress.innerText = 'Unindo todas as cenas...';
-            await ff.writeFile('concat.txt', concatList);
-            tempFiles.push('concat.txt');
+            // Une todos os chunks .ts diretamente em um fluxo unificado
+            const totalBytes = tsChunks.reduce((acc, chunk) => acc + chunk.length, 0);
+            const combinedTs = new Uint8Array(totalBytes);
+            let offset = 0;
+            for (const chunk of tsChunks) {
+                combinedTs.set(chunk, offset);
+                offset += chunk.length;
+            }
+            tsChunks.length = 0; // libera memória JS
 
-            const outputName = `output.${ext}`;
-            await ff.exec(['-f', 'concat', '-safe', '0', '-i', 'concat.txt', '-c', 'copy', outputName]);
+            await ff.writeFile('combined.ts', combinedTs);
+            const outputName = 'output.mp4';
+
+            // Remux ultra-rápido de MPEG-TS para MP4 sem re-encode
+            await ff.exec(['-i', 'combined.ts', '-c', 'copy', '-movflags', '+faststart', outputName]);
+            await safeDeleteFile(ff, 'combined.ts');
 
             const finalData = await ff.readFile(outputName);
-            const blob = new Blob([finalData.buffer], { type: currentFile.type || 'video/mp4' });
+            await safeDeleteFile(ff, outputName);
+
+            const blob = new Blob([finalData.buffer], { type: 'video/mp4' });
             const url = trackObjectURL(URL.createObjectURL(blob));
 
             document.getElementById('finalVideo').src = url;
             const dl = document.getElementById('downloadLink');
             dl.href = url;
-            dl.download = `${currentFileBaseName}.${ext}`;
+            dl.download = `${currentFileBaseName}.mp4`;
 
             videoResultCard.style.display = 'block';
             videoResultCard.scrollIntoView({ behavior: 'smooth' });
-            cutProgress.innerText = 'Vídeo finalizado com sucesso! ✅';
-
-            for (const f of tempFiles) await safeDeleteFile(ff, f);
+            cutProgress.innerText = 'Vídeo finalizado e montado com sucesso! ✅';
             return true;
 
         } catch (err) {
