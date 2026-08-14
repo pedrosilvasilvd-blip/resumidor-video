@@ -1,0 +1,2394 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resumidor e Cortador de Vídeo com IA</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent-color: #6366f1;
+            --accent-hover: #4f46e5;
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        h1 { text-align: center; font-size: 1.8rem; margin-bottom: 5px; }
+        p.subtitle { text-align: center; color: var(--text-muted); margin-top: 0; }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        input, select, textarea {
+            background-color: #0f172a;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px;
+            color: var(--text-color);
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        input:focus, select:focus { border-color: var(--accent-color); }
+
+        button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 12px 20px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover { background-color: var(--accent-hover); }
+        button:disabled { background-color: #475569; cursor: not-allowed; }
+
+        #status {
+            margin-top: 15px;
+            font-weight: bold;
+            color: #818cf8;
+            text-align: center;
+        }
+
+        .output-box {
+            background-color: #090d16;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 15px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #e2e8f0;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .apiKey-link {
+            font-size: 0.8rem;
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+
+        table.cuts-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        table.cuts-table th, table.cuts-table td {
+            border: 1px solid var(--border-color);
+            padding: 8px 10px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        table.cuts-table th {
+            background-color: #0f172a;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+        }
+
+        table.cuts-table tr:nth-child(even) { background-color: #182338; }
+
+        /* Em telas estreitas, a tabela vira uma pilha de "cartões": cada linha
+           some das colunas e passa a exibir os campos empilhados, com o nome da
+           coluna como rótulo (via data-label). Sem isso, a tabela de 5 colunas
+           ficava cortada/ilegível no celular. */
+        @media (max-width: 700px) {
+            table.cuts-table, table.cuts-table thead, table.cuts-table tbody,
+            table.cuts-table th, table.cuts-table td, table.cuts-table tr {
+                display: block;
+            }
+            table.cuts-table thead {
+                position: absolute;
+                width: 1px; height: 1px;
+                overflow: hidden;
+                clip: rect(0 0 0 0);
+            }
+            table.cuts-table tr {
+                margin-bottom: 14px;
+                border: 1px solid var(--border-color);
+                border-radius: 8px;
+                overflow: hidden;
+            }
+            table.cuts-table td {
+                border: none;
+                border-bottom: 1px solid var(--border-color);
+                padding-left: 45%;
+                position: relative;
+                min-height: 20px;
+            }
+            table.cuts-table td:last-child { border-bottom: 0; }
+            table.cuts-table td::before {
+                content: attr(data-label);
+                position: absolute;
+                left: 10px;
+                top: 8px;
+                width: 40%;
+                font-weight: 600;
+                font-size: 0.7rem;
+                text-transform: uppercase;
+                color: var(--text-muted);
+            }
+        }
+
+        .confirm-box {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .confirm-box p { margin-top: 0; color: var(--text-muted); }
+
+        .confirm-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .confirm-buttons button { flex: 1; max-width: 260px; }
+
+        #btnNaoCortar {
+            background-color: #334155;
+        }
+
+        #btnNaoCortar:hover { background-color: #475569; }
+
+        #cutProgress {
+            margin-top: 15px;
+            font-weight: bold;
+            color: #818cf8;
+            text-align: center;
+        }
+
+        #videoResultCard video {
+            width: 100%;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .download-link {
+            display: inline-block;
+            background-color: #16a34a;
+            color: white;
+            text-decoration: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        .download-link:hover { background-color: #15803d; }
+    </style>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "@google/genai": "https://esm.run/@google/genai@2.16.0",
+          "@ffmpeg/ffmpeg": "https://esm.run/@ffmpeg/ffmpeg@0.12.15",
+          "@ffmpeg/util": "https://esm.run/@ffmpeg/util@0.12.2"
+        }
+      }
+    </script>
+</head>
+<body>
+
+<div class="container">
+    <div>
+        <h1>Resumidor de Vídeo & Roteirista IA</h1>
+        <p class="subtitle">Envie seu vídeo e receba o corte exato com narração em 3ª pessoa, dublada por uma voz sintética humanizada</p>
+    </div>
+
+    <div class="card">
+        <div class="form-group" style="margin-bottom: 15px;">
+            <label for="apiKey">Chave API do Google Gemini 
+                (<a href="https://aistudio.google.com/app/apikey" target="_blank" class="apiKey-link">Obter chave gratuita aqui</a>)
+            </label>
+            <input type="password" id="apiKey" placeholder="Cole sua chave AIzaSy..." />
+            <label style="text-transform:none;font-weight:400;font-size:0.8rem;display:flex;align-items:center;gap:6px;margin-top:4px;">
+                <input type="checkbox" id="rememberApiKey" style="width:auto;">
+                Lembrar minha chave neste navegador (fica salva só localmente, no seu dispositivo)
+            </label>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 15px;">
+            <label for="videoFile">Selecione o(s) Arquivo(s) de Vídeo (.mp4, .webm, .mov)</label>
+            <input type="file" id="videoFile" accept="video/*" multiple />
+            <p id="queueInfo" style="display:none; font-size:0.8rem; color:var(--text-muted); margin:4px 0 0;"></p>
+            <video id="videoPreview" controls style="display:none; width:100%; border-radius:8px; margin-top:8px; max-height:320px;"></video>
+            <p id="videoPreviewInfo" style="display:none; font-size:0.8rem; color:var(--text-muted); margin:4px 0 0;"></p>
+        </div>
+
+        <div class="grid">
+            <div class="form-group">
+                <label for="targetTime">Duração do Resumo (minutos)</label>
+                <input type="number" id="targetTime" value="10" min="1" max="30">
+            </div>
+            <div class="form-group">
+                <label for="tone">Tom da Narração</label>
+                <select id="tone">
+                    <option value="dinâmico, envolvente e direto ao ponto">Dinâmico e Envolvente</option>
+                    <option value="misterioso, focado em suspense e tensão">Misterioso / Suspense</option>
+                    <option value="didático, explicativo e analítico">Didático / Documental</option>
+                    <option value="cinematográfico e dramático">Cinematográfico / Dramático</option>
+                    <option value="acelerado, hiperenergético, cheio de ganchos e reviravoltas, com frases curtas e quase sem pausas, no estilo de resumo de dorama/novela viral do TikTok" data-turbo="true">🔥 Turbo TikTok / Dorama (acelerado, muitos cortes)</option>
+                </select>
+                <p id="toneTurboHint" style="display:none;font-size:0.75rem;color:var(--text-muted);margin:4px 0 0;">Roteiro com mais cortes curtos, ganchos e reviravoltas a cada poucos segundos, e narração falada mais rápido — pensado pra prender a atenção como um resumo de dorama que viraliza no TikTok.</p>
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 15px;">
+            <label for="voice">Voz do Narrador (IA)</label>
+            <select id="voice">
+                <option value="Sulafat">Sulafat — Calorosa (recomendada)</option>
+                <option value="Achird">Achird — Amigável</option>
+                <option value="Rasalgethi">Rasalgethi — Documental / Informativa</option>
+                <option value="Charon">Charon — Grave / Informativo</option>
+                <option value="Puck">Puck — Animada / Empolgante</option>
+                <option value="Gacrux">Gacrux — Madura / Séria</option>
+                <option value="Umbriel">Umbriel — Tranquila</option>
+                <option value="Kore">Kore — Firme / Neutra</option>
+            </select>
+            <label style="text-transform:none;font-weight:400;font-size:0.8rem;display:flex;align-items:center;gap:6px;margin-top:8px;">
+                <input type="checkbox" id="skipNarration" style="width:auto;">
+                🔇 Não gerar narração — manter o áudio original do vídeo em todas as cenas
+            </label>
+            <p id="skipNarrationHint" style="display:none;font-size:0.75rem;color:var(--text-muted);margin:4px 0 0;">Pula a etapa de narração sintética (economiza tempo e cota da API): o roteiro/tabela de cortes ainda é gerado normalmente, mas o corte final mantém o som original do vídeo em toda cena.</p>
+        </div>
+
+        <div class="form-group" style="margin-top: 15px;">
+            <label for="aspectRatio">Formato de Saída</label>
+            <select id="aspectRatio">
+                <option value="original">Original (sem cortar as bordas)</option>
+                <option value="9:16">Vertical 9:16 — Stories / Reels / TikTok</option>
+                <option value="4:5">Retrato 4:5 — Feed do Instagram</option>
+                <option value="1:1">Quadrado 1:1 — Feed</option>
+            </select>
+            <p style="font-size:0.75rem;color:var(--text-muted);margin:4px 0 0;">Formatos diferentes do original cortam as bordas laterais/topo-baixo (crop central) para preencher a proporção escolhida — isso reenquadra a cena, então algo nas bordas pode ficar de fora.</p>
+        </div>
+
+        <div class="form-group" style="margin-top: 15px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                <input type="checkbox" id="viralMode" checked style="width:auto;">
+                🧲 Modo Viciante — otimizado pra retenção (recomendado)
+            </label>
+            <p style="font-size:0.75rem;color:var(--text-muted);margin:4px 0 0;">Ativa 4 coisas de uma vez: (1) legenda queimada no vídeo — a maioria assiste sem som; (2) exige que a IA abra com o momento mais forte do vídeo inteiro, com uma frase-gancho em destaque nos 2-3s iniciais; (3) regra de ritmo mais rígida no roteiro (cortes mais curtos, espalhados pelo vídeo todo); (4) barra de progresso fina no rodapé. Deixa o processamento mais lento (o vídeo precisa ser reprocessado com as legendas "queimadas" na imagem).</p>
+        </div>
+
+        <p style="font-size:0.78rem; color:var(--text-muted); margin: 16px 0 0; line-height:1.5;">
+            💳 Cada processamento consome a cota/saldo da <strong>sua</strong> chave de API do Gemini — o upload do vídeo, a geração do roteiro e a narração de cada cena são chamadas pagas (a chave tem uma cota gratuita limitada; acima dela, cobra por uso). Acompanhe o consumo em
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" class="apiKey-link">aistudio.google.com</a>.
+        </p>
+        <div style="display:flex; gap:10px; margin-top: 10px;">
+            <button id="processBtn" style="flex:1;">Processar Vídeo(s), Roteiro e Narração</button>
+            <button id="cancelBtn" style="display:none; background-color:#b91c1c; flex:0 0 auto;">✖ Cancelar</button>
+        </div>
+        <div id="status" role="status" aria-live="polite"></div>
+        <div id="batchStatus" role="status" aria-live="polite" style="display:none; margin-top:8px; font-weight:600;"></div>
+    </div>
+
+    <div class="card" id="outputCard" style="display: none;">
+        <h3>Resultado e Tabela de Cortes</h3>
+        <div id="resultOutput"></div>
+
+        <div class="confirm-box" id="confirmBox" style="display: none;">
+            <p>Quer que eu corte o vídeo e aplique a narração sintética automaticamente seguindo essa tabela?</p>
+            <div class="confirm-buttons">
+                <button id="btnSimCortar">✅ Sim, cortar vídeo</button>
+                <button id="btnNaoCortar">❌ Não, obrigado</button>
+            </div>
+            <div id="cutProgress" role="status" aria-live="polite"></div>
+            <button id="cancelCutBtn" style="display:none; background-color:#b91c1c; margin-top:10px;">✖ Cancelar corte</button>
+        </div>
+    </div>
+
+    <div class="card" id="videoResultCard" style="display: none;">
+        <h3>Vídeo Cortado</h3>
+        <video id="finalVideo" controls></video>
+        <div style="text-align: center;">
+            <a id="downloadLink" class="download-link" download="resumo_final.mp4">⬇️ Baixar vídeo cortado</a>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { GoogleGenAI, createUserContent, createPartFromUri, Type } from '@google/genai';
+    import { FFmpeg } from '@ffmpeg/ffmpeg';
+    import { fetchFile } from '@ffmpeg/util';
+
+    document.getElementById('processBtn').addEventListener('click', () => {
+        const files = document.getElementById('videoFile').files;
+        if (files.length > 1) {
+            runBatchQueue(Array.from(files));
+        } else {
+            processVideo();
+        }
+    });
+    document.getElementById('btnSimCortar').addEventListener('click', cortarVideo);
+    document.getElementById('btnNaoCortar').addEventListener('click', () => {
+        document.getElementById('confirmBox').style.display = 'none';
+    });
+    document.getElementById('cancelBtn').addEventListener('click', () => {
+        cancelRequested = true;
+        document.getElementById('status').innerText = 'Cancelando... (aguardando a etapa atual terminar)';
+    });
+    document.getElementById('cancelCutBtn').addEventListener('click', () => {
+        cancelRequested = true;
+        document.getElementById('cutProgress').innerText = 'Cancelando... (aguardando a cena atual terminar de cortar)';
+    });
+    // Delegação de eventos: a tabela de cortes é recriada via innerHTML a cada
+    // render (editar/salvar/cancelar/regenerar narração), então em vez de
+    // religar um listener por botão a cada vez, um único listener no
+    // container cuida de tudo, olhando o atributo data-action de quem foi
+    // clicado.
+    document.getElementById('resultOutput').addEventListener('click', async (e) => {
+        const btn = e.target.closest('[data-action]');
+        if (!btn) return;
+        const action = btn.dataset.action;
+        if (action === 'edit-roteiro') {
+            renderCutsTable(currentCuts, currentNarrationAudios, true);
+        } else if (action === 'cancel-edit') {
+            renderCutsTable(currentCuts, currentNarrationAudios, false);
+        } else if (action === 'save-roteiro') {
+            saveEditedRoteiro();
+        } else if (action === 'regen-narracao') {
+            await regenerateNarrationForScene(Number(btn.dataset.index));
+        } else if (action === 'download-legenda') {
+            downloadLegendaSrt();
+        }
+    });
+    document.getElementById('videoFile').addEventListener('change', (e) => {
+        const preview = document.getElementById('videoPreview');
+        const info = document.getElementById('videoPreviewInfo');
+        const queueInfo = document.getElementById('queueInfo');
+        const files = e.target.files;
+        const file = files[0];
+
+        if (previewObjectURL) {
+            URL.revokeObjectURL(previewObjectURL);
+            previewObjectURL = null;
+        }
+
+        if (!file) {
+            preview.style.display = 'none';
+            preview.removeAttribute('src');
+            info.style.display = 'none';
+            queueInfo.style.display = 'none';
+            currentVideoWidth = null;
+            currentVideoHeight = null;
+            return;
+        }
+
+        // Mais de um arquivo selecionado = modo fila: cada vídeo é processado
+        // e cortado em sequência, sem pausar pra revisão manual entre um e
+        // outro (ver runBatchQueue). Mostramos a lista aqui só como aviso;
+        // o preview abaixo continua sendo do primeiro arquivo, pra conferência.
+        if (files.length > 1) {
+            const nomes = Array.from(files).map(f => f.name).join(', ');
+            queueInfo.textContent = `🗂️ Modo fila: ${files.length} vídeos selecionados (${nomes}). Serão processados e cortados em sequência, um atrás do outro, sem pausar pra revisão — vídeo e legenda de cada um são baixados automaticamente com o mesmo nome do arquivo original.`;
+            queueInfo.style.display = 'block';
+        } else {
+            queueInfo.style.display = 'none';
+        }
+
+        previewObjectURL = URL.createObjectURL(file);
+        preview.src = previewObjectURL;
+        preview.style.display = 'block';
+        currentVideoWidth = null;
+        currentVideoHeight = null;
+
+        const sizeMB = (file.size / 1024 / 1024).toFixed(1);
+        const avisoTamanho = file.size > WARN_FILE_SIZE_BYTES
+            ? ' — arquivo grande, o upload pode demorar vários minutos'
+            : '';
+        info.textContent = `${file.name} — ${sizeMB} MB${avisoTamanho}`;
+        info.style.display = 'block';
+
+        // Assim que os metadados carregam, já sabemos a duração e a resolução —
+        // a duração ajuda a conferir o arquivo certo, e a resolução (largura x
+        // altura) é usada depois pra calcular o corte central quando o usuário
+        // escolhe um "Formato de Saída" diferente do original (9:16, 1:1 etc.).
+        preview.onloadedmetadata = () => {
+            const totalSeconds = Math.round(preview.duration || 0);
+            const mm = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+            const ss = String(totalSeconds % 60).padStart(2, '0');
+            currentVideoWidth = preview.videoWidth || null;
+            currentVideoHeight = preview.videoHeight || null;
+            info.textContent = `${file.name} — ${sizeMB} MB — duração ${mm}:${ss}${avisoTamanho}`;
+        };
+    });
+
+    // Abrir o arquivo direto do disco (duplo-clique / file:///C:/...) impede o
+    // ffmpeg.wasm de funcionar: navegadores tratam páginas file:// como uma origem
+    // "opaca/null", e a criação do Web Worker que o ffmpeg.wasm precisa falha
+    // silenciosamente nesse contexto (os downloads dos arquivos até funcionam, mas
+    // o carregamento nunca conclui — é exatamente o sintoma "não respondeu em 30s").
+    // Isso não tem relação com bloqueador de anúncios nem com o ffmpeg instalado no
+    // Windows: aquele é um programa separado, de linha de comando, que essa página
+    // (rodando dentro do navegador) não enxerga nem usa.
+    if (location.protocol === 'file:') {
+        const warning = document.createElement('div');
+        warning.className = 'card';
+        warning.style.borderColor = '#f59e0b';
+        warning.innerHTML = `
+            <h3 style="color:#f59e0b;margin-top:0;">⚠️ Abra este arquivo por um servidor local, não por duplo-clique</h3>
+            <p>Você abriu este HTML direto da pasta Downloads (endereço começando com <code>file:///</code>). O corte de vídeo usa um "motor" (ffmpeg.wasm) que precisa rodar dentro de um Web Worker, e os navegadores bloqueiam isso quando a página é aberta assim — o carregamento fica pendurado até dar timeout, mesmo sem bloqueador de anúncios.</p>
+            <p><strong>O ffmpeg instalado no seu Windows não ajuda aqui</strong>: é um programa separado de linha de comando; esta página roda tudo dentro do navegador e não tem acesso a ele.</p>
+            <p><strong>Como resolver (rápido):</strong></p>
+            <ol style="line-height:1.8;">
+                <li>Abra o Prompt de Comando na pasta onde está o arquivo (Shift + botão direito → "Abrir janela do PowerShell/Terminal aqui").</li>
+                <li>Rode: <code>python -m http.server 8000</code> (se tiver Python) ou <code>npx serve .</code> (se tiver Node.js).</li>
+                <li>No navegador, acesse <code>http://localhost:8000/</code> e abra o arquivo por lá — não pelo ícone na pasta.</li>
+            </ol>
+            <p>A geração do roteiro (texto) funciona por file:// porque não usa Worker — só o corte do vídeo precisa do servidor local.</p>
+        `;
+        document.querySelector('.container').insertBefore(warning, document.querySelector('.card'));
+    }
+
+    // Estado global entre a geração do roteiro e o corte
+    let currentFile = null;
+    // Bytes do arquivo atual, lidos do disco UMA ÚNICA VEZ, o mais cedo
+    // possível (ver processVideo). No Android, um File vindo de "content://"
+    // (Downloads, WhatsApp etc.) pode deixar de poder ser relido do disco
+    // depois de alguns minutos — e o pipeline inteiro (upload pro Gemini +
+    // análise de IA + geração de narração) já leva minutos antes de chegar
+    // no corte. Ler de novo só na hora de cortar causava
+    // "File could not be read! Code=-1". Guardando os bytes aqui, perto da
+    // seleção do arquivo, o corte nunca mais precisa tocar no disco.
+    let cachedFileBytes = null;
+    let cachedFileBytesFor = null; // referência do File a que cachedFileBytes pertence
+    let currentCuts = [];
+    let currentNarrationAudios = []; // PCM (s16le) por cena, mesmo índice de currentCuts
+    let ffmpeg = null;
+    // Nome-base (sem extensão) do vídeo cortado E da legenda .srt — os dois são
+    // salvos com o MESMO nome (só a extensão muda), pra ficar óbvio qual
+    // legenda pertence a qual vídeo quando vários são processados em fila.
+    // Vem do nome do arquivo original enviado; cai pra 'resumo_final' se por
+    // algum motivo não der pra extrair um nome (ex: nome vazio).
+    let currentFileBaseName = 'resumo_final';
+    // Resolução do vídeo atual (capturada quando o <video> de preview carrega
+    // os metadados) — usada para calcular o corte central do "Formato de
+    // Saída". Precisa estar declarada aqui: como o script roda em modo
+    // estrito (type="module"), atribuir a uma variável nunca declarada lança
+    // ReferenceError em vez de criar uma global silenciosa.
+    let currentVideoWidth = null;
+    let currentVideoHeight = null;
+
+    // URL do preview do vídeo original (mostrado assim que o usuário escolhe o
+    // arquivo, antes mesmo de processar). Guardada à parte de activeObjectURLs
+    // porque o preview deve continuar visível durante o processamento — só é
+    // revogada quando o usuário troca de arquivo ou fecha a aba.
+    let previewObjectURL = null;
+
+    // Cache do último upload feito ao Gemini. Se o usuário só trocar tom/voz e
+    // clicar em "Processar" de novo com o MESMO arquivo, reaproveitamos a
+    // referência já enviada em vez de subir o vídeo inteiro outra vez (upload +
+    // análise de quadros/áudio podem levar minutos e custam cota da API). O
+    // Google mantém arquivos enviados por ~48h, então a referência costuma
+    // continuar válida dentro de uma sessão de uso.
+    let lastUpload = null; // { signature, uri, mimeType }
+
+    function fileSignature(file) {
+        return `${file.name}|${file.size}|${file.lastModified}`;
+    }
+
+    // Tira a extensão do nome original do arquivo pra usar como nome-base do
+    // vídeo cortado e da legenda (ambos saem com esse mesmo nome). Troca
+    // caracteres que dão problema em nome de arquivo baixado por "_".
+    function baseNameNoExt(filename) {
+        if (!filename) return 'resumo_final';
+        const semExtensao = filename.replace(/\.[^./\\]+$/, '');
+        const limpo = semExtensao.replace(/[\\/:*?"<>|]+/g, '_').trim();
+        return limpo || 'resumo_final';
+    }
+
+    // Erros TRANSITÓRIOS da API (sobrecarga temporária do lado do Google) —
+    // vale tentar de novo automaticamente com espera. Erros de outro tipo
+    // (chave inválida, prompt rejeitado, cota zerada etc.) não se resolvem
+    // tentando de novo, então não entram aqui.
+    function isTransientApiError(err) {
+        const msg = String((err && err.message) || err || '');
+        return /"code":\s*503|"status":\s*"UNAVAILABLE"|"code":\s*429|"status":\s*"RESOURCE_EXHAUSTED"|overloaded|high demand|try again later/i.test(msg);
+    }
+
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    // Tenta "fn" várias vezes com espera crescente (2s, 4s, 8s...) SÓ quando o
+    // erro é transitório (ver isTransientApiError) — outros erros são
+    // relançados na hora, sem desperdiçar tentativas. "onRetry" (opcional)
+    // avisa a UI de que uma nova tentativa está prestes a começar.
+    // "shouldRetry" é opcional — por padrão só insiste em erros transitórios
+    // (ver isTransientApiError). Chamadores com outros tipos de falha
+    // conhecida e passageira (ex: o TTS às vezes devolve resposta vazia) podem
+    // passar seu próprio predicado para também entrar no retry.
+    async function withRetries(fn, { attempts = 3, baseDelayMs = 2000, onRetry, shouldRetry = isTransientApiError } = {}) {
+        let lastErr;
+        for (let i = 0; i < attempts; i++) {
+            try {
+                return await fn();
+            } catch (err) {
+                lastErr = err;
+                const isLastAttempt = i === attempts - 1;
+                if (isLastAttempt || !shouldRetry(err)) throw err;
+                const waitMs = baseDelayMs * Math.pow(2, i);
+                if (onRetry) onRetry(i + 1, attempts, waitMs);
+                await sleep(waitMs);
+            }
+        }
+        throw lastErr;
+    }
+
+    // Cancelamento "cooperativo": como o SDK do Gemini e o ffmpeg.wasm não
+    // expõem uma forma simples de abortar uma chamada já em andamento, a
+    // flag é checada entre uma etapa e outra (antes de cada passo caro) e
+    // interrompe o fluxo assim que a etapa atual terminar, em vez de travar
+    // o navegador tentando abortar uma requisição no meio do caminho.
+    let cancelRequested = false;
+    class CancelledError extends Error {}
+    function checkCancelled() {
+        if (cancelRequested) throw new CancelledError('Processamento cancelado pelo usuário.');
+    }
+
+    // Mantém a tela ligada (impede o apagamento/bloqueio automático por
+    // inatividade) enquanto há alguma etapa pesada rodando — upload,
+    // geração de roteiro/narração, corte de vídeo, ou a fila inteira em modo
+    // lote. Usa Screen Wake Lock API (suportada em Chrome/Edge Android e
+    // Safari iOS 16.4+; sem suporte em navegadores mais antigos).
+    //
+    // LIMITAÇÃO REAL, sem forma de contornar por uma página web: isso só
+    // evita o apagamento AUTOMÁTICO da tela por inatividade. Se a pessoa
+    // apertar o botão de ligar/bloquear manualmente, o Android/iOS suspende
+    // (ou mata) a aba em segundo plano, e o processamento para de qualquer
+    // jeito — nenhum site consegue continuar rodando livremente com o
+    // celular bloqueado na tela de cadeado. O wake lock resolve o caso mais
+    // comum (a tela apagar sozinha enquanto o celular fica parado do lado),
+    // não o de bloquear manualmente e guardar o celular no bolso.
+    //
+    // Contagem de referência: processVideo, cortarVideo e runBatchQueue
+    // "pedem" e "devolvem" o lock cada um por conta própria. Em modo fila,
+    // runBatchQueue pede o dele ANTES do loop e só devolve DEPOIS — como
+    // processVideo/cortarVideo pedem e devolvem o deles a cada vídeo por
+    // baixo desse, o contador nunca zera no meio da fila, e a tela continua
+    // ligada do primeiro ao último vídeo, não só dentro de cada um.
+    let wakeLockSentinel = null;
+    let wakeLockRefCount = 0;
+
+    async function acquireWakeLock() {
+        wakeLockRefCount++;
+        if (wakeLockSentinel || !('wakeLock' in navigator)) return;
+        try {
+            wakeLockSentinel = await navigator.wakeLock.request('screen');
+            wakeLockSentinel.addEventListener('release', () => {
+                // O próprio navegador pode soltar o lock (ex: usuário trocou de
+                // aba) sem passar por releaseWakeLock() — sincroniza o estado.
+                wakeLockSentinel = null;
+            });
+        } catch (e) {
+            console.warn('Não foi possível manter a tela ligada automaticamente:', e);
+            wakeLockSentinel = null;
+        }
+    }
+
+    function releaseWakeLock() {
+        wakeLockRefCount = Math.max(0, wakeLockRefCount - 1);
+        if (wakeLockRefCount === 0 && wakeLockSentinel) {
+            wakeLockSentinel.release().catch(() => {});
+            wakeLockSentinel = null;
+        }
+    }
+
+    // Se o navegador soltou o lock sozinho (ex: minimizar o app e voltar) mas
+    // ainda temos processamento em andamento (refCount > 0), tenta pedir de
+    // novo assim que a aba volta a ficar visível.
+    document.addEventListener('visibilitychange', async () => {
+        if (wakeLockRefCount > 0 && document.visibilityState === 'visible' && !wakeLockSentinel && 'wakeLock' in navigator) {
+            try {
+                wakeLockSentinel = await navigator.wakeLock.request('screen');
+            } catch (e) { /* ignora — tenta de novo na próxima mudança de visibilidade */ }
+        }
+    });
+
+    // Toda blob: URL criada (áudios de preview por cena + vídeo final) fica
+    // guardada aqui. Sem revogar, cada "Processar Vídeo" novo (trocar tom/voz,
+    // tentar de novo etc.) vai empilhando URLs na memória do navegador até a aba
+    // travar em sessões longas.
+    let activeObjectURLs = [];
+    function trackObjectURL(url) {
+        activeObjectURLs.push(url);
+        return url;
+    }
+    function revokeAllObjectURLs() {
+        for (const url of activeObjectURLs) {
+            try { URL.revokeObjectURL(url); } catch (e) { /* ignora */ }
+        }
+        activeObjectURLs = [];
+    }
+
+    // --- Persistência local (apenas preferências de formulário) ---
+    // Guardamos só o que é conveniente e de baixo risco (duração, tom, voz).
+    // A chave de API só é salva se o usuário marcar a caixa explicitamente —
+    // por padrão nada de sensível vai para o localStorage.
+    const SETTINGS_KEY = 'resumidorVideoIA_settings_v1';
+
+    function loadSettings() {
+        let saved = {};
+        try {
+            saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+        } catch (e) { saved = {}; }
+
+        if (saved.targetTime) document.getElementById('targetTime').value = saved.targetTime;
+        if (saved.tone) document.getElementById('tone').value = saved.tone;
+        if (saved.voice) document.getElementById('voice').value = saved.voice;
+        if (saved.aspectRatio) document.getElementById('aspectRatio').value = saved.aspectRatio;
+        // Se nunca foi salvo, mantém o padrão do HTML (marcado). Se já foi salvo
+        // alguma vez, respeita a última escolha do usuário (mesmo que seja "desligar").
+        if (saved.viralMode !== undefined) document.getElementById('viralMode').checked = saved.viralMode;
+        if (saved.skipNarration !== undefined) document.getElementById('skipNarration').checked = saved.skipNarration;
+        if (saved.rememberApiKey) {
+            document.getElementById('rememberApiKey').checked = true;
+            if (saved.apiKey) document.getElementById('apiKey').value = saved.apiKey;
+        }
+    }
+
+    function saveSettings() {
+        const rememberApiKey = document.getElementById('rememberApiKey').checked;
+        const settings = {
+            targetTime: document.getElementById('targetTime').value,
+            tone: document.getElementById('tone').value,
+            voice: document.getElementById('voice').value,
+            aspectRatio: document.getElementById('aspectRatio').value,
+            viralMode: document.getElementById('viralMode').checked,
+            skipNarration: document.getElementById('skipNarration').checked,
+            rememberApiKey,
+            apiKey: rememberApiKey ? document.getElementById('apiKey').value.trim() : ''
+        };
+        try {
+            localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+        } catch (e) { /* localStorage indisponível/cheio — ignora silenciosamente */ }
+    }
+
+    ['targetTime', 'tone', 'voice', 'aspectRatio', 'viralMode', 'skipNarration', 'apiKey', 'rememberApiKey'].forEach(id => {
+        document.getElementById(id).addEventListener('change', saveSettings);
+    });
+    loadSettings();
+
+    // Quando "Não gerar narração" está marcado, a voz deixa de fazer sentido
+    // (não vai haver chamada de TTS) — desabilita o seletor pra deixar isso
+    // óbvio, em vez de só ignorar o valor escolhido em silêncio.
+    function updateSkipNarrationUI() {
+        const skip = document.getElementById('skipNarration').checked;
+        document.getElementById('voice').disabled = skip;
+        document.getElementById('skipNarrationHint').style.display = skip ? 'block' : 'none';
+    }
+    document.getElementById('skipNarration').addEventListener('change', updateSkipNarrationUI);
+    updateSkipNarrationUI();
+
+    // Mostra uma dica extra só quando o estilo "🔥 Turbo TikTok / Dorama" está
+    // selecionado, avisando que o roteiro vai vir com mais cortes e ritmo
+    // mais acelerado (ver isTurboToneSelected(), usado também no prompt).
+    function isTurboToneSelected() {
+        const toneSelect = document.getElementById('tone');
+        return toneSelect.selectedOptions[0]?.dataset.turbo === 'true';
+    }
+    function updateToneTurboHint() {
+        document.getElementById('toneTurboHint').style.display = isTurboToneSelected() ? 'block' : 'none';
+    }
+    document.getElementById('tone').addEventListener('change', updateToneTurboHint);
+    updateToneTurboHint();
+
+    // Limites práticos de arquivo: a API de upload de arquivos do Gemini costuma
+    // rejeitar vídeos acima de ~2GB, e uploads muito grandes pela rede do
+    // navegador (sem barra de progresso nativa nessa etapa) deixam o usuário sem
+    // noção de quanto falta. Bloqueamos o caso extremo e avisamos no caso grande.
+    const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024 * 1024; // 2 GB
+    const WARN_FILE_SIZE_BYTES = 500 * 1024 * 1024; // 500 MB
+
+    // Descobre a duração real do vídeo antes de processar, pra podermos avisar
+    // se a duração de resumo pedida não faz sentido (ex: pedir 10 min de resumo
+    // de um vídeo de 2 min). Usa um <video> temporário e desiste depois de 8s
+    // (alguns formatos/containers incomuns não expõem duração via metadata).
+    function getVideoDurationSeconds(file) {
+        return new Promise((resolve) => {
+            const tempVideo = document.createElement('video');
+            tempVideo.preload = 'metadata';
+            const url = URL.createObjectURL(file);
+            let done = false;
+            const finish = (value) => {
+                if (done) return;
+                done = true;
+                URL.revokeObjectURL(url);
+                resolve(value);
+            };
+            const timeout = setTimeout(() => finish(null), 8000);
+            tempVideo.onloadedmetadata = () => {
+                clearTimeout(timeout);
+                finish(isFinite(tempVideo.duration) ? tempVideo.duration : null);
+            };
+            tempVideo.onerror = () => {
+                clearTimeout(timeout);
+                finish(null);
+            };
+            tempVideo.src = url;
+        });
+    }
+
+    // Modelo de Text-to-Speech nativo do Gemini. O áudio sempre vem como PCM
+    // bruto de 16 bits, mono, 24kHz — por isso não precisamos de nenhuma lib
+    // extra pra decodificar: é só matemática simples pra achar a duração, e um
+    // cabeçalho WAV de 44 bytes pra poder tocar no <audio> do navegador.
+    // ID reconferido na documentação oficial do Gemini API em 11/08/2026 —
+    // segue ativo (inclusive ganhou suporte a streaming recentemente). Se um
+    // dia a API devolver erro de "modelo não encontrado" aqui, é sinal de que
+    // o Google descontinuou este preview; confira o substituto em
+    // https://ai.google.dev/gemini-api/docs/models
+    const TTS_MODEL = 'gemini-3.1-flash-tts-preview';
+    const TTS_SAMPLE_RATE = 24000;
+
+    async function processVideo(fileOverride) {
+        const apiKey = document.getElementById('apiKey').value.trim();
+        const fileInput = document.getElementById('videoFile');
+        const targetTime = document.getElementById('targetTime').value;
+        const tone = document.getElementById('tone').value;
+        const voiceName = document.getElementById('voice').value;
+        const skipNarration = document.getElementById('skipNarration').checked;
+        const status = document.getElementById('status');
+        const processBtn = document.getElementById('processBtn');
+        const resultOutput = document.getElementById('resultOutput');
+        const outputCard = document.getElementById('outputCard');
+        const confirmBox = document.getElementById('confirmBox');
+        const videoResultCard = document.getElementById('videoResultCard');
+
+        if (!apiKey) {
+            alert('Por favor, insira sua Chave de API do Gemini.');
+            return;
+        }
+
+        if (!fileOverride && fileInput.files.length === 0) {
+            alert('Por favor, selecione um arquivo de vídeo.');
+            return;
+        }
+
+        const file = fileOverride || fileInput.files[0];
+
+        if (file.size > MAX_FILE_SIZE_BYTES) {
+            alert(`Esse vídeo tem ${(file.size / 1024 / 1024 / 1024).toFixed(2)} GB — acima do limite de 2 GB aceito pela API de upload de arquivos do Gemini. Compacte ou corte o vídeo antes de enviar.`);
+            return;
+        }
+
+        status.innerText = 'Verificando o vídeo...';
+        const videoDurationSeconds = await getVideoDurationSeconds(file);
+        const targetMinutes = Number(targetTime) || 0;
+        if (videoDurationSeconds && targetMinutes * 60 >= videoDurationSeconds * 0.9) {
+            const durMin = (videoDurationSeconds / 60).toFixed(1);
+            const sugerido = Math.max(1, Math.floor((videoDurationSeconds / 60) * 0.5));
+            alert(
+                `O vídeo dura cerca de ${durMin} min, mas você pediu um resumo de ${targetTime} min — ` +
+                `isso é quase a duração inteira do vídeo (ou mais), o que não faz sentido para um "resumo". ` +
+                `Reduza a "Duração do Resumo" (sugestão: até ${sugerido} min) e tente novamente.`
+            );
+            status.innerText = '';
+            return;
+        }
+
+        currentFile = file;
+        currentFileBaseName = baseNameNoExt(file.name);
+        confirmBox.style.display = 'none';
+        videoResultCard.style.display = 'none';
+        document.getElementById('cutProgress').innerText = '';
+        revokeAllObjectURLs(); // limpa URLs de áudio/vídeo de uma rodada anterior
+        cancelRequested = false;
+        const cancelBtn = document.getElementById('cancelBtn');
+        cancelBtn.style.display = 'inline-block';
+
+        // Lê os bytes do arquivo AGORA, antes de qualquer coisa demorada
+        // (upload, análise de IA, narração) — é o momento em que o handle do
+        // arquivo (especialmente "content://" no Android) está mais
+        // garantidamente válido. cortarVideo() reaproveita esses bytes
+        // minutos depois em vez de reler do disco. Se essa leitura antecipada
+        // falhar por algum motivo, não travamos o fluxo aqui: cortarVideo
+        // simplesmente tenta ler do disco na hora, como fazia antes.
+        cachedFileBytes = null;
+        cachedFileBytesFor = null;
+        try {
+            cachedFileBytes = new Uint8Array(await file.arrayBuffer());
+            cachedFileBytesFor = file;
+        } catch (preReadErr) {
+            console.warn('Não foi possível pré-carregar os bytes do vídeo agora — vai tentar ler do disco na hora do corte.', preReadErr);
+        }
+
+        try {
+            await acquireWakeLock();
+            processBtn.disabled = true;
+            status.innerText = "1/5: Conectando à SDK do Gemini...";
+
+            const ai = new GoogleGenAI({ apiKey: apiKey });
+
+            // 1. Upload do vídeo via SDK — mas só se este exato arquivo ainda não
+            // tiver sido enviado nesta sessão (ex: usuário só trocou tom/voz e
+            // clicou em processar de novo). Isso evita reenviar o vídeo inteiro e
+            // esperar a análise de novo quando nada sobre o ARQUIVO mudou.
+            const signature = fileSignature(file);
+            let uploadResult;
+            if (lastUpload && lastUpload.signature === signature && lastUpload.apiKey === apiKey) {
+                status.innerText = "2/5: Reaproveitando vídeo já enviado (mesmo arquivo de antes)...";
+                uploadResult = { uri: lastUpload.uri, mimeType: lastUpload.mimeType, name: lastUpload.name };
+            } else {
+                checkCancelled();
+                status.innerText = "2/5: Enviando arquivo de vídeo...";
+                uploadResult = await ai.files.upload({
+                    file: file,
+                    config: { mimeType: file.type }
+                });
+
+                // 2. Aguarda processamento do arquivo
+                checkCancelled();
+                status.innerText = "3/5: Vídeo enviado! IA está analisando quadros e áudio...";
+                let fileState = await ai.files.get({ name: uploadResult.name });
+
+                // Limite de tentativas: sem isso, se o processamento do Google travar
+                // (arquivo corrompido, formato estranho etc.), o app fica pedindo pra
+                // sempre sem nunca avisar o usuário. 90 tentativas x 4s = 6 minutos.
+                const MAX_POLL_ATTEMPTS = 90;
+                let pollAttempts = 0;
+
+                while (fileState.state === "PROCESSING") {
+                    checkCancelled();
+                    if (pollAttempts >= MAX_POLL_ATTEMPTS) {
+                        throw new Error("O Google levou tempo demais (mais de 6 minutos) para processar o vídeo. Tente novamente ou use um arquivo menor.");
+                    }
+                    pollAttempts++;
+                    status.innerText = `3/5: Vídeo enviado! IA está analisando quadros e áudio... (${pollAttempts})`;
+                    await new Promise(resolve => setTimeout(resolve, 4000));
+                    fileState = await ai.files.get({ name: uploadResult.name });
+
+                    if (fileState.state === "FAILED") {
+                        throw new Error("O Google não conseguiu processar esse arquivo de vídeo.");
+                    }
+                }
+
+                lastUpload = { signature, apiKey, uri: uploadResult.uri, mimeType: uploadResult.mimeType, name: uploadResult.name };
+            }
+
+            checkCancelled();
+
+            // 3. Gerar o roteiro em JSON estruturado (para conseguirmos cortar o vídeo depois)
+            status.innerText = "4/5: Gerando tabela de cortes e roteiro...";
+
+            const targetWords = targetTime * 140;
+            const isViralMode = document.getElementById('viralMode').checked;
+            const maxSceneSeconds = isTurboToneSelected() ? 4 : 6;
+            const turboRules = isTurboToneSelected() ? `
+7. ESTILO TURBO TIKTOK/DORAMA (obrigatório neste roteiro): monte MUITOS cortes curtos — cada cena deve durar só o tempo de 1 a 2 frases de narração, nunca cenas longas e paradas. Priorize os momentos de maior impacto emocional: brigas, confissões, reviravoltas, olhares, close-ups de reação. Comece com o gancho mais forte do vídeo logo nos primeiros segundos (nada de introdução lenta). Encadeie as cenas como cliffhangers, sempre empurrando para "o que vem a seguir". Frases de narração curtas, diretas, quase sem pausas — no ritmo de vídeo de resumo de dorama/novela que viraliza no TikTok.` : '';
+            // "Modo Viciante": regras de RETENÇÃO que valem para qualquer tom de
+            // narração escolhido (independente do estilo Turbo acima) — gancho
+            // forçado logo de cara e ritmo de corte mais constante o vídeo inteiro.
+            const viralRules = isViralMode ? `
+${turboRules ? '8' : '7'}. GANCHO INICIAL (obrigatório): a PRIMEIRA cena escolhida precisa ser o momento mais chocante, emocionante ou intrigante do vídeo inteiro — nunca um plano parado, atmosférico ou de introdução lenta. É essa cena que decide se a pessoa continua assistindo ou passa o vídeo nos primeiros segundos.
+${turboRules ? '9' : '8'}. No campo "gancho", escreva uma frase de até 8 palavras, curta e impactante, tipo manchete, resumindo o choque/mistério central da história — mas SÓ na primeira cena (índice 0). Nas demais cenas, deixe "gancho" como uma string vazia ("").
+${turboRules ? '10' : '9'}. RITMO CONSTANTE: nenhuma cena deve durar mais que ${maxSceneSeconds} segundos, mesmo que isso signifique escrever frases de narração mais curtas — prefira várias frases curtas a uma cena longa e parada. Distribua os cortes de forma constante por TODO o vídeo original, do início ao fim; não concentre os cortes só numa parte do vídeo e deixe outras partes com um único plano longo sem corte.` : '';
+            const promptText = `Atue como um editor de vídeo e roteirista profissional.
+Analise este vídeo anexado e crie um roteiro de resumo compactado para exatamente ${targetTime} minutos.
+
+REGRAS OBRIGATÓRIAS:
+1. Narração exclusivamente em TERCEIRA PESSOA, com tom ${tone}.
+2. O texto total de narração deve ter cerca de ${targetWords} palavras.
+3. Escolha as melhores cenas e mapeie exatamente em qual momento do vídeo original o corte deve acontecer para coincidir com a narração.
+4. MUITO IMPORTANTE: a duração de CADA corte (fim - início) deve ser compatível com o tempo de leitura da narração DAQUELA cena, e não apenas com o total do vídeo. Use como referência ~2,3 palavras por segundo (140 palavras/minuto). Se a narração de uma cena tem 20 palavras, o corte dessa cena precisa ter pelo menos ~9 segundos — nunca faça um corte mais curto que o tempo de leitura da sua própria narração.
+5. Os campos "inicio" e "fim" devem ser o timestamp exato do vídeo original no formato HH:MM:SS (ex: 00:01:23).
+6. Retorne as cenas em ordem cronológica do vídeo original.${turboRules}${viralRules}`;
+
+            // ID conferido na documentação oficial do Gemini API em 11/08/2026 —
+            // gemini-3.6-flash é o modelo GA atual da família 3.x Flash (sucessor
+            // do gemini-3.5-flash, usado antes aqui): aceita vídeo como entrada,
+            // tem desempenho igual ou melhor em tarefas multimodais/agenticas e
+            // custa menos por token de saída. Se um dia a API devolver erro de
+            // "modelo não encontrado" aqui, confira o substituto atual em
+            // https://ai.google.dev/gemini-api/docs/models
+            const response = await withRetries(() => ai.models.generateContent({
+                model: 'gemini-3.6-flash',
+                contents: createUserContent([
+                    createPartFromUri(uploadResult.uri, uploadResult.mimeType),
+                    promptText
+                ]),
+                config: {
+                    responseMimeType: 'application/json',
+                    responseSchema: {
+                        type: Type.ARRAY,
+                        items: {
+                            type: Type.OBJECT,
+                            properties: {
+                                cena: { type: Type.STRING, description: 'Nome ou número curto da cena.' },
+                                inicio: { type: Type.STRING, description: 'Timestamp de início no vídeo original, formato HH:MM:SS.' },
+                                fim: { type: Type.STRING, description: 'Timestamp de fim no vídeo original, formato HH:MM:SS.' },
+                                narracao: { type: Type.STRING, description: 'Narração em 3ª pessoa para esse trecho.' },
+                                visual: { type: Type.STRING, description: 'Descrição curta do que aparece na cena.' },
+                                ...(isViralMode ? {
+                                    gancho: { type: Type.STRING, description: 'Frase-gancho de até 8 palavras — preenchida SÓ na primeira cena (índice 0); string vazia nas demais.' }
+                                } : {})
+                            },
+                            propertyOrdering: isViralMode
+                                ? ['cena', 'inicio', 'fim', 'narracao', 'visual', 'gancho']
+                                : ['cena', 'inicio', 'fim', 'narracao', 'visual']
+                        }
+                    }
+                }
+            }), {
+                onRetry: (attempt, total, waitMs) => {
+                    status.innerText = `4/5: A IA está sobrecarregada (alta demanda) — tentando de novo em ${Math.round(waitMs / 1000)}s (tentativa ${attempt + 1}/${total})...`;
+                }
+            });
+
+            let cuts;
+            try {
+                cuts = JSON.parse(response.text);
+                if (!Array.isArray(cuts) || cuts.length === 0) {
+                    throw new Error('formato inesperado (esperava uma lista de cenas)');
+                }
+            } catch (parseErr) {
+                console.error('Resposta bruta da IA:', response.text);
+                throw new Error(
+                    'A IA devolveu um roteiro em formato inválido (' + parseErr.message + '). ' +
+                    'Isso costuma ser passageiro — clique em "Processar Vídeo" novamente.'
+                );
+            }
+            adjustCutsForNarration(cuts); // 1ª estimativa, por contagem de palavras
+            currentCuts = cuts;
+            currentNarrationAudios = [];
+
+            if (skipNarration) {
+                // Usuário pediu pra não gerar narração sintética — pula a etapa
+                // de TTS inteira (economiza tempo e cota da API) e deixa toda
+                // cena marcada para manter o áudio original no corte. O
+                // roteiro/texto de narração ainda é gerado normalmente (serve
+                // de legenda e guia dos cortes), só o áudio falado que não é
+                // produzido.
+                currentNarrationAudios = cuts.map(() => null);
+                status.innerText = "Roteiro gerado (narração sintética desativada — o corte vai manter o áudio original em todas as cenas).";
+            } else {
+                // 5. Gera a narração em voz sintética de cada cena. Fazemos isso cena a
+                // cena (em vez de mandar tudo de uma vez) porque assim já sabemos a
+                // duração REAL de cada trecho falado, e usamos ela pra reajustar os
+                // cortes com muito mais precisão do que a estimativa de palavras/segundo.
+                // Cada cena falha de forma INDEPENDENTE: se a cena 5 der erro de cota,
+                // as cenas 1-4 e 6+ continuam com narração normalmente — só a cena que
+                // falhou cai de volta para o áudio original dela no corte final. Antes,
+                // uma falha isolada descartava a narração de TODAS as cenas.
+                status.innerText = "5/5: Gerando narração com voz sintética...";
+                const realDurations = [];
+                let narradasComSucesso = 0;
+                let falhasNarracao = 0;
+                for (let i = 0; i < cuts.length; i++) {
+                    checkCancelled();
+                    status.innerText = `5/5: Narrando cena ${i + 1} de ${cuts.length}...`;
+                    try {
+                        const { pcmBytes, durationSeconds } = await generateNarrationAudioWithRetry(
+                            ai, cuts[i].narracao, voiceName, tone
+                        );
+                        currentNarrationAudios[i] = pcmBytes;
+                        realDurations[i] = durationSeconds;
+                        narradasComSucesso++;
+                    } catch (narrError) {
+                        console.error(`Narração da cena ${i + 1} falhou:`, narrError);
+                        currentNarrationAudios[i] = null;
+                        realDurations[i] = null;
+                        cuts[i]._narracaoFalhou = true;
+                        falhasNarracao++;
+                    }
+                }
+                adjustCutsForNarration(cuts, realDurations); // reajuste fino, com duração real (onde disponível)
+                currentCuts = cuts;
+
+                if (falhasNarracao === 0) {
+                    status.innerText = "Roteiro e narração gerados com sucesso!";
+                } else if (narradasComSucesso === 0) {
+                    status.innerText = "Roteiro gerado, mas a narração falhou em todas as cenas. O corte vai manter o áudio original do vídeo.";
+                } else {
+                    status.innerText = `Roteiro gerado. Narração ok em ${narradasComSucesso} de ${cuts.length} cenas — ` +
+                        `${falhasNarracao} cena(s) vão manter o áudio original no corte.`;
+                }
+            }
+
+            renderCutsTable(currentCuts, currentNarrationAudios, false);
+            outputCard.style.display = 'block';
+            confirmBox.style.display = 'block';
+            return true;
+
+        } catch (error) {
+            if (error instanceof CancelledError) {
+                status.innerText = 'Processamento cancelado.';
+            } else {
+                console.error(error);
+                const msg = error.message || JSON.stringify(error);
+                // Se reaproveitamos um upload antigo e ele já expirou no lado do
+                // Google (arquivos somem depois de ~48h), a mensagem de erro
+                // costuma citar "not found" — nesse caso limpamos o cache pra que
+                // a PRÓXIMA tentativa reenvie o vídeo do zero automaticamente.
+                if (lastUpload && /not found|404|permission|invalid/i.test(msg)) {
+                    lastUpload = null;
+                    status.innerText = "Erro durante o processamento: " + msg +
+                        " (o vídeo enviado anteriormente pode ter expirado — tente novamente para reenviá-lo).";
+                } else if (isTransientApiError(error)) {
+                    status.innerText = "A IA do Gemini está com alta demanda no momento (já tentei de novo automaticamente algumas vezes, sem sucesso). " +
+                        "Isso costuma passar em alguns minutos — clique em \"Processar Vídeo\" novamente daqui a pouco.";
+                } else {
+                    status.innerText = "Erro durante o processamento: " + msg;
+                }
+            }
+            return false;
+        } finally {
+            processBtn.disabled = false;
+            cancelRequested = false;
+            cancelBtn.style.display = 'none';
+            releaseWakeLock();
+        }
+    }
+
+    // Modo fila: processa vários vídeos em sequência, um atrás do outro, sem
+    // pausar pra revisão manual do roteiro (o usuário pediu isso explicitamente
+    // pro caso de vários arquivos — no modo de UM arquivo só, a revisão/
+    // confirmação continua normalmente via confirmBox). Pra cada vídeo: gera
+    // roteiro+narração, corta, e baixa automaticamente o vídeo cortado E a
+    // legenda .srt com o MESMO nome-base do arquivo original — assim os dois
+    // arquivos ficam facilmente pareáveis na pasta de downloads, mesmo
+    // processando vários vídeos seguidos. Uma falha num vídeo (roteiro ou
+    // corte) não interrompe a fila — os outros continuam normalmente.
+    async function runBatchQueue(files) {
+        const processBtn = document.getElementById('processBtn');
+        const batchStatus = document.getElementById('batchStatus');
+        const confirmBox = document.getElementById('confirmBox');
+        const downloadLink = document.getElementById('downloadLink');
+
+        processBtn.disabled = true;
+        batchStatus.style.display = 'block';
+        // Pede UM wake lock que cobre a fila inteira (ver acquireWakeLock) —
+        // os pedidos que processVideo/cortarVideo fazem por baixo disso, a
+        // cada vídeo, só incrementam/decrementam o contador sem soltar a
+        // tela até este aqui também ser devolvido, no fim da fila.
+        await acquireWakeLock();
+        if (!('wakeLock' in navigator)) {
+            batchStatus.innerText = '⚠️ Este navegador não suporta manter a tela ligada automaticamente — deixe o celular na tomada/sem bloquear manualmente até a fila terminar.';
+        }
+        // Em modo fila não perguntamos "quer cortar?" — escondemos só a
+        // pergunta e os botões Sim/Não (a área de progresso do corte,
+        // #cutProgress, continua visível dentro da mesma caixa, senão o
+        // usuário não veria o andamento nem um eventual erro do corte).
+        // Restaurados no final desta função, pra não quebrar o modo de um
+        // vídeo só numa próxima vez.
+        const confirmQuestion = confirmBox.querySelector('p');
+        const confirmButtons = confirmBox.querySelector('.confirm-buttons');
+        let sucessos = 0;
+        let falhas = 0;
+
+        try {
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                batchStatus.innerText = `🗂️ Fila: processando vídeo ${i + 1} de ${files.length} — ${file.name}`;
+
+                const roteiroOk = await processVideo(file);
+                if (!roteiroOk) {
+                    falhas++;
+                    continue; // erro já ficou visível em #status — segue pro próximo
+                }
+
+                // processVideo() acabou de mostrar o confirmBox (com a pergunta e os
+                // botões Sim/Não) — escondemos só essas duas partes, e cortamos
+                // direto, como se o usuário tivesse clicado em "Sim, cortar vídeo".
+                if (confirmQuestion) confirmQuestion.style.display = 'none';
+                if (confirmButtons) confirmButtons.style.display = 'none';
+                batchStatus.innerText = `🗂️ Fila: cortando vídeo ${i + 1} de ${files.length} — ${file.name}`;
+                const corteOk = await cortarVideo();
+
+                if (corteOk) {
+                    sucessos++;
+                    // Baixa o vídeo cortado.
+                    downloadLink.click();
+                    // Pequena pausa entre um download e outro: ajuda o navegador
+                    // (principalmente no celular) a não tratar downloads em
+                    // sequência rápida como pop-up/spam e bloquear os próximos.
+                    await sleep(500);
+                    // Baixa a legenda .srt (mesmo nome-base do vídeo) — só se tiver
+                    // algum texto de narração no roteiro pra colocar nela.
+                    if (currentCuts.some(c => (c.narracao || '').trim())) {
+                        downloadLegendaSrt();
+                        await sleep(500);
+                    }
+                } else {
+                    falhas++;
+                }
+            }
+        } finally {
+            releaseWakeLock();
+        }
+
+        batchStatus.innerText = `🗂️ Fila concluída: ${sucessos} de ${files.length} vídeo(s) cortados e baixados com sucesso` +
+            (falhas > 0 ? `, ${falhas} falharam (veja os detalhes acima de cada um).` : '.');
+        // Restaura a pergunta/botões de confirmação pro estado normal, caso o
+        // usuário volte a processar um vídeo só depois desta fila.
+        if (confirmQuestion) confirmQuestion.style.display = '';
+        if (confirmButtons) confirmButtons.style.display = '';
+        processBtn.disabled = false;
+    }
+
+    // Corrige na marra: se a narração de uma cena é mais longa que o tempo de vídeo
+    // reservado para ela, estica o "fim" do corte (sem invadir a cena seguinte).
+    const PALAVRAS_POR_SEGUNDO = 2.33; // ~140 palavras/minuto
+
+    // Estica (se preciso) o "fim" de UMA cena para caber "neededSeconds" de
+    // narração, sem invadir o início da próxima cena. Extraído à parte para
+    // ser reaproveitado tanto no ajuste em lote (logo abaixo) quanto quando o
+    // usuário regenera a narração de uma cena isolada, depois de editar o
+    // roteiro manualmente.
+    function stretchCutIfNeeded(cuts, i, neededSeconds) {
+        const cut = cuts[i];
+        const start = timeToSeconds(cut.inicio);
+        const end = timeToSeconds(cut.fim);
+
+        if (neededSeconds <= (end - start)) {
+            delete cut._ajustado;
+            return;
+        }
+
+        let newEnd = start + neededSeconds;
+
+        // Não deixa o corte invadir o início da próxima cena.
+        if (i < cuts.length - 1) {
+            const nextStart = timeToSeconds(cuts[i + 1].inicio);
+            if (newEnd > nextStart) newEnd = Math.max(nextStart - 0.2, end);
+        }
+
+        if (newEnd > end) {
+            cut.fim = secondsToTime(newEnd);
+            cut._ajustado = newEnd < start + neededSeconds ? 'parcial' : true;
+        }
+    }
+
+    function adjustCutsForNarration(cuts, realDurations) {
+        for (let i = 0; i < cuts.length; i++) {
+            const cut = cuts[i];
+
+            // Se já temos a duração REAL do áudio gerado pela IA, usamos ela (mais
+            // precisa) em vez da estimativa por contagem de palavras. Somamos uma
+            // pequena folga de segurança porque o corte de vídeo abaixo arredonda
+            // pra segundo inteiro.
+            let neededSeconds;
+            if (realDurations && realDurations[i] != null) {
+                neededSeconds = realDurations[i] + 0.4;
+            } else {
+                const wordCount = (cut.narracao || '').trim().split(/\s+/).filter(Boolean).length;
+                neededSeconds = wordCount / PALAVRAS_POR_SEGUNDO;
+            }
+
+            stretchCutIfNeeded(cuts, i, neededSeconds);
+        }
+        return cuts;
+    }
+
+    function secondsToTime(totalSeconds) {
+        totalSeconds = Math.max(0, Math.round(totalSeconds));
+        const h = Math.floor(totalSeconds / 3600);
+        const m = Math.floor((totalSeconds % 3600) / 60);
+        const s = totalSeconds % 60;
+        return [h, m, s].map(v => String(v).padStart(2, '0')).join(':');
+    }
+
+    // Formato de timestamp exigido pelo .srt: HH:MM:SS,mmm (vírgula, não ponto).
+    function formatSrtTimestamp(totalSeconds) {
+        totalSeconds = Math.max(0, totalSeconds);
+        const h = Math.floor(totalSeconds / 3600);
+        const m = Math.floor((totalSeconds % 3600) / 60);
+        const s = Math.floor(totalSeconds % 60);
+        const ms = Math.round((totalSeconds - Math.floor(totalSeconds)) * 1000);
+        const pad = (v, len) => String(v).padStart(len, '0');
+        return `${pad(h, 2)}:${pad(m, 2)}:${pad(s, 2)},${pad(ms, 3)}`;
+    }
+
+    // Monta um arquivo .srt a partir do roteiro atual. Os tempos usados são os
+    // da duração ACUMULADA de cada cena (mesma lógica da barra de progresso do
+    // Modo Viciante) — ou seja, batem com o VÍDEO FINAL já cortado/concatenado,
+    // não com os timestamps do vídeo original (que têm os trechos removidos
+    // entre as cenas). Cada bloco de legenda usa o texto de narração inteiro da
+    // cena — é o roteiro que a IA escreveu, o mesmo que aparece "queimado" no
+    // vídeo quando o Modo Viciante está ligado.
+    function buildSrtFromCuts(cuts) {
+        let cursor = 0;
+        let blockNumber = 0;
+        let srt = '';
+        cuts.forEach((c) => {
+            const duration = Math.max(timeToSeconds(c.fim) - timeToSeconds(c.inicio), 0.1);
+            const start = cursor;
+            const end = cursor + duration;
+            cursor = end;
+
+            const text = (c.narracao || '').trim();
+            if (!text) return; // cena sem texto de narração não gera bloco de legenda
+
+            blockNumber++;
+            srt += `${blockNumber}\n${formatSrtTimestamp(start)} --> ${formatSrtTimestamp(end)}\n${text}\n\n`;
+        });
+        return srt;
+    }
+
+    // Dispara o download do .srt gerado a partir do roteiro atual (currentCuts)
+    // — funciona independente do Modo Viciante/legenda queimada estar ligado,
+    // então dá pra usar essa legenda em qualquer editor de vídeo externo.
+    function downloadLegendaSrt() {
+        if (!currentCuts || currentCuts.length === 0) {
+            alert('Gere o roteiro primeiro — ainda não há legenda para baixar.');
+            return;
+        }
+        const srt = buildSrtFromCuts(currentCuts);
+        if (!srt.trim()) {
+            alert('Nenhuma cena do roteiro tem texto de narração — não há o que colocar na legenda.');
+            return;
+        }
+        const blob = new Blob([srt], { type: 'text/srt' });
+        const url = trackObjectURL(URL.createObjectURL(blob));
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${currentFileBaseName}.srt`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+    }
+
+    // Lê os valores digitados nos <input>/<textarea> da tabela em modo de
+    // edição e devolve para currentCuts. Se o TEXTO da narração de uma cena
+    // mudou, o áudio já gerado pra ela deixou de bater com o texto — nesse
+    // caso invalidamos esse áudio (o corte final volta a usar o áudio
+    // original naquela cena até o usuário gerar a narração de novo). Edições
+    // de início/fim não dão mais o "esticamento automático": a partir daqui o
+    // usuário está no controle, então só sinalizamos (⚠️) se a narração já
+    // gerada não couber mais no intervalo definido manualmente.
+    function saveEditedRoteiro() {
+        const rows = document.querySelectorAll('#resultOutput tr[data-index]');
+        const novosCuts = [];
+        let erro = null;
+
+        rows.forEach(tr => {
+            const i = Number(tr.dataset.index);
+            const cena = tr.querySelector('[data-field="cena"]').value.trim();
+            const inicio = tr.querySelector('[data-field="inicio"]').value.trim();
+            const fim = tr.querySelector('[data-field="fim"]').value.trim();
+            const narracao = tr.querySelector('[data-field="narracao"]').value.trim();
+            const visual = tr.querySelector('[data-field="visual"]').value.trim();
+
+            if (!erro) {
+                if (!/^\d{1,2}:\d{2}:\d{2}$/.test(inicio) || !/^\d{1,2}:\d{2}:\d{2}$/.test(fim)) {
+                    erro = `Cena ${i + 1}: use o formato HH:MM:SS para início e fim (ex: 00:01:23).`;
+                } else if (timeToSeconds(fim) <= timeToSeconds(inicio)) {
+                    erro = `Cena ${i + 1}: o "fim" precisa ser depois do "início".`;
+                }
+            }
+
+            novosCuts[i] = { cena, inicio, fim, narracao, visual, gancho: currentCuts[i] ? currentCuts[i].gancho : undefined };
+        });
+
+        if (erro) {
+            alert(erro);
+            return;
+        }
+
+        novosCuts.forEach((cut, i) => {
+            const textoMudou = (currentCuts[i] && currentCuts[i].narracao || '') !== cut.narracao;
+            if (textoMudou) {
+                currentNarrationAudios[i] = null;
+                delete cut._narracaoFalhou; // sem áudio por causa da edição, não de uma falha da API
+            }
+            delete cut._ajustado; // edição manual: o usuário assume o controle da duração
+
+            const pcmBytes = currentNarrationAudios[i];
+            if (pcmBytes && pcmBytes.length) {
+                const audioDuration = pcmBytes.length / (TTS_SAMPLE_RATE * 2);
+                const duration = timeToSeconds(cut.fim) - timeToSeconds(cut.inicio);
+                cut._avisoCurto = (audioDuration + 0.4) > duration;
+            }
+        });
+
+        currentCuts = novosCuts;
+        renderCutsTable(currentCuts, currentNarrationAudios, false);
+    }
+
+    // Gera (ou regera) só a narração de UMA cena, sem reprocessar o vídeo
+    // inteiro nem gastar cota refazendo o roteiro completo. Útil depois de
+    // editar o texto de uma cena, ou para tentar de novo uma cena que falhou.
+    async function regenerateNarrationForScene(i) {
+        const apiKey = document.getElementById('apiKey').value.trim();
+        if (!apiKey) {
+            alert('Insira sua Chave de API do Gemini para gerar a narração desta cena.');
+            return;
+        }
+        const cut = currentCuts[i];
+        if (!cut || !cut.narracao || !cut.narracao.trim()) {
+            alert('Essa cena não tem texto de narração. Clique em "✏️ Editar roteiro" e escreva um texto antes de gerar o áudio.');
+            return;
+        }
+
+        const tone = document.getElementById('tone').value;
+        const voiceName = document.getElementById('voice').value;
+        const btn = document.querySelector(`[data-action="regen-narracao"][data-index="${i}"]`);
+        if (btn) { btn.disabled = true; btn.innerText = 'Gerando...'; }
+
+        try {
+            const ai = new GoogleGenAI({ apiKey });
+            const { pcmBytes, durationSeconds } = await generateNarrationAudioWithRetry(ai, cut.narracao, voiceName, tone);
+            currentNarrationAudios[i] = pcmBytes;
+            delete cut._avisoCurto;
+            delete cut._narracaoFalhou;
+            stretchCutIfNeeded(currentCuts, i, durationSeconds + 0.4);
+        } catch (err) {
+            console.error(`Falha ao gerar narração da cena ${i + 1}:`, err);
+            cut._narracaoFalhou = true;
+            alert(`Não consegui gerar a narração desta cena: ${err.message || err}`);
+        } finally {
+            // O re-render restaura o botão (habilitado, com o rótulo certo) tanto
+            // em caso de sucesso quanto de erro.
+            renderCutsTable(currentCuts, currentNarrationAudios, false);
+        }
+    }
+
+    function renderCutsTable(cuts, narrationAudios, editable) {
+        const resultOutput = document.getElementById('resultOutput');
+
+        let toolbarHtml;
+        if (editable) {
+            toolbarHtml = `<div style="display:flex;gap:10px;margin-bottom:12px;">
+                <button data-action="save-roteiro">💾 Salvar alterações</button>
+                <button data-action="cancel-edit" style="background-color:#334155;">✖ Cancelar</button>
+            </div>
+            <p style="font-size:0.78rem;color:var(--text-muted);margin:-4px 0 12px;">Se você mudar o texto de uma narração já gerada, o áudio antigo deixa de valer para essa cena — depois de salvar, use "🔄 Regenerar narração" nela.</p>`;
+        } else {
+            toolbarHtml = `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+                <button data-action="edit-roteiro" style="background-color:#334155;">✏️ Editar roteiro</button>
+                <button data-action="download-legenda" style="background-color:#334155;">⬇️ Baixar legenda (.srt)</button>
+            </div>`;
+        }
+
+        let html = toolbarHtml + '<table class="cuts-table"><thead><tr>' +
+            '<th>Cena</th><th>Início</th><th>Fim</th><th>Narração (3ª pessoa)</th><th>Visual</th>' +
+            '</tr></thead><tbody>';
+
+        let temAjuste = false;
+        let temAvisoCurto = false;
+        let algumaFalhouNarracao = false;
+
+        cuts.forEach((c, i) => {
+            if (editable) {
+                html += `<tr data-index="${i}">
+                    <td data-label="Cena"><input type="text" data-field="cena" value="${escapeHtmlAttr(c.cena || '')}"></td>
+                    <td data-label="Início"><input type="text" data-field="inicio" value="${escapeHtmlAttr(c.inicio || '')}" placeholder="HH:MM:SS"></td>
+                    <td data-label="Fim"><input type="text" data-field="fim" value="${escapeHtmlAttr(c.fim || '')}" placeholder="HH:MM:SS"></td>
+                    <td data-label="Narração"><textarea data-field="narracao" rows="3" style="width:100%;resize:vertical;box-sizing:border-box;">${escapeHtml(c.narracao || '')}</textarea></td>
+                    <td data-label="Visual"><input type="text" data-field="visual" value="${escapeHtmlAttr(c.visual || '')}"></td>
+                </tr>`;
+                return;
+            }
+
+            const marcador = c._ajustado ? ' ⏱️' : (c._avisoCurto ? ' ⚠️' : '');
+            if (c._ajustado) temAjuste = true;
+            if (c._avisoCurto) temAvisoCurto = true;
+
+            // Se já geramos o áudio dessa cena, mostra um player pra ouvir a
+            // narração sintética antes de confirmar o corte. Se a lista de áudios
+            // já foi gerada (não é null) mas ESSA cena especificamente não tem
+            // áudio, é porque a narração falhou só nela — mostramos um aviso local
+            // em vez do genérico de "narração não gerada".
+            let audioHtml = '';
+            const pcmBytes = narrationAudios && narrationAudios[i];
+            const temAudio = !!(pcmBytes && pcmBytes.length);
+            if (temAudio) {
+                const url = trackObjectURL(URL.createObjectURL(pcmToWavBlob(pcmBytes)));
+                audioHtml = `<audio controls src="${url}" style="width:100%;margin-top:6px;height:28px;"></audio>`;
+            } else if (narrationAudios && narrationAudios.length === cuts.length) {
+                // Sem áudio nesta cena pode ser por dois motivos bem diferentes:
+                // a IA falhou de verdade ao gerar (c._narracaoFalhou), ou a
+                // narração simplesmente ainda não foi gerada/foi invalidada por
+                // uma edição de texto — nesse 2º caso não é uma "falha".
+                if (c._narracaoFalhou) {
+                    algumaFalhouNarracao = true;
+                    audioHtml = '<div style="font-size:0.75rem;color:#f59e0b;margin-top:4px;">⚠️ Narração falhou nesta cena — vai manter o áudio original.</div>';
+                } else {
+                    audioHtml = '<div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px;">Narração ainda não gerada para esta cena — vai manter o áudio original até você clicar em "Gerar narração".</div>';
+                }
+            }
+            const regenLabel = temAudio ? '🔄 Regenerar narração' : '🔊 Gerar narração';
+            audioHtml += `<button data-action="regen-narracao" data-index="${i}" style="margin-top:6px;font-size:0.72rem;padding:6px 10px;">${regenLabel}</button>`;
+
+            const linhaCor = c._ajustado === 'parcial' ? ' style="background-color:#3f1d1d;"'
+                : (c._ajustado || c._avisoCurto) ? ' style="background-color:#3f2d0f;"' : '';
+
+            const ganchoHtml = (i === 0 && c.gancho && c.gancho.trim())
+                ? `<div style="font-size:0.75rem;color:#FFE600;margin-bottom:4px;">🪝 Gancho (aparece em destaque nos 1ºs segundos): "${escapeHtml(c.gancho)}"</div>`
+                : '';
+
+            html += `<tr${linhaCor}>
+                <td data-label="Cena">${escapeHtml(c.cena || '')}</td>
+                <td data-label="Início">${escapeHtml(c.inicio || '')}</td>
+                <td data-label="Fim">${escapeHtml(c.fim || '')}${marcador}</td>
+                <td data-label="Narração">${ganchoHtml}${escapeHtml(c.narracao || '')}${audioHtml}</td>
+                <td data-label="Visual">${escapeHtml(c.visual || '')}</td>
+            </tr>`;
+        });
+
+        html += '</tbody></table>';
+        if (!editable) {
+            if (temAjuste) {
+                html += '<p style="font-size:0.8rem;color:var(--text-muted);margin-top:10px;">⏱️ = corte esticado automaticamente para a narração caber. Linhas vermelhas: não deu para esticar o suficiente sem invadir a próxima cena (a narração pode passar um pouco do vídeo).</p>';
+            }
+            if (temAvisoCurto) {
+                html += '<p style="font-size:0.8rem;color:#f59e0b;margin-top:10px;">⚠️ = o intervalo definido manualmente é mais curto que a narração já gerada para essa cena — ela pode ficar cortada. Aumente o "fim" da cena ou clique em "🔄 Regenerar narração".</p>';
+            }
+            const narracoesOk = narrationAudios ? narrationAudios.filter(a => a && a.length).length : 0;
+            if (!narrationAudios || narrationAudios.length === 0 || narracoesOk === 0) {
+                html += '<p style="font-size:0.8rem;color:var(--text-muted);margin-top:10px;">⚠️ A narração sintética não foi gerada — o corte final vai manter o áudio original do vídeo.</p>';
+            } else if (algumaFalhouNarracao) {
+                html += '<p style="font-size:0.8rem;color:var(--text-muted);margin-top:10px;">⚠️ Algumas cenas (marcadas acima) não geraram narração — só essas cenas vão manter o áudio original; as demais serão narradas normalmente.</p>';
+            }
+        }
+        resultOutput.innerHTML = html;
+    }
+
+    function escapeHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
+    // Igual a escapeHtml, mas também escapa aspas — necessário para valores
+    // colocados dentro de atributos value="..." nos campos editáveis.
+    function escapeHtmlAttr(str) {
+        return escapeHtml(str).replace(/"/g, '&quot;');
+    }
+
+    // Converte "HH:MM:SS", "MM:SS" ou "SS" (com ou sem milissegundos) para segundos.
+    function timeToSeconds(t) {
+        if (!t) return 0;
+        const parts = String(t).trim().split(':').map(p => parseFloat(p.replace(',', '.')) || 0);
+        let seconds = 0;
+        for (const p of parts) seconds = seconds * 60 + p;
+        return seconds;
+    }
+
+    function base64ToUint8Array(base64) {
+        const binary = atob(base64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        return bytes;
+    }
+
+    // Envolve o PCM cru (16 bits, mono) num cabeçalho WAV de 44 bytes só para dar
+    // pra tocar no <audio> do navegador (o ffmpeg, mais adiante, recebe o PCM cru
+    // diretamente, sem precisar desse cabeçalho).
+    function pcmToWavBlob(pcmBytes, sampleRate = TTS_SAMPLE_RATE, channels = 1, bitsPerSample = 16) {
+        const blockAlign = channels * bitsPerSample / 8;
+        const byteRate = sampleRate * blockAlign;
+        const header = new ArrayBuffer(44);
+        const view = new DataView(header);
+        const writeString = (offset, str) => {
+            for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+        };
+        writeString(0, 'RIFF');
+        view.setUint32(4, 36 + pcmBytes.length, true);
+        writeString(8, 'WAVE');
+        writeString(12, 'fmt ');
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true); // PCM
+        view.setUint16(22, channels, true);
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, byteRate, true);
+        view.setUint16(32, blockAlign, true);
+        view.setUint16(34, bitsPerSample, true);
+        writeString(36, 'data');
+        view.setUint32(40, pcmBytes.length, true);
+        return new Blob([header, pcmBytes], { type: 'audio/wav' });
+    }
+
+    // O Gemini TTS é "dirigível": em vez de só mandar o texto puro, damos uma
+    // instrução curta de interpretação (estilo de narração + "fale em voz alta
+    // em português") pra fugir do tom robótico/monótono de sintetizador genérico
+    // e soar como um narrador humano de verdade. O texto entre aspas é o único
+    // trecho que deve ser narrado — isso evita que o modelo "leia" a instrução
+    // em voz alta por engano.
+    function buildTtsPrompt(narrationText, tone) {
+        return `Sintetize a fala a seguir em português do Brasil, com uma voz humana muito natural — nunca robótica, apressada ou monótona — como um narrador profissional de vídeo/documentário de verdade, com respiração e entonação realistas.
+Estilo de interpretação: ${tone}.
+Narre em terceira pessoa, num ritmo natural de narração de vídeo.
+
+Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar nem repetir mais nada:
+"${narrationText}"`;
+    }
+
+    async function generateNarrationAudio(ai, text, voiceName, tone) {
+        const response = await ai.models.generateContent({
+            model: TTS_MODEL,
+            contents: [{ parts: [{ text: buildTtsPrompt(text, tone) }] }],
+            config: {
+                responseModalities: ['AUDIO'],
+                speechConfig: {
+                    voiceConfig: { prebuiltVoiceConfig: { voiceName } }
+                }
+            }
+        });
+
+        const b64 = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+        if (!b64) {
+            throw new Error('A IA não retornou áudio para esta cena (resposta vazia).');
+        }
+        const pcmBytes = base64ToUint8Array(b64);
+        const durationSeconds = pcmBytes.length / (TTS_SAMPLE_RATE * 2); // s16le, mono
+        return { pcmBytes, durationSeconds };
+    }
+
+    // O TTS do Gemini às vezes devolve tokens de texto em vez de áudio (bug
+    // documentado do modelo em preview), falha com erro 500 numa pequena
+    // porcentagem das chamadas, ou devolve 503 "alta demanda" nos horários de
+    // pico — por isso tentamos de novo automaticamente (com espera crescente
+    // nos casos de sobrecarga) antes de desistir dessa cena.
+    async function generateNarrationAudioWithRetry(ai, text, voiceName, tone) {
+        return withRetries(
+            () => generateNarrationAudio(ai, text, voiceName, tone),
+            { attempts: 3, baseDelayMs: 1500, shouldRetry: () => true }
+        );
+    }
+
+    // WebM não aceita AAC — precisa de Opus/Vorbis. Escolhe o codec de áudio de
+    // acordo com o container de saída (mesma extensão do vídeo enviado).
+    function audioCodecForExt(ext) {
+        return ext === 'webm' ? 'libopus' : 'aac';
+    }
+
+    // Calcula o filtro "crop" (corte central) do ffmpeg para encaixar o vídeo
+    // original na proporção escolhida em "Formato de Saída". Retorna null
+    // quando o formato é "original" ou quando não sabemos a resolução do
+    // vídeo (ex: metadados ainda não carregaram) — nesse caso o corte segue
+    // sem cortar bordas, em vez de travar o processo.
+    function computeCropFilter(srcWidth, srcHeight, aspectRatio) {
+        if (!aspectRatio || aspectRatio === 'original') return null;
+        if (!srcWidth || !srcHeight) return null;
+
+        const [rw, rh] = aspectRatio.split(':').map(Number);
+        if (!rw || !rh) return null;
+
+        const targetRatio = rw / rh;
+        const srcRatio = srcWidth / srcHeight;
+
+        let cropW, cropH;
+        if (srcRatio > targetRatio) {
+            // Vídeo original mais "largo" que o alvo: corta as laterais.
+            cropH = srcHeight;
+            cropW = Math.round(srcHeight * targetRatio);
+        } else {
+            // Vídeo original mais "alto"/quadrado que o alvo: corta topo/base.
+            cropW = srcWidth;
+            cropH = Math.round(srcWidth / targetRatio);
+        }
+
+        // Largura/altura precisam ser números pares — a maioria dos encoders
+        // (libx264 incluso) rejeita dimensões ímpares.
+        cropW -= cropW % 2;
+        cropH -= cropH % 2;
+        if (cropW <= 0 || cropH <= 0) return null;
+
+        // Se o crop calculado já é (praticamente) o próprio vídeo, não vale a
+        // pena reencodar à toa.
+        if (cropW >= srcWidth - 1 && cropH >= srcHeight - 1) return null;
+
+        return `crop=${cropW}:${cropH}:(iw-${cropW})/2:(ih-${cropH})/2`;
+    }
+
+    // Quando não há nenhum filtro visual, "-c:v copy" reaproveita o vídeo
+    // original (rápido, sem perda). Quando há QUALQUER filtro (crop, legenda,
+    // gancho, barra de progresso...), o vídeo PRECISA ser reencodado — não dá
+    // pra copiar um stream e aplicar filtro ao mesmo tempo — escolhe libx264
+    // para a maioria dos containers e libvpx para webm. "filters" é uma lista
+    // de trechos de filtro (na ORDEM em que devem ser aplicados: crop sempre
+    // primeiro, porque texto/barra desenhados depois já usam a largura/altura
+    // final pós-corte).
+    // "forceReencode" é usado quando o corte tem MAIS DE UMA cena: mesmo sem
+    // nenhum filtro visual (crop/legenda/gancho/barra), cada trecho cortado
+    // com "-ss" carrega um pequeno "resto" de timestamp do vídeo original
+    // (o ffmpeg busca o quadro-chave mais próximo, não o instante exato). Com
+    // "-c:v copy" esse resto vai junto pro arquivo da cena; na hora de juntar
+    // tudo com "-f concat -c copy", esses restos viram BURACOS sem nenhum
+    // quadro entre uma cena e a próxima — o vídeo final trava (congela) bem
+    // na junção de cada corte, ficando pior quanto mais cenas existirem. Por
+    // isso, sempre que houver mais de uma cena a concatenar, forçamos reencode
+    // com "setpts=PTS-STARTPTS" como PRIMEIRO filtro — ele zera a linha do
+    // tempo interna da cena pra começar exatamente em 0:00, garantindo que a
+    // concatenação fique com timestamps contínuos, sem saltos.
+    function videoEncodeArgs(ext, filters, forceReencode) {
+        const activeFilters = (filters || []).filter(Boolean);
+        if (activeFilters.length === 0 && !forceReencode) return ['-c:v', 'copy'];
+        const vf = ['setpts=PTS-STARTPTS', ...activeFilters].join(',');
+        if (ext === 'webm') {
+            return ['-vf', vf, '-c:v', 'libvpx', '-b:v', '2M'];
+        }
+        return ['-vf', vf, '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23'];
+    }
+
+    // --- Modo Viciante: legenda queimada, gancho inicial e barra de progresso ---
+    // A maior parte da audiência do TikTok/Reels assiste sem som — sem legenda
+    // queimada na imagem, a narração inteira passa batido pra essa audiência.
+    // Usamos o filtro "drawtext" do ffmpeg, que precisa de um arquivo de fonte
+    // de verdade (o ffmpeg.wasm não vem com fontes do sistema). Baixamos uma
+    // única vez e cacheamos no sistema de arquivos virtual do ffmpeg.
+    const CAPTION_FONT_URL = 'https://cdn.jsdelivr.net/gh/JulietaUla/Montserrat/fonts/ttf/Montserrat-Bold.ttf';
+    const CAPTION_FONT_NAME = 'caption_font.ttf';
+    // "captionFontLoaded" indica se a fonte já foi escrita no sistema de
+    // arquivos da instância ATUAL do ffmpeg (não é uma memória global — toda
+    // vez que a instância é reciclada, para liberar memória WASM, o MEMFS dela
+    // é recriado do zero e a fonte precisa ser reescrita). Os BYTES da fonte
+    // em si (`captionFontBytes`) ficam cacheados em memória JS comum (fora do
+    // heap WASM), então reescrever depois de um reciclo é só uma cópia local,
+    // sem baixar de novo da rede.
+    let captionFontLoaded = false;
+    let captionFontBytes = null;
+
+    async function ensureCaptionFont(ff) {
+        if (!captionFontBytes) {
+            captionFontBytes = await fetchFile(CAPTION_FONT_URL);
+        }
+        if (captionFontLoaded) return;
+        // .slice() pelo mesmo motivo do vídeo de entrada: ff.writeFile()
+        // transfere (detach) o buffer recebido, e "captionFontBytes" precisa
+        // sobreviver para ser reescrito em cada nova instância reciclada.
+        await ff.writeFile(CAPTION_FONT_NAME, captionFontBytes.slice());
+        captionFontLoaded = true;
+    }
+
+    // Quebra o texto da narração em pedaços curtos (padrão de legenda de rede
+    // social: poucas palavras por vez, fácil de ler num relance).
+    function splitIntoCaptionChunks(text, maxWords = 5) {
+        const words = (text || '').trim().split(/\s+/).filter(Boolean);
+        if (words.length === 0) return [];
+        const chunks = [];
+        for (let i = 0; i < words.length; i += maxWords) {
+            chunks.push(words.slice(i, i + maxWords).join(' '));
+        }
+        return chunks;
+    }
+
+    // Gera um filtro "drawtext" por pedaço de legenda, cada um "ligado" (enable)
+    // só durante a fatia de tempo proporcional ao número de palavras daquele
+    // pedaço dentro da duração real da cena — assim a legenda troca no ritmo
+    // aproximado da fala, em vez de ficar o corte inteiro parada na tela.
+    async function buildCaptionFilters(ff, narrationText, sceneDuration, filePrefix, trackedFiles) {
+        const chunks = splitIntoCaptionChunks(narrationText, 5);
+        if (chunks.length === 0) return [];
+
+        const wordCounts = chunks.map(c => c.split(/\s+/).length);
+        const totalWords = wordCounts.reduce((a, b) => a + b, 0) || 1;
+
+        const filters = [];
+        let cursor = 0;
+        for (let j = 0; j < chunks.length; j++) {
+            const chunkDuration = Math.max(0.35, (wordCounts[j] / totalWords) * sceneDuration);
+            const start = cursor;
+            const end = j === chunks.length - 1 ? sceneDuration : Math.min(sceneDuration, cursor + chunkDuration);
+            cursor = end;
+
+            const fileName = `${filePrefix}_${j}.txt`;
+            await ff.writeFile(fileName, chunks[j]);
+            if (trackedFiles) trackedFiles.push(fileName);
+            filters.push(
+                `drawtext=fontfile=${CAPTION_FONT_NAME}:textfile=${fileName}:fontsize=w/20:fontcolor=white:` +
+                `borderw=4:bordercolor=black@0.9:` +
+                `box=1:boxcolor=black@0.38:boxborderw=18:` +
+                `x=(w-text_w)/2:y=h-h/4.2:` +
+                `enable='between(t,${start.toFixed(2)},${end.toFixed(2)})'`
+            );
+        }
+        return filters;
+    }
+
+    // Quebra o texto do gancho em até 2 linhas (por número de palavras) — numa
+    // frase de até 8 palavras numa fonte grande, uma linha só costuma estourar
+    // a largura do vídeo (principalmente nos formatos verticais 9:16/4:5).
+    function wrapHookText(text) {
+        const words = (text || '').trim().split(/\s+/).filter(Boolean);
+        if (words.length <= 4) return words.join(' ');
+        const mid = Math.ceil(words.length / 2);
+        return words.slice(0, mid).join(' ') + '\n' + words.slice(mid).join(' ');
+    }
+
+    // Frase-gancho em destaque nos 2,6s iniciais (só existe na cena 0). Fonte
+    // grande e proporcional à largura do vídeo (não um valor fixo em pixels —
+    // senão estoura a tela em formatos verticais), cor de alto contraste,
+    // posicionada mais pro topo pra não brigar com a legenda normal (que fica
+    // perto do rodapé).
+    async function buildHookFilter(ff, hookText, filePrefix, trackedFiles) {
+        if (!hookText || !hookText.trim()) return null;
+        const fileName = `${filePrefix}_hook.txt`;
+        await ff.writeFile(fileName, wrapHookText(hookText));
+        if (trackedFiles) trackedFiles.push(fileName);
+        return `drawtext=fontfile=${CAPTION_FONT_NAME}:textfile=${fileName}:fontsize=w/14:fontcolor=#FFE600:` +
+            `borderw=6:bordercolor=black:line_spacing=10:` +
+            `box=1:boxcolor=black@0.45:boxborderw=24:` +
+            `x=(w-text_w)/2:y=h*0.14:` +
+            `enable='between(t,0,2.6)'`;
+    }
+
+    // Barra fina no rodapé que enche conforme o vídeo FINAL (já concatenado)
+    // avança — não conforme cada corte individual. "offsetSeconds" é a soma
+    // das durações de todas as cenas ANTERIORES a essa, calculada antes do
+    // loop de corte. "eval=frame" é obrigatório aqui: sem ele, o ffmpeg só
+    // calcula a expressão com "t" UMA vez (no início), e a barra nunca cresce.
+    function buildProgressBarFilter(offsetSeconds, totalSeconds) {
+        const total = Math.max(totalSeconds, 0.1).toFixed(3);
+        const offset = offsetSeconds.toFixed(3);
+        return `drawbox=x=0:y=ih-10:w='iw*min(1\\,(${offset}+t)/${total})':h=10:color=#7C7FFF:t=fill:eval=frame`;
+    }
+
+    // Baixa um arquivo de UMA url mostrando progresso real (bytes recebidos), em vez
+    // de ficar "no escuro" tipo o toBlobURL padrão. Desiste depois de 15s sem nenhum
+    // byte novo (bloqueador de anúncios costuma "engolir" a requisição em silêncio),
+    // e também rejeita respostas que "deram certo" mas vieram vazias — alguns
+    // bloqueadores devolvem HTTP 200 com corpo vazio em vez de bloquear a conexão,
+    // o que antes passava batido e gerava um worker.js quebrado (arquivo de 0 bytes),
+    // travando o ffmpeg mais adiante sem nenhum erro visível.
+    async function fetchAsBlobURLOnce(url, mimeType, label, onProgress) {
+        const controller = new AbortController();
+        let watchdog = setTimeout(() => controller.abort(), 15000);
+
+        let response;
+        try {
+            response = await fetch(url, { signal: controller.signal, cache: 'force-cache' });
+        } catch (err) {
+            clearTimeout(watchdog);
+            if (err.name === 'AbortError') {
+                throw new Error(`Tempo esgotado baixando ${label} de ${new URL(url).hostname}.`);
+            }
+            throw new Error(`Não consegui baixar ${label} de ${new URL(url).hostname}: ${err.message}`);
+        }
+
+        if (!response.ok) {
+            clearTimeout(watchdog);
+            throw new Error(`Falha ao baixar ${label} de ${new URL(url).hostname}: HTTP ${response.status}`);
+        }
+
+        const totalStr = response.headers.get('content-length');
+        const total = totalStr ? parseInt(totalStr, 10) : 0;
+        const reader = response.body.getReader();
+        const chunks = [];
+        let loaded = 0;
+
+        try {
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                chunks.push(value);
+                loaded += value.length;
+                if (onProgress) onProgress(label, loaded, total);
+
+                // Reinicia o cronômetro a cada pedaço recebido — só desiste se
+                // realmente ficar 15s sem nenhum dado novo chegando.
+                clearTimeout(watchdog);
+                watchdog = setTimeout(() => controller.abort(), 15000);
+            }
+        } catch (err) {
+            if (err.name === 'AbortError') {
+                throw new Error(`A conexão travou baixando ${label} de ${new URL(url).hostname} (sem novos dados por 15s).`);
+            }
+            throw err;
+        } finally {
+            clearTimeout(watchdog);
+        }
+
+        if (loaded === 0) {
+            throw new Error(`${label} veio vazio (0 bytes) de ${new URL(url).hostname} — provavelmente um bloqueador de anúncios/extensão de privacidade interceptou o arquivo.`);
+        }
+
+        const blob = new Blob(chunks, { type: mimeType });
+        return URL.createObjectURL(blob);
+    }
+
+    // Tenta várias URLs (mirrors/CDNs diferentes) em sequência para o mesmo arquivo.
+    // Se um CDN estiver bloqueado (comum com jsdelivr/unpkg e extensões de privacidade),
+    // cai para o próximo automaticamente em vez de travar a página inteira.
+    async function fetchAsBlobURLWithMirrors(urls, mimeType, label, onProgress) {
+        let lastError;
+        for (const url of urls) {
+            try {
+                return await fetchAsBlobURLOnce(url, mimeType, label, onProgress);
+            } catch (err) {
+                console.warn(`[ffmpeg loader] falhou baixando ${label} de ${url}:`, err.message);
+                lastError = err;
+            }
+        }
+        throw new Error(
+            `Não consegui baixar ${label} de nenhuma fonte disponível. Último erro: ${lastError ? lastError.message : 'desconhecido'} ` +
+            `Tente desativar bloqueadores de anúncios/extensões de privacidade para esta página e recarregar.`
+        );
+    }
+
+    const FFMPEG_CORE_VERSION = '0.12.10';
+    const FFMPEG_PKG_VERSION = '0.12.15';
+
+    function mirrorsFor(pkg, version, path) {
+        return [
+            `https://cdn.jsdelivr.net/npm/${pkg}@${version}/${path}`,
+            `https://unpkg.com/${pkg}@${version}/${path}`
+        ];
+    }
+
+    // Código-fonte oficial do worker.js do @ffmpeg/ffmpeg 0.12.15 (MIT license),
+    // com const.js e errors.js já embutidos (evita os imports relativos que não
+    // resolvem quando o worker é carregado a partir de um blob: URL). Ele fica
+    // 100% embutido aqui — não faz NENHUMA requisição de rede para "worker.js".
+    // Isso elimina de vez o ponto de falha mais comum: antivírus, firewall,
+    // proxy corporativo ou DNS que bloqueiam qualquer URL terminando em
+    // "worker.js" (padrão comum de bloqueio ligado a scripts de mineração).
+    const FFMPEG_EMBEDDED_WORKER_SRC = "// --- const.js ---\nconst MIME_TYPE_JAVASCRIPT = \"text/javascript\";\nconst MIME_TYPE_WASM = \"application/wasm\";\nconst CORE_VERSION = \"0.12.9\";\nconst CORE_URL = `https://unpkg.com/@ffmpeg/core@${CORE_VERSION}/dist/umd/ffmpeg-core.js`;\nvar FFMessageType;\n(function (FFMessageType) {\n    FFMessageType[\"LOAD\"] = \"LOAD\";\n    FFMessageType[\"EXEC\"] = \"EXEC\";\n    FFMessageType[\"FFPROBE\"] = \"FFPROBE\";\n    FFMessageType[\"WRITE_FILE\"] = \"WRITE_FILE\";\n    FFMessageType[\"READ_FILE\"] = \"READ_FILE\";\n    FFMessageType[\"DELETE_FILE\"] = \"DELETE_FILE\";\n    FFMessageType[\"RENAME\"] = \"RENAME\";\n    FFMessageType[\"CREATE_DIR\"] = \"CREATE_DIR\";\n    FFMessageType[\"LIST_DIR\"] = \"LIST_DIR\";\n    FFMessageType[\"DELETE_DIR\"] = \"DELETE_DIR\";\n    FFMessageType[\"ERROR\"] = \"ERROR\";\n    FFMessageType[\"DOWNLOAD\"] = \"DOWNLOAD\";\n    FFMessageType[\"PROGRESS\"] = \"PROGRESS\";\n    FFMessageType[\"LOG\"] = \"LOG\";\n    FFMessageType[\"MOUNT\"] = \"MOUNT\";\n    FFMessageType[\"UNMOUNT\"] = \"UNMOUNT\";\n})(FFMessageType || (FFMessageType = {}));\n\n// --- errors.js ---\nconst ERROR_UNKNOWN_MESSAGE_TYPE = new Error(\"unknown message type\");\nconst ERROR_NOT_LOADED = new Error(\"ffmpeg is not loaded, call `await ffmpeg.load()` first\");\nconst ERROR_TERMINATED = new Error(\"called FFmpeg.terminate()\");\nconst ERROR_IMPORT_FAILURE = new Error(\"failed to import ffmpeg-core.js\");\n\n// --- worker.js ---\n/// <reference no-default-lib=\"true\" />\n/// <reference lib=\"esnext\" />\n/// <reference lib=\"webworker\" />\nlet ffmpeg;\nconst load = async ({ coreURL: _coreURL, wasmURL: _wasmURL, workerURL: _workerURL, }) => {\n    const first = !ffmpeg;\n    try {\n        if (!_coreURL)\n            _coreURL = CORE_URL;\n        // when web worker type is `classic`.\n        importScripts(_coreURL);\n    }\n    catch {\n        if (!_coreURL || _coreURL === CORE_URL)\n            _coreURL = CORE_URL.replace('/umd/', '/esm/');\n        // when web worker type is `module`.\n        self.createFFmpegCore = (await import(\n        /* @vite-ignore */ _coreURL)).default;\n        if (!self.createFFmpegCore) {\n            throw ERROR_IMPORT_FAILURE;\n        }\n    }\n    const coreURL = _coreURL;\n    const wasmURL = _wasmURL ? _wasmURL : _coreURL.replace(/.js$/g, \".wasm\");\n    const workerURL = _workerURL\n        ? _workerURL\n        : _coreURL.replace(/.js$/g, \".worker.js\");\n    ffmpeg = await self.createFFmpegCore({\n        // Fix `Overload resolution failed.` when using multi-threaded ffmpeg-core.\n        // Encoded wasmURL and workerURL in the URL as a hack to fix locateFile issue.\n        mainScriptUrlOrBlob: `${coreURL}#${btoa(JSON.stringify({ wasmURL, workerURL }))}`,\n    });\n    ffmpeg.setLogger((data) => self.postMessage({ type: FFMessageType.LOG, data }));\n    ffmpeg.setProgress((data) => self.postMessage({\n        type: FFMessageType.PROGRESS,\n        data,\n    }));\n    return first;\n};\nconst exec = ({ args, timeout = -1 }) => {\n    ffmpeg.setTimeout(timeout);\n    ffmpeg.exec(...args);\n    const ret = ffmpeg.ret;\n    ffmpeg.reset();\n    return ret;\n};\nconst ffprobe = ({ args, timeout = -1 }) => {\n    ffmpeg.setTimeout(timeout);\n    ffmpeg.ffprobe(...args);\n    const ret = ffmpeg.ret;\n    ffmpeg.reset();\n    return ret;\n};\nconst writeFile = ({ path, data }) => {\n    ffmpeg.FS.writeFile(path, data);\n    return true;\n};\nconst readFile = ({ path, encoding }) => ffmpeg.FS.readFile(path, { encoding });\n// TODO: check if deletion works.\nconst deleteFile = ({ path }) => {\n    ffmpeg.FS.unlink(path);\n    return true;\n};\nconst rename = ({ oldPath, newPath }) => {\n    ffmpeg.FS.rename(oldPath, newPath);\n    return true;\n};\n// TODO: check if creation works.\nconst createDir = ({ path }) => {\n    ffmpeg.FS.mkdir(path);\n    return true;\n};\nconst listDir = ({ path }) => {\n    const names = ffmpeg.FS.readdir(path);\n    const nodes = [];\n    for (const name of names) {\n        const stat = ffmpeg.FS.stat(`${path}/${name}`);\n        const isDir = ffmpeg.FS.isDir(stat.mode);\n        nodes.push({ name, isDir });\n    }\n    return nodes;\n};\n// TODO: check if deletion works.\nconst deleteDir = ({ path }) => {\n    ffmpeg.FS.rmdir(path);\n    return true;\n};\nconst mount = ({ fsType, options, mountPoint }) => {\n    const str = fsType;\n    const fs = ffmpeg.FS.filesystems[str];\n    if (!fs)\n        return false;\n    ffmpeg.FS.mount(fs, options, mountPoint);\n    return true;\n};\nconst unmount = ({ mountPoint }) => {\n    ffmpeg.FS.unmount(mountPoint);\n    return true;\n};\nself.onmessage = async ({ data: { id, type, data: _data }, }) => {\n    const trans = [];\n    let data;\n    try {\n        if (type !== FFMessageType.LOAD && !ffmpeg)\n            throw ERROR_NOT_LOADED; // eslint-disable-line\n        switch (type) {\n            case FFMessageType.LOAD:\n                data = await load(_data);\n                break;\n            case FFMessageType.EXEC:\n                data = exec(_data);\n                break;\n            case FFMessageType.FFPROBE:\n                data = ffprobe(_data);\n                break;\n            case FFMessageType.WRITE_FILE:\n                data = writeFile(_data);\n                break;\n            case FFMessageType.READ_FILE:\n                data = readFile(_data);\n                break;\n            case FFMessageType.DELETE_FILE:\n                data = deleteFile(_data);\n                break;\n            case FFMessageType.RENAME:\n                data = rename(_data);\n                break;\n            case FFMessageType.CREATE_DIR:\n                data = createDir(_data);\n                break;\n            case FFMessageType.LIST_DIR:\n                data = listDir(_data);\n                break;\n            case FFMessageType.DELETE_DIR:\n                data = deleteDir(_data);\n                break;\n            case FFMessageType.MOUNT:\n                data = mount(_data);\n                break;\n            case FFMessageType.UNMOUNT:\n                data = unmount(_data);\n                break;\n            default:\n                throw ERROR_UNKNOWN_MESSAGE_TYPE;\n        }\n    }\n    catch (e) {\n        self.postMessage({\n            id,\n            type: FFMessageType.ERROR,\n            data: e.toString(),\n        });\n        return;\n    }\n    if (data instanceof Uint8Array) {\n        trans.push(data.buffer);\n    }\n    self.postMessage({ id, type, data }, trans);\n};\n";
+
+    function embeddedWorkerBlobURL() {
+        const blob = new Blob([FFMPEG_EMBEDDED_WORKER_SRC], { type: 'text/javascript' });
+        return URL.createObjectURL(blob);
+    }
+
+    async function getFFmpeg(onLog, onProgress) {
+        if (ffmpeg) return ffmpeg;
+        const instance = new FFmpeg();
+        if (onLog) instance.on('log', ({ message }) => onLog(message));
+
+        try {
+            const coreURL = await fetchAsBlobURLWithMirrors(
+                mirrorsFor('@ffmpeg/core', FFMPEG_CORE_VERSION, 'dist/esm/ffmpeg-core.js'),
+                'text/javascript', 'ffmpeg-core.js', onProgress
+            );
+            const wasmURL = await fetchAsBlobURLWithMirrors(
+                mirrorsFor('@ffmpeg/core', FFMPEG_CORE_VERSION, 'dist/esm/ffmpeg-core.wasm'),
+                'application/wasm', 'ffmpeg-core.wasm', onProgress
+            );
+            const classWorkerURL = embeddedWorkerBlobURL();
+
+            const loadTimeoutMs = 30000;
+            let loadTimer;
+            const loadTimeout = new Promise((_, reject) => {
+                loadTimer = setTimeout(() => reject(new Error(
+                    'O motor de edição (ffmpeg) não respondeu em 30s após o download. ' +
+                    'Isso costuma ser bloqueador de anúncios/extensão de privacidade impedindo a criação do Web Worker. ' +
+                    'Tente desativar extensões para esta página e recarregar.'
+                )), loadTimeoutMs);
+            });
+
+            try {
+                await Promise.race([instance.load({ coreURL, wasmURL, classWorkerURL }), loadTimeout]);
+            } finally {
+                clearTimeout(loadTimer);
+            }
+        } catch (err) {
+            // Não guarda uma instância meio-carregada: se ficar em cache, um "tentar
+            // de novo" do usuário só devolveria essa mesma instância quebrada.
+            ffmpeg = null;
+            throw err;
+        }
+
+        ffmpeg = instance;
+        return ffmpeg;
+    }
+
+    // A memória linear do WebAssembly só CRESCE — mesmo apagando arquivos do
+    // MEMFS (safeDeleteFile), as páginas de memória que o wasm já pediu ao
+    // navegador nunca voltam pro sistema operacional dentro da MESMA instância.
+    // Num corte com muitas cenas reencodadas (crop/legenda/gancho/barra), cada
+    // "ff.exec" empurra esse teto um pouco mais pra cima, até estourar o limite
+    // da instância e quebrar com "memory access out of bounds" — é esse o
+    // padrão descrito no comentário acima de "tempFiles", em cortarVideo.
+    // A única forma de "devolver" essa memória é descartar a instância inteira
+    // (Web Worker + módulo wasm) e criar outra do zero, o que reinicia a
+    // memória linear no tamanho mínimo. cortarVideo chama isso periodicamente
+    // durante o corte (a cada poucas cenas) para manter o uso de memória sob
+    // controle em vídeos longos/com muitos cortes, em vez de deixá-lo crescer
+    // sem parar até estourar perto do fim.
+    async function recycleFFmpeg(onLog, onProgress) {
+        if (ffmpeg) {
+            try { ffmpeg.terminate(); } catch (e) { /* já pode estar encerrada — ignora */ }
+        }
+        ffmpeg = null;
+        captionFontLoaded = false; // nova instância = MEMFS vazio, a fonte precisa ser reescrita
+        return await getFFmpeg(onLog, onProgress);
+    }
+
+    // Deleta um arquivo do sistema de arquivos virtual do ffmpeg, ignorando
+    // erro se ele não existir (ex: uma cena que falhou antes de chegar a
+    // escrever o arquivo). Usado para liberar memória WASM ao longo do corte.
+    async function safeDeleteFile(ff, name) {
+        try { await ff.deleteFile(name); } catch (e) { /* já não existe — ignora */ }
+    }
+
+    async function cortarVideo() {
+        const cutProgress = document.getElementById('cutProgress');
+        const btnSim = document.getElementById('btnSimCortar');
+        const btnNao = document.getElementById('btnNaoCortar');
+        const videoResultCard = document.getElementById('videoResultCard');
+
+        if (!currentFile || currentCuts.length === 0) {
+            cutProgress.innerText = 'Nada para cortar ainda — gere o roteiro primeiro.';
+            return;
+        }
+
+        if (location.protocol === 'file:') {
+            cutProgress.innerText = 'Não é possível cortar o vídeo com a página aberta direto do arquivo (file:///...). Suba um servidor local (veja o aviso amarelo no topo da página) e acesse por http://localhost.';
+            return;
+        }
+
+        btnSim.disabled = true;
+        btnNao.disabled = true;
+        cancelRequested = false;
+        const cancelCutBtn = document.getElementById('cancelCutBtn');
+        cancelCutBtn.style.display = 'inline-block';
+
+        // Nomes de todo arquivo temporário escrito no sistema de arquivos
+        // virtual do ffmpeg (MEMFS, dentro da memória WASM) referentes à
+        // instância ATUALMENTE ativa — a lista é esvaziada sempre que a
+        // instância é reciclada (ver recycleFFmpeg), já que os arquivos da
+        // instância anterior somem junto com ela. Sem apagar esses arquivos
+        // conforme deixam de ser necessários, eles ficam acumulados na memória
+        // (vídeo original inteiro + um arquivo de vídeo/áudio por cena + cada
+        // cena já cortada) até estourar o limite de memória do WASM — é a
+        // causa mais comum do erro "memory access out of bounds" em vídeos
+        // mais longos ou com muitas cenas. Além de apagar os arquivos que já
+        // não servem, o loop de corte (mais abaixo) também recicla a instância
+        // do ffmpeg periodicamente, porque a memória linear do WASM só CRESCE
+        // — apagar arquivo nenhum devolve espaço pro navegador dentro da MESMA
+        // instância, só descartá-la e recriá-la faz isso.
+        // Declarada FORA do try (e apagada no "finally") para que uma
+        // tentativa nova, mesmo depois de um erro/cancelamento no meio do
+        // caminho, sempre comece com a memória limpa em vez de empilhar sobre
+        // o que sobrou da tentativa anterior.
+        const tempFiles = [];
+        let ffForCleanup = null;
+        let instanceDiscarded = false;
+
+        try {
+            await acquireWakeLock();
+            checkCancelled();
+            cutProgress.innerText = 'Carregando motor de edição de vídeo (ffmpeg, ~31 MB, só na primeira vez)...';
+
+            let ff = await getFFmpeg(
+                (msg) => console.log('[ffmpeg]', msg),
+                (label, loaded, total) => {
+                    const loadedMB = (loaded / 1024 / 1024).toFixed(1);
+                    // content-length reflete o tamanho comprimido (gzip), mas os bytes
+                    // que chegam já vêm descomprimidos — por isso limitamos a 99% em vez
+                    // de deixar passar de 100% em arquivos pequenos como o worker.js.
+                    if (total && loaded < total) {
+                        const pct = Math.min(99, Math.round((loaded / total) * 100));
+                        cutProgress.innerText = `Baixando ${label}... ${loadedMB} MB (${pct}%)`;
+                    } else {
+                        cutProgress.innerText = `Baixando ${label}... ${loadedMB} MB`;
+                    }
+                }
+            );
+            ffForCleanup = ff;
+
+            const ext = (currentFile.name.split('.').pop() || 'mp4').toLowerCase();
+            const inputName = `input.${ext}`;
+
+            const aspectRatio = document.getElementById('aspectRatio').value;
+            const cropFilter = computeCropFilter(currentVideoWidth, currentVideoHeight, aspectRatio);
+            if (aspectRatio !== 'original' && !cropFilter) {
+                console.warn('Não foi possível calcular o corte central (resolução do vídeo desconhecida) — mantendo o formato original.');
+            }
+
+            // "Modo Viciante": legenda queimada + gancho inicial + barra de
+            // progresso. Se a fonte não conseguir baixar (rede bloqueada, CDN
+            // fora do ar), não travamos o corte inteiro por causa disso — só
+            // desligamos essas 3 coisas nesta rodada e avisamos no resultado final.
+            const isViralMode = document.getElementById('viralMode').checked;
+            let captionsAvailable = false;
+            if (isViralMode) {
+                cutProgress.innerText = 'Baixando fonte para as legendas (só na primeira vez)...';
+                try {
+                    await ensureCaptionFont(ff);
+                    captionsAvailable = true;
+                } catch (err) {
+                    console.warn('Não foi possível baixar a fonte das legendas — seguindo sem legenda/gancho/barra nesta rodada.', err);
+                    captionsAvailable = false;
+                }
+            }
+
+            // Duração de cada cena e o quanto de vídeo já passou ANTES dela no
+            // resultado final concatenado — é o que a barra de progresso usa pra
+            // saber em que ponto do vídeo INTEIRO ela está, mesmo processando
+            // uma cena de cada vez.
+            const sceneDurations = currentCuts.map(c => Math.max(timeToSeconds(c.fim) - timeToSeconds(c.inicio), 0.1));
+            const totalDuration = sceneDurations.reduce((a, b) => a + b, 0) || 1;
+            let acumulado = 0;
+            const offsetsAcumulados = sceneDurations.map(d => { const off = acumulado; acumulado += d; return off; });
+
+            cutProgress.innerText = 'Carregando vídeo original na memória...';
+            // Reaproveita os bytes lidos lá no início de processVideo, se
+            // ainda forem deste mesmo arquivo. Só volta a ler do disco (o que
+            // pode falhar em "content://" depois de vários minutos) se por
+            // algum motivo esse cache não existir.
+            let inputBytes;
+            if (cachedFileBytes && cachedFileBytesFor === currentFile) {
+                inputBytes = cachedFileBytes;
+            } else {
+                inputBytes = await fetchFile(currentFile);
+            }
+            // IMPORTANTE: ff.writeFile() transfere (não copia) o ArrayBuffer
+            // por trás do Uint8Array pro Worker do ffmpeg, pra evitar cópia —
+            // isso "esvazia" (detach) o buffer original no thread principal.
+            // Como esse mesmo vídeo de entrada precisa ser reescrito de novo
+            // mais abaixo (toda vez que a instância do ffmpeg é reciclada),
+            // mandamos sempre uma CÓPIA (.slice()) e guardamos "inputBytes"
+            // intocado — senão a 2ª reciclagem falha com "An ArrayBuffer is
+            // detached and could not be cloned".
+            await ff.writeFile(inputName, inputBytes.slice());
+            tempFiles.push(inputName);
+            // NÃO zeramos "inputBytes" aqui: o loop mais abaixo reaproveita
+            // essa mesma variável para reescrever o arquivo de entrada toda
+            // vez que a instância do ffmpeg é reciclada (ver RECYCLE_EVERY_SCENES).
+            // Só soltamos a referência do CACHE global (que já cumpriu seu
+            // papel de evitar reler do disco).
+            cachedFileBytes = null;
+            cachedFileBytesFor = null;
+
+            // Decide a narração CENA A CENA: se uma cena específica não tem áudio
+            // gerado (falhou lá no processVideo), só ELA mantém o áudio original —
+            // as demais cenas com narração disponível continuam sendo narradas
+            // normalmente, em vez de descartar tudo por causa de uma falha isolada.
+            const audioCodec = audioCodecForExt(ext);
+            // Com mais de uma cena, o resultado passa pelo "-f concat" — precisa
+            // forçar reencode com timestamps zerados em cada cena pra evitar os
+            // congelamentos na junção (ver comentário em videoEncodeArgs).
+            const needsCleanJoin = currentCuts.length > 1;
+
+            // Cada cena finalizada é lida para um Uint8Array comum em memória
+            // JS (fora da memória linear do WASM) e IMEDIATAMENTE apagada do
+            // MEMFS do ffmpeg — em vez de deixar todas as N cenas acumuladas
+            // dentro da instância do ffmpeg até o concat final. Isso reduz bem
+            // o pico de memória WASM durante o loop; elas voltam pro MEMFS (da
+            // instância então ativa) só na hora de montar o vídeo final.
+            const segmentBuffers = [];
+
+            // A cada RECYCLE_EVERY_SCENES cenas, descarta a instância do
+            // ffmpeg e cria outra do zero — é a única forma de "devolver"
+            // memória WASM que só cresce (ver comentário em recycleFFmpeg).
+            // Mais agressivo (a cada 3) quando há reencode pesado (crop,
+            // legenda, gancho, barra), já que cada exec nesse caso consome
+            // bem mais memória do que um simples "-c:v copy".
+            const RECYCLE_EVERY_SCENES = (cropFilter || captionsAvailable || needsCleanJoin) ? 2 : 6;
+
+            for (let i = 0; i < currentCuts.length; i++) {
+                checkCancelled();
+                const cut = currentCuts[i];
+                const start = timeToSeconds(cut.inicio);
+                const end = timeToSeconds(cut.fim);
+                const duration = Math.max(end - start, 0.1);
+                const segName = `seg${i}.${ext}`;
+                const hasNarrationForThisCut = !!(currentNarrationAudios[i] && currentNarrationAudios[i].length > 0);
+
+                // Monta a lista de filtros visuais dessa cena, NA ORDEM certa: crop
+                // primeiro (define a largura/altura final), depois legenda, gancho
+                // (só cena 0) e barra de progresso — cada um sabendo o tamanho de
+                // tela já cortado.
+                const sceneFilters = [];
+                if (cropFilter) sceneFilters.push(cropFilter);
+                if (captionsAvailable) {
+                    const captionFilters = await buildCaptionFilters(ff, cut.narracao, duration, `cap${i}`, tempFiles);
+                    sceneFilters.push(...captionFilters);
+                    if (i === 0) {
+                        const hookFilter = await buildHookFilter(ff, cut.gancho, `cap${i}`, tempFiles);
+                        if (hookFilter) sceneFilters.push(hookFilter);
+                    }
+                    sceneFilters.push(buildProgressBarFilter(offsetsAcumulados[i], totalDuration));
+                }
+
+                if (hasNarrationForThisCut) {
+                    cutProgress.innerText = `Cortando e narrando cena ${i + 1} de ${currentCuts.length}...`;
+
+                    // 1) Corta só a IMAGEM dessa cena (sem áudio), copiando o codec
+                    // original (ou reencodando, se houver crop/legenda/gancho/barra,
+                    // ou se essa cena vai ser concatenada com outras).
+                    const videoOnlyName = `segv${i}.${ext}`;
+                    await ff.exec([
+                        '-ss', String(start),
+                        '-i', inputName,
+                        '-t', String(duration),
+                        '-an',
+                        ...videoEncodeArgs(ext, sceneFilters, needsCleanJoin),
+                        '-avoid_negative_ts', 'make_zero',
+                        videoOnlyName
+                    ]);
+
+                    // 2) Escreve o PCM cru da narração dessa cena (gerado lá no
+                    // processVideo) e calcula quanto ele precisa "encolher" ou
+                    // "esticar" pra caber exatamente na duração do corte.
+                    const pcmBytes = currentNarrationAudios[i];
+                    const audioName = `narr${i}.pcm`;
+                    // .slice() pelo mesmo motivo do vídeo de entrada (ver comentário
+                    // acima de "ff.writeFile(inputName, ...)"): sem isso, o Worker do
+                    // ffmpeg transfere (detach) o buffer de "currentNarrationAudios[i]",
+                    // deixando-o inutilizável. Como esse mesmo array é reaproveitado
+                    // em qualquer nova tentativa de corte (botão "Tentar novamente"
+                    // após um erro), a 2ª tentativa gravava um arquivo vazio/corrompido
+                    // pra cada cena narrada já processada antes do erro — e a leitura
+                    // desse resultado (ou de um exec que dependia dele) quebrava mais
+                    // adiante com "ErrnoError: FS error".
+                    await ff.writeFile(audioName, pcmBytes.slice());
+                    const audioDuration = pcmBytes.length / (TTS_SAMPLE_RATE * 2);
+
+                    // Se a narração ficou mais longa que o corte (imprecisão do TTS),
+                    // acelera até 15% (imperceptível ao ouvido) para caber; nunca
+                    // desacelera, porque isso soa antinatural. O resto do tempo (se
+                    // sobrar) é preenchido com silêncio (apad), e o "-t" no final
+                    // garante que o áudio nunca passe da duração do vídeo.
+                    const tempoFactor = Math.min(Math.max(audioDuration / duration, 1.0), 1.15);
+                    const audioFilter = tempoFactor > 1.001
+                        ? `atempo=${tempoFactor.toFixed(3)},apad`
+                        : 'apad';
+
+                    // 3) Junta a imagem cortada com a narração sintética nesse trecho.
+                    await ff.exec([
+                        '-i', videoOnlyName,
+                        '-f', 's16le', '-ar', String(TTS_SAMPLE_RATE), '-ac', '1',
+                        '-i', audioName,
+                        '-map', '0:v:0',
+                        '-map', '1:a:0',
+                        '-c:v', 'copy',
+                        '-c:a', audioCodec,
+                        '-b:a', '128k',
+                        '-af', audioFilter,
+                        '-t', String(duration),
+                        segName
+                    ]);
+
+                    // Já foram "fundidos" dentro de segName — livra a memória WASM
+                    // dessas duas cópias intermediárias antes de passar pra próxima
+                    // cena (ver comentário sobre "memory access out of bounds" acima).
+                    await safeDeleteFile(ff, videoOnlyName);
+                    await safeDeleteFile(ff, audioName);
+                } else {
+                    cutProgress.innerText = `Cortando cena ${i + 1} de ${currentCuts.length}...`;
+                    // Mesma lógica do vídeo: se essa cena vai ser concatenada com
+                    // outras, o áudio também precisa ter os timestamps zerados
+                    // ("asetpts=PTS-STARTPTS"), senão o pequeno resto herdado do
+                    // "-ss" pode gerar um estalo/dessincronia na junção das cenas.
+                    const audioArgsSemNarracao = (sceneFilters.length > 0 || needsCleanJoin)
+                        ? ['-af', 'asetpts=PTS-STARTPTS', '-c:a', audioCodec, '-b:a', '128k']
+                        : ['-c:a', 'copy'];
+                    await ff.exec([
+                        '-ss', String(start),
+                        '-i', inputName,
+                        '-t', String(duration),
+                        ...videoEncodeArgs(ext, sceneFilters, needsCleanJoin),
+                        ...audioArgsSemNarracao,
+                        '-avoid_negative_ts', 'make_zero',
+                        segName
+                    ]);
+                }
+                // Tira a cena pronta do MEMFS do ffmpeg assim que ela existe —
+                // os bytes passam a viver só em memória JS (segmentBuffers),
+                // liberando a área correspondente no heap WASM em vez de
+                // deixá-la ocupada até o concat final.
+                const segData = await ff.readFile(segName);
+                segmentBuffers.push(segData);
+                await safeDeleteFile(ff, segName);
+
+                const isLastScene = i === currentCuts.length - 1;
+                if (!isLastScene && (i + 1) % RECYCLE_EVERY_SCENES === 0) {
+                    cutProgress.innerText = `Liberando memória do motor de edição (cena ${i + 1} de ${currentCuts.length})...`;
+                    ff = await recycleFFmpeg(
+                        (msg) => console.log('[ffmpeg]', msg),
+                        () => { /* motor já está em cache local, sem download nesse ponto */ }
+                    );
+                    ffForCleanup = ff;
+                    // A instância antiga (com seus nomes de arquivo) já foi
+                    // encerrada — a lista de temporários pendentes dela não se
+                    // aplica mais à nova instância, que começa com MEMFS vazio.
+                    tempFiles.length = 0;
+                    // Cópia de novo pelo mesmo motivo do primeiro writeFile
+                    // acima: o Worker do ffmpeg transfere (detach) o buffer
+                    // que recebe, e "inputBytes" precisa continuar intacto
+                    // para futuras reciclagens.
+                    await ff.writeFile(inputName, inputBytes.slice());
+                    tempFiles.push(inputName);
+                    if (captionsAvailable) {
+                        await ensureCaptionFont(ff);
+                    }
+                }
+            }
+
+            cutProgress.innerText = 'Preparando as cenas para a montagem final...';
+            // Volta cada cena (guardada em memória JS) para o MEMFS da
+            // instância do ffmpeg atualmente ativa — só agora, na hora de
+            // concatenar, é que todas precisam existir ao mesmo tempo dentro
+            // do ffmpeg.
+            const segmentFiles = [];
+            for (let i = 0; i < segmentBuffers.length; i++) {
+                checkCancelled();
+                const segName = `seg${i}.${ext}`;
+                // .slice() pelo mesmo motivo do vídeo de entrada e do áudio de
+                // narração (ver comentários acima): sem isso, o Worker do ffmpeg
+                // transfere (detach) o buffer de "segmentBuffers[i]" ao recebê-lo,
+                // e se o cancelamento pedido em "checkCancelled()" (ou qualquer
+                // outro erro) interromper o corte no MEIO deste loop, o "finally"
+                // e o "Tentar novamente" reaproveitam esse mesmo array já com
+                // buffers detachados — a gravação seguinte falha com
+                // "ErrnoError: FS error".
+                await ff.writeFile(segName, segmentBuffers[i].slice());
+                segmentBuffers[i] = null; // já copiado pro ffmpeg — solta a referência em JS
+                segmentFiles.push(segName);
+                tempFiles.push(segName);
+            }
+
+            cutProgress.innerText = 'Juntando as cenas no vídeo final...';
+            const listContent = segmentFiles.map(f => `file '${f}'`).join('\n');
+            await ff.writeFile('concat_list.txt', listContent);
+            tempFiles.push('concat_list.txt');
+
+            const outputName = `output.${ext}`;
+            await ff.exec(['-f', 'concat', '-safe', '0', '-i', 'concat_list.txt', '-c', 'copy', outputName]);
+            tempFiles.push(outputName);
+
+            // A partir daqui já não precisamos mais do vídeo original nem das
+            // cenas individuais dentro da memória do ffmpeg — libera tudo ANTES
+            // de ler o resultado final, sobrando o máximo de memória livre
+            // possível para essa última leitura (o arquivo de saída pode ser
+            // grande).
+            await safeDeleteFile(ff, inputName);
+            for (const f of segmentFiles) await safeDeleteFile(ff, f);
+            await safeDeleteFile(ff, 'concat_list.txt');
+
+            const data = await ff.readFile(outputName);
+            const mime = currentFile.type || 'video/mp4';
+            const blob = new Blob([data.buffer], { type: mime });
+            const url = trackObjectURL(URL.createObjectURL(blob));
+
+            const finalVideo = document.getElementById('finalVideo');
+            const downloadLink = document.getElementById('downloadLink');
+            finalVideo.src = url;
+            downloadLink.href = url;
+            downloadLink.download = `${currentFileBaseName}.${ext}`;
+
+            videoResultCard.style.display = 'block';
+            videoResultCard.scrollIntoView({ behavior: 'smooth' });
+            const cenasNarradas = currentNarrationAudios.filter(a => a && a.length > 0).length;
+            let resumoNarracao;
+            if (cenasNarradas === currentCuts.length) {
+                resumoNarracao = 'Vídeo cortado e narrado com sucesso! ✅';
+            } else if (cenasNarradas === 0) {
+                resumoNarracao = 'Vídeo cortado com sucesso (áudio original mantido em todas as cenas)! ✅';
+            } else {
+                resumoNarracao = `Vídeo cortado! ✅ ${cenasNarradas} de ${currentCuts.length} cenas narradas — as demais mantiveram o áudio original.`;
+            }
+            const notaFormato = cropFilter
+                ? ` Formato de saída aplicado: ${aspectRatio} (bordas cortadas no centro).`
+                : '';
+            const notaViciante = isViralMode
+                ? (captionsAvailable
+                    ? ' Modo Viciante aplicado: legenda queimada, gancho inicial e barra de progresso. ✅'
+                    : ' ⚠️ Modo Viciante estava ligado, mas não consegui baixar a fonte das legendas (rede bloqueada?) — o vídeo saiu SEM legenda/gancho/barra desta vez.')
+                : '';
+            cutProgress.innerText = resumoNarracao +
+                ' (os cortes seguem o quadro-chave mais próximo, então pode haver ~1-2s de folga em cada corte)' +
+                notaFormato + notaViciante;
+            return true;
+
+        } catch (error) {
+            if (error instanceof CancelledError) {
+                cutProgress.innerText = 'Corte cancelado.';
+            } else {
+                console.error(error);
+                // Um erro no meio do corte (ex.: "memory access out of bounds") deixa
+                // a memória WASM DESSA instância corrompida/inutilizável — continuar
+                // usando ela (mesmo só para apagar arquivos temporários abaixo) pode
+                // travar ou repetir o mesmo erro. Descartamos a instância inteira e
+                // zeramos a variável global "ffmpeg" agora, para que o botão "Tentar
+                // novamente" (getFFmpeg) crie uma instância nova do zero em vez de
+                // reaproveitar essa mesma instância quebrada — sem isso, cada nova
+                // tentativa caía exatamente no mesmo erro, na mesma cena.
+                if (ffForCleanup) {
+                    try { ffForCleanup.terminate(); } catch (e) { /* já pode estar encerrada — ignora */ }
+                }
+                ffmpeg = null;
+                captionFontLoaded = false;
+                instanceDiscarded = true;
+
+                cutProgress.innerHTML = '';
+                const errLine = document.createElement('div');
+                errLine.innerText = 'Erro ao cortar o vídeo: ' + (error.message || JSON.stringify(error));
+                const retryBtn = document.createElement('button');
+                retryBtn.innerText = '🔄 Tentar novamente';
+                retryBtn.style.marginTop = '10px';
+                retryBtn.addEventListener('click', cortarVideo);
+                cutProgress.appendChild(errLine);
+                cutProgress.appendChild(retryBtn);
+            }
+            return false;
+        } finally {
+            // Libera tudo que ainda sobrou no sistema de arquivos do ffmpeg
+            // nesta rodada — tanto em caso de sucesso (o outputName só foi lido
+            // acima, nunca apagado) quanto de cancelamento no meio do corte
+            // (sobram arquivos das cenas que já tinham sido escritas). Pulamos
+            // isso quando a instância já foi descartada acima (erro real), já
+            // que tentar usá-la de novo é inútil e pode travar.
+            if (!instanceDiscarded && ffForCleanup && tempFiles.length) {
+                for (const f of tempFiles) await safeDeleteFile(ffForCleanup, f);
+            }
+            btnSim.disabled = false;
+            btnNao.disabled = false;
+            cancelRequested = false;
+            cancelCutBtn.style.display = 'none';
+            releaseWakeLock();
+        }
+    }
+</script>
+
+</body>
+</html>
