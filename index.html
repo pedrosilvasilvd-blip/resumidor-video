@@ -855,6 +855,7 @@
     appDashboard.className = 'dashboard found-theme';
     blindPreviewColumn.style.display = 'flex';
     mainControlsColumn.style.display = 'block';
+    loadPreviewForTab('found');
     syncActiveTabElements();
     renderInteractivePreview();
   });
@@ -868,6 +869,7 @@
     appDashboard.className = 'dashboard dorama-theme';
     blindPreviewColumn.style.display = 'flex';
     mainControlsColumn.style.display = 'block';
+    loadPreviewForTab('dorama');
     syncActiveTabElements();
     renderInteractivePreview();
   });
@@ -909,9 +911,53 @@
   const TARGET_W = 720;
   const TARGET_H = 1280;
 
-  let fileQueue = [];
+  // Cada aba (found/dorama) tem sua própria fila de vídeos, independente da outra.
+  let fileQueues = { found: [], dorama: [] };
+  function getCurrentQueue() { return fileQueues[activeTab] || []; }
+
   let cropNorm = { x: 0, y: 0, w: 1, h: 1 };
   let currentPreviewMode = 'overlay';
+
+  // Carrega no preview compartilhado (video/canvas) o vídeo pertencente à aba informada.
+  // Isso garante que trocar de aba mostre APENAS o vídeo daquela aba (ou nada, se vazio).
+  function loadPreviewForTab(tab) {
+    const queue = fileQueues[tab] || [];
+    const container = tab === 'found' ? tabFoundContent : tabDoramaContent;
+    const ctrl = {
+      trimStart: container.querySelector('.trim-start-range'),
+      trimEnd: container.querySelector('.trim-end-range'),
+      processBtn: container.querySelector('.process-btn')
+    };
+
+    if (queue.length === 0) {
+      video.removeAttribute('src');
+      video.load();
+      if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+      cropBox.style.display = 'none';
+      if (ctrl.processBtn) ctrl.processBtn.disabled = true;
+      status.innerText = 'Nenhum vídeo selecionado nesta aba.';
+      return;
+    }
+
+    canvas.width = TARGET_W;
+    canvas.height = TARGET_H;
+    if (ctrl.processBtn) ctrl.processBtn.disabled = false;
+    status.innerText = `${queue.length} vídeo(s) na fila.`;
+
+    video.src = URL.createObjectURL(queue[0]);
+    video.load();
+    video.onloadedmetadata = () => {
+      if (ctrl.trimStart) {
+        ctrl.trimStart.max = (video.duration / 2).toFixed(1);
+        video.currentTime = parseFloat(ctrl.trimStart.value);
+      }
+      if (ctrl.trimEnd) ctrl.trimEnd.max = (video.duration / 2).toFixed(1);
+      setTimeout(() => {
+        setupCropBox();
+        renderInteractivePreview();
+      }, 200);
+    };
+  }
 
   function getActiveTabContainer() {
     return activeTab === 'found' ? tabFoundContent : tabDoramaContent;
@@ -1007,26 +1053,18 @@
 
   document.querySelectorAll('#tabFoundContent .video-input, #tabDoramaContent .video-input').forEach(input => {
     input.addEventListener('change', (e) => {
-      fileQueue = Array.from(e.target.files);
-      if (fileQueue.length === 0) return;
+      const tab = e.target.closest('#tabFoundContent') ? 'found' : 'dorama';
+      fileQueues[tab] = Array.from(e.target.files);
+      if (fileQueues[tab].length === 0) return;
 
-      canvas.width = TARGET_W;
-      canvas.height = TARGET_H;
-      const ctrl = getActiveControls();
-      ctrl.processBtn.disabled = false;
-      status.innerText = `${fileQueue.length} vídeo(s) na fila.`;
-
-      video.src = URL.createObjectURL(fileQueue[0]);
-      video.load();
-      video.onloadedmetadata = () => {
-        ctrl.trimStart.max = (video.duration / 2).toFixed(1);
-        ctrl.trimEnd.max = (video.duration / 2).toFixed(1);
-        video.currentTime = parseFloat(ctrl.trimStart.value);
-        setTimeout(() => {
-          setupCropBox();
-          renderInteractivePreview();
-        }, 200);
-      };
+      // Só atualiza o preview compartilhado se a aba que recebeu o arquivo for a aba ativa.
+      if (tab === activeTab) {
+        loadPreviewForTab(tab);
+      } else {
+        const container = tab === 'found' ? tabFoundContent : tabDoramaContent;
+        const btn = container.querySelector('.process-btn');
+        if (btn) btn.disabled = false;
+      }
     });
   });
 
@@ -1448,12 +1486,34 @@
     return '';
   }
 
+  // O elemento <video> só pode ser conectado UMA ÚNICA VEZ a um MediaElementSourceNode
+  // durante toda a vida da página. Criar isso de novo a cada produção (como era antes)
+  // lança um erro na 2ª produção em diante e travava o fluxo. Por isso o contexto de
+  // áudio e o "source" são criados uma vez só e reaproveitados em todas as produções.
+  let sharedAudioCtx = null;
+  let sharedAudioSource = null;
+  function getSharedAudioSource() {
+    if (!sharedAudioCtx) {
+      sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      sharedAudioSource = sharedAudioCtx.createMediaElementSource(video);
+    }
+    if (sharedAudioCtx.state === 'suspended') sharedAudioCtx.resume();
+    return { audioCtx: sharedAudioCtx, audioSource: sharedAudioSource };
+  }
+
   function processVideoItem(file, currentTitle, index, total, config) {
     return new Promise((resolve) => {
       status.innerText = `Renderizando (${index + 1}/${total}): "${currentTitle}"...`;
       video.src = URL.createObjectURL(file);
       video.muted = false;
       video.load();
+
+      // Se algo impedir o vídeo de carregar (arquivo corrompido, etc.), garante
+      // que a Promise resolva mesmo assim, para o botão nunca ficar travado.
+      video.onerror = () => {
+        console.error('Erro ao carregar o vídeo para produção.');
+        resolve();
+      };
 
       video.onloadedmetadata = () => {
         let recordedChunks = [];
@@ -1462,8 +1522,9 @@
         const stopTime = Math.max(config.cutStart + 0.5, video.duration - config.cutEnd);
 
         try {
-          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-          audioSource = audioCtx.createMediaElementSource(video);
+          const shared = getSharedAudioSource();
+          audioCtx = shared.audioCtx;
+          audioSource = shared.audioSource;
           audioDest = audioCtx.createMediaStreamDestination();
 
           const bq = audioCtx.createBiquadFilter();
@@ -1474,6 +1535,9 @@
           duckingGain = audioCtx.createGain();
           duckingGain.gain.value = (activeTab === 'dorama' && config.ducking) ? 0.18 : 1.0;
 
+          // Desconecta ligações de produções anteriores antes de refazer a cadeia,
+          // senão o áudio continuaria sendo enviado também para streams antigas.
+          audioSource.disconnect();
           audioSource.connect(bq);
           bq.connect(duckingGain);
           duckingGain.connect(audioDest);
@@ -1504,9 +1568,16 @@
           if (e.data.size > 0) recordedChunks.push(e.data);
         };
 
+        // Se o MediaRecorder falhar no meio do caminho, resolve mesmo assim
+        // em vez de deixar a fila travada para sempre.
+        mediaRecorder.onerror = (e) => {
+          console.error('Erro no MediaRecorder:', e);
+          if (osc) { try { osc.stop(); } catch (_) {} }
+          resolve();
+        };
+
         mediaRecorder.onstop = () => {
-          if (osc) osc.stop();
-          if (audioCtx) audioCtx.close();
+          if (osc) { try { osc.stop(); } catch (_) {} }
 
           const blob = new Blob(recordedChunks, { type: 'video/mp4' });
           const url = URL.createObjectURL(blob);
@@ -1533,7 +1604,23 @@
 
         const { mainX: destX, mainY: destY, mainW: destW, mainH: destH } = getVideoRenderLayout();
 
+        // Envolve o loop de desenho em try/catch: se algum frame falhar, paramos a
+        // gravação (ou resolvemos a Promise) em vez de deixar o processo travado
+        // silenciosamente, exigindo recarregar a página.
         function render() {
+          try {
+            renderFrame();
+          } catch (err) {
+            console.error('Erro ao renderizar frame:', err);
+            if (mediaRecorder.state === 'recording') {
+              mediaRecorder.stop();
+            } else {
+              resolve();
+            }
+          }
+        }
+
+        function renderFrame() {
           const elapsed = (Date.now() - startTime) / 1000;
           frameIndex++;
 
@@ -1669,7 +1756,8 @@
 
   document.querySelectorAll('#tabFoundContent .process-btn, #tabDoramaContent .process-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
-      if (fileQueue.length === 0) return;
+      const queue = getCurrentQueue();
+      if (queue.length === 0) return;
       btn.disabled = true;
       cropBox.style.display = 'none';
 
@@ -1690,15 +1778,22 @@
         ducking: ctrl.ducking ? ctrl.ducking.checked : false
       };
 
-      for (let i = 0; i < fileQueue.length; i++) {
-        const currentTitle = incrementText(baseTitle, i);
-        await processVideoItem(fileQueue[i], currentTitle, i, fileQueue.length, config);
-        await new Promise(r => setTimeout(r, 600));
+      try {
+        for (let i = 0; i < queue.length; i++) {
+          const currentTitle = incrementText(baseTitle, i);
+          await processVideoItem(queue[i], currentTitle, i, queue.length, config);
+          await new Promise(r => setTimeout(r, 600));
+        }
+        status.innerText = `Processamento de ${queue.length} vídeo(s) concluído com sucesso!`;
+      } catch (err) {
+        console.error('Erro ao produzir vídeo:', err);
+        status.innerText = 'Ocorreu um erro ao produzir o vídeo. Tente novamente.';
+      } finally {
+        // Sempre reabilita o botão, mesmo se algo falhar no meio do processamento,
+        // para nunca mais precisar recarregar a página para tentar de novo.
+        if (config.isCropActive && currentPreviewMode === 'overlay') cropBox.style.display = 'block';
+        btn.disabled = false;
       }
-
-      if (config.isCropActive && currentPreviewMode === 'overlay') cropBox.style.display = 'block';
-      status.innerText = `Processamento de ${fileQueue.length} vídeo(s) concluído com sucesso!`;
-      btn.disabled = false;
     });
   });
 </script>
@@ -1996,6 +2091,7 @@ Retorne as cenas em ordem cronológica com timestamps exatos no formato HH:MM:SS
         ]),
         config: {
           responseMimeType: 'application/json',
+          maxOutputTokens: 8192,
           responseSchema: {
             type: Type.ARRAY,
             items: {
@@ -2013,7 +2109,26 @@ Retorne as cenas em ordem cronológica com timestamps exatos no formato HH:MM:SS
         }
       }));
 
-      let cuts = JSON.parse(response.text);
+      let cuts;
+      try {
+        cuts = JSON.parse(response.text);
+      } catch (parseErr) {
+        // A IA pode "travar" numa repetição e cortar a resposta no meio do
+        // JSON. Antes de desistir, tenta aproveitar as cenas que já vieram
+        // completas em vez de falhar o processo inteiro.
+        const repaired = tryRepairJsonArray(response.text);
+        if (!repaired) {
+          throw new Error('A IA retornou uma resposta incompleta/corrompida. Tente novamente ou reduza um pouco a duração do roteiro.');
+        }
+        cuts = repaired;
+        console.warn(`Resposta da IA veio truncada; aproveitando ${cuts.length} cena(s) completas antes do corte.`);
+        aiStatus.innerText = `⚠️ A IA cortou a resposta no meio; aproveitando ${cuts.length} cena(s) completa(s) recuperada(s)...`;
+        await sleep(1200);
+      }
+      if (!Array.isArray(cuts) || !cuts.length) {
+        throw new Error('A IA não retornou nenhuma cena válida. Tente novamente.');
+      }
+
       const totalBefore = cuts.reduce((acc, c) => acc + Math.max(timeToSec(c.fim || c.inicio) - timeToSec(c.inicio), 0.5), 0);
       cuts = enforceTargetDuration(cuts, Number(aiTargetTime.value));
       const totalAfter = cuts.reduce((acc, c) => acc + Math.max(timeToSec(c.fim || c.inicio) - timeToSec(c.inicio), 0.5), 0);
@@ -2196,6 +2311,33 @@ Retorne as cenas em ordem cronológica com timestamps exatos no formato HH:MM:SS
     let s = 0;
     for (const p of parts) s = s * 60 + (p || 0);
     return s;
+  }
+
+  // Tenta recuperar um array JSON que foi cortado no meio (resposta truncada
+  // da IA) aproveitando apenas os objetos completos já retornados, em vez de
+  // descartar tudo e falhar.
+  function tryRepairJsonArray(text) {
+    if (!text) return null;
+    const s = text.trim();
+    if (!s.startsWith('[')) return null;
+    let depth = 0, inString = false, esc = false, lastGoodEnd = -1;
+    for (let i = 0; i < s.length; i++) {
+      const ch = s[i];
+      if (inString) {
+        if (esc) esc = false;
+        else if (ch === '\\') esc = true;
+        else if (ch === '"') inString = false;
+        continue;
+      }
+      if (ch === '"') { inString = true; continue; }
+      if (ch === '{') depth++;
+      else if (ch === '}') { depth--; if (depth === 0) lastGoodEnd = i; }
+    }
+    if (lastGoodEnd === -1) return null;
+    try {
+      const parsed = JSON.parse(s.slice(0, lastGoodEnd + 1) + ']');
+      return (Array.isArray(parsed) && parsed.length) ? parsed : null;
+    } catch (e) { return null; }
   }
 
   function secToTime(totalSec) {
