@@ -3938,15 +3938,35 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
             // Volta cada cena (guardada em memória JS) para o MEMFS da
             // instância do ffmpeg atualmente ativa — só agora, na hora de
             // concatenar, é que todas precisam existir ao mesmo tempo dentro
-            // do ffmpeg.
+            // do ffmpeg. IMPORTANTE: escrevemos uma CÓPIA (".slice()") de cada
+            // buffer, nunca o original — o ffmpeg.wasm TRANSFERE (em vez de
+            // copiar) o ArrayBuffer pro Worker ao escrever um arquivo, o que o
+            // deixa "detached" (inutilizável) no lado de cá depois. Sem a
+            // cópia, cada leitura teria só metade das chances de sobreviver a
+            // um retry, e — mais grave — a cena escrita corrompida vira um
+            // "moov atom not found" silencioso na hora do concat, muito mais
+            // difícil de rastrear do que um erro claro aqui.
             const segmentFiles = [];
             for (let i = 0; i < segmentBuffers.length; i++) {
                 checkCancelled();
                 const segName = `seg${i}.${ext}`;
-                await ff.writeFile(segName, segmentBuffers[i]);
+                const segBuf = segmentBuffers[i];
+                if (!segBuf || segBuf.length === 0) {
+                    // Não deveria acontecer (cada cena só chega em
+                    // segmentBuffers depois de um ff.readFile bem-sucedido),
+                    // mas se acontecer, é melhor pular essa cena do que
+                    // deixar um arquivo vazio quebrar o concat inteiro.
+                    scenesSkipped.push({ numero: i + 1, motivo: 'Cena ficou vazia/corrompida em memória antes da montagem final.' });
+                    continue;
+                }
+                await ff.writeFile(segName, segBuf.slice());
                 segmentBuffers[i] = null; // já copiado pro ffmpeg — solta a referência em JS
                 segmentFiles.push(segName);
                 tempFiles.push(segName);
+            }
+
+            if (segmentFiles.length === 0) {
+                throw new Error('Todas as cenas ficaram vazias/corrompidas antes da montagem final — nenhuma sobrou para concatenar.');
             }
 
             cutProgress.innerText = 'Juntando as cenas no vídeo final...';
