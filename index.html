@@ -348,7 +348,7 @@
     /* Galeria de Vídeos da Aba 4 */
     .video-grid-gallery {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
       gap: 14px;
     }
     .video-card-item {
@@ -781,7 +781,7 @@
             <p class="desc">Carregue vídeos públicos de qualquer perfil ou cole links para baixar em lote sem marca d'água.</p>
 
             <label for="tiktokProfileInput">Nome de Usuário do Perfil:</label>
-            <input type="text" id="tiktokProfileInput" placeholder="ex: @zoecole.fr ou zoecole.fr" value="@zoecole.fr">
+            <input type="text" id="tiktokProfileInput" placeholder="ex: zoecole.fr ou @zoecole.fr" value="zoecole.fr">
 
             <button id="searchProfileBtn" class="btn-action" style="width:100%; margin-top:10px;">🔍 Carregar Vídeos do Canal</button>
             
@@ -1742,7 +1742,6 @@
   const TTS_SAMPLE_RATE = 24000;
   const FFMPEG_CORE_VERSION = '0.12.10';
 
-  // Código oficial do worker embutido para eliminar erro de Same-Origin Policy[cite: 1]
   const FFMPEG_EMBEDDED_WORKER_SRC = `
     const MIME_TYPE_JAVASCRIPT = "text/javascript";
     const MIME_TYPE_WASM = "application/wasm";
@@ -2151,7 +2150,7 @@ Retorne as cenas em ordem cronológica com timestamps exatos no formato HH:MM:SS
     aiProcessBtn.disabled = false;
   }
 
-  // --- Pipeline da Aba 4: Coletor e Extrator Nativo sem Dependência de CORS ---
+  // --- Pipeline da Aba 4: API Direta com Envio de Formulário Assinado ---
   const tiktokProfileInput = document.getElementById('tiktokProfileInput');
   const searchProfileBtn = document.getElementById('searchProfileBtn');
   const tiktokUrls = document.getElementById('tiktokUrls');
@@ -2162,10 +2161,9 @@ Retorne as cenas em ordem cronológica com timestamps exatos no formato HH:MM:SS
 
   let currentProfileVideos = [];
 
-  // Baixa o arquivo do vídeo através de Stream Binário Local
   async function downloadVideoDirectly(videoUrl, filename) {
     try {
-      const response = await fetch(videoUrl, { mode: 'cors' });
+      const response = await fetch(videoUrl);
       const blob = await response.blob();
       const blobUrl = URL.createObjectURL(blob);
       
@@ -2190,56 +2188,24 @@ Retorne as cenas em ordem cronológica com timestamps exatos no formato HH:MM:SS
     }
   }
 
-  // Coleta dados do canal lendo o HTML público do TikTok
-  async function scrapeProfileDirect(username) {
-    const profileUrl = `https://www.tiktok.com/@${username}`;
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(profileUrl)}`;
-    
-    const res = await fetch(proxyUrl);
-    if (!res.ok) throw new Error('Não foi possível conectar ao perfil.');
-    const raw = await res.json();
-    const html = raw.contents || '';
+  // Consulta por FormData direto para a API TikWM sem bloqueio de cabeçalho
+  async function fetchUserVideosDirect(username) {
+    const formData = new FormData();
+    formData.append('unique_id', username);
+    formData.append('count', 35);
+    formData.append('cursor', 0);
 
-    // Extrai os dados embutidos no UniversalData do TikTok
-    const scriptMatch = html.match(/<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__"[^>]*>([\s\S]*?)<\/script>/) ||
-                        html.match(/<script id="SIGI_STATE"[^>]*>([\s\S]*?)<\/script>/);
+    const res = await fetch('https://www.tikwm.com/api/user/posts', {
+      method: 'POST',
+      body: formData
+    });
 
-    if (scriptMatch && scriptMatch[1]) {
-      const data = JSON.parse(scriptMatch[1]);
-      const defaultScope = data['__DEFAULT_SCOPE__'] || data;
-      const userDetail = defaultScope['webapp.user-detail'] || {};
-      const itemList = userDetail.itemList || [];
-      const itemModule = defaultScope.ItemModule || {};
-
-      const videoIds = itemList.length > 0 ? itemList : Object.keys(itemModule);
-
-      if (videoIds.length > 0) {
-        return videoIds.map(id => {
-          const item = itemModule[id] || {};
-          return {
-            id: id,
-            url: `https://www.tiktok.com/@${username}/video/${id}`,
-            desc: item.desc || `Vídeo ${id}`,
-            cover: item.video?.cover || ''
-          };
-        });
-      }
+    if (!res.ok) throw new Error('Servidor não respondeu.');
+    const data = await res.json();
+    if (data.code === 0 && data.data && data.data.videos) {
+      return data.data.videos;
     }
-
-    // Fallback por Expressão Regular caso o script JSON mude
-    const matches = Array.from(html.matchAll(/\/video\/(\d{15,22})/g));
-    const uniqueIds = Array.from(new Set(matches.map(m => m[1])));
-
-    if (uniqueIds.length > 0) {
-      return uniqueIds.map(id => ({
-        id: id,
-        url: `https://www.tiktok.com/@${username}/video/${id}`,
-        desc: `Vídeo ${id}`,
-        cover: ''
-      }));
-    }
-
-    throw new Error('Nenhum vídeo público identificado no feed.');
+    throw new Error(data.msg || 'Nenhum vídeo retornado.');
   }
 
   // 1. Carregar Vídeos de um Perfil
@@ -2257,7 +2223,7 @@ Retorne as cenas em ordem cronológica com timestamps exatos no formato HH:MM:SS
     dlStatus.innerText = 'Buscando publicações...';
 
     try {
-      const videos = await scrapeProfileDirect(username);
+      const videos = await fetchUserVideosDirect(username);
       currentProfileVideos = videos;
 
       videoGalleryContainer.innerHTML = '';
@@ -2266,12 +2232,14 @@ Retorne as cenas em ordem cronológica com timestamps exatos no formato HH:MM:SS
       videos.forEach((v, idx) => {
         const card = document.createElement('div');
         card.className = 'video-card-item';
-        const coverSrc = v.cover || 'https://via.placeholder.com/180x280/0f172a/38bdf8?text=TikTok+Video';
+        const coverSrc = v.cover || 'https://via.placeholder.com/170x240/0f172a/38bdf8?text=TikTok';
+        const title = v.title || `Vídeo ${idx + 1}`;
+        const safeTitle = (v.title || `tiktok_${v.id}`).substring(0, 30).replace(/[^a-z0-9]/gi, '_').toLowerCase();
 
         card.innerHTML = `
           <img src="${coverSrc}" class="video-card-thumb" alt="Capa" loading="lazy">
           <div class="video-card-body">
-            <div class="video-card-title">${v.desc}</div>
+            <div class="video-card-title">${title}</div>
             <button class="video-card-btn" id="dlCardBtn_${idx}">⬇ Baixar Vídeo</button>
           </div>
         `;
@@ -2279,30 +2247,18 @@ Retorne as cenas em ordem cronológica com timestamps exatos no formato HH:MM:SS
 
         document.getElementById(`dlCardBtn_${idx}`).addEventListener('click', async () => {
           const btn = document.getElementById(`dlCardBtn_${idx}`);
-          btn.innerText = 'Extraindo...';
+          btn.innerText = 'Baixando...';
           btn.disabled = true;
-
-          try {
-            const apiRes = await fetch(`https://www.tikwm.com/api/?url=${encodeURIComponent(v.url)}`);
-            const apiData = await apiRes.json();
-            if (apiData.code === 0 && apiData.data && apiData.data.play) {
-              const safeTitle = (apiData.data.title || `tiktok_${v.id}`).substring(0, 30).replace(/[^a-z0-9]/gi, '_').toLowerCase();
-              await downloadVideoDirectly(apiData.data.play, `${safeTitle}.mp4`);
-              btn.innerText = '✅ Baixado!';
-            } else {
-              btn.innerText = '❌ Falhou';
-            }
-          } catch(e) {
-            btn.innerText = '❌ Erro';
-          }
+          await downloadVideoDirectly(v.play, `${safeTitle}.mp4`);
+          btn.innerText = '✅ Baixado!';
           setTimeout(() => { btn.innerText = '⬇ Baixar Vídeo'; btn.disabled = false; }, 2500);
         });
       });
 
-      dlStatus.innerText = `${videos.length} vídeos de @${username} encontrados e prontos para download!`;
+      dlStatus.innerText = `${videos.length} vídeos de @${username} carregados e prontos!`;
     } catch (err) {
-      videoGalleryContainer.innerHTML = `<p style="color:#ef4444; font-size:0.85rem; grid-column: 1 / -1;">${err.message || 'Erro ao carregar o canal.'} Tente colar os links dos vídeos na caixa abaixo.</p>`;
-      dlStatus.innerText = 'Perfil sem vídeos públicos ou indisponível.';
+      videoGalleryContainer.innerHTML = `<p style="color:#ef4444; font-size:0.85rem; grid-column: 1 / -1;">${err.message || 'Erro ao carregar o canal.'} Certifique-se de que o perfil é público ou cole os links abaixo.</p>`;
+      dlStatus.innerText = 'Falha ao obter perfil.';
     } finally {
       searchProfileBtn.disabled = false;
     }
@@ -2315,20 +2271,14 @@ Retorne as cenas em ordem cronológica com timestamps exatos no formato HH:MM:SS
     downloadAllGalleryBtn.disabled = true;
     for (let i = 0; i < currentProfileVideos.length; i++) {
       const v = currentProfileVideos[i];
-      dlStatus.innerText = `Processando e baixando (${i + 1}/${currentProfileVideos.length})...`;
+      const safeTitle = (v.title || `tiktok_${v.id}`).substring(0, 30).replace(/[^a-z0-9]/gi, '_').toLowerCase();
 
-      try {
-        const apiRes = await fetch(`https://www.tikwm.com/api/?url=${encodeURIComponent(v.url)}`);
-        const apiData = await apiRes.json();
-        if (apiData.code === 0 && apiData.data && apiData.data.play) {
-          const safeTitle = (apiData.data.title || `tiktok_${v.id}`).substring(0, 30).replace(/[^a-z0-9]/gi, '_').toLowerCase();
-          await downloadVideoDirectly(apiData.data.play, `${safeTitle}.mp4`);
-        }
-      } catch(e) {}
+      dlStatus.innerText = `Baixando (${i + 1}/${currentProfileVideos.length}): "${v.title || v.id}"...`;
+      await downloadVideoDirectly(v.play, `${safeTitle}.mp4`);
       await sleep(1500);
     }
     
-    dlStatus.innerText = `Download em lote dos ${currentProfileVideos.length} vídeos finalizado!`;
+    dlStatus.innerText = `Todos os ${currentProfileVideos.length} vídeos foram baixados!`;
     downloadAllGalleryBtn.disabled = false;
   });
 
@@ -2351,10 +2301,16 @@ Retorne as cenas em ordem cronológica com timestamps exatos no formato HH:MM:SS
 
     for (let i = 0; i < urls.length; i++) {
       const url = urls[i];
-      dlStatus.innerText = `Extraindo e baixando (${i + 1}/${urls.length})...`;
+      dlStatus.innerText = `Extraindo (${i + 1}/${urls.length})...`;
 
       try {
-        const res = await fetch(`https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`);
+        const formData = new FormData();
+        formData.append('url', url);
+
+        const res = await fetch('https://www.tikwm.com/api/', {
+          method: 'POST',
+          body: formData
+        });
         const data = await res.json();
 
         if (data.code === 0 && data.data && data.data.play) {
@@ -2362,7 +2318,7 @@ Retorne as cenas em ordem cronológica com timestamps exatos no formato HH:MM:SS
           await downloadVideoDirectly(data.data.play, `${safeTitle}.mp4`);
         }
       } catch (err) {
-        console.warn('Erro ao baixar vídeo individual:', err);
+        console.warn('Erro ao baixar vídeo:', err);
       }
 
       await sleep(1500);
