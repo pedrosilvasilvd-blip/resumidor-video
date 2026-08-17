@@ -2420,7 +2420,7 @@
         } catch (e) { /* localStorage indisponível/cheio — ignora silenciosamente */ }
     }
 
-    ['targetTime', 'tone', 'voice', 'aspectRatio', 'viralMode', 'skipNarration', 'apiKey', 'rememberApiKey'].forEach(id => {
+    ['aiTargetTime', 'aiTone', 'aiVoice', 'aiAspectRatio', 'aiViralMode', 'aiSkipNarration', 'aiApiKey', 'aiRememberApiKey'].forEach(id => {
         document.getElementById(id).addEventListener('change', saveSettings);
     });
     loadSettings();
