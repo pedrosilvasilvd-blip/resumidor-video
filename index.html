@@ -406,9 +406,27 @@
       .controls-column { height: auto; overflow: visible; }
       .preview-wrapper { max-width: 240px; }
       .ai-grid-container { grid-template-columns: 1fr; height: auto; }
+      #tabAiContent { height: auto; overflow: visible; }
     }
 
     /* ===== Estilos da Aba 3 (Resumidor & Roteirista IA) — escopados em .ai30-panel ===== */
+
+    /* Mesmo tratamento visual (fundo, borda, sombra) e o mesmo scroll interno
+       independente que as outras abas já usam (.controls-column, .ai-left-panel,
+       .ai-right-panel) — sem isso, o conteúdo da aba 3 ficava mais alto que a
+       tela e não dava pra rolar até o fim. */
+    #tabAiContent {
+      background: var(--panel-bg);
+      border-radius: 16px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 20px 45px rgba(0,0,0,0.85);
+      padding: 20px 24px;
+      height: calc(100vh - 40px);
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+    #tabAiContent::-webkit-scrollbar { width: 6px; }
+    #tabAiContent::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
 
     .ai30-panel {
       --v30-bg-color: #0f172a;
