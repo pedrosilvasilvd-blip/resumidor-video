@@ -3440,12 +3440,17 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
     // Barra fina no rodapé que enche conforme o vídeo FINAL (já concatenado)
     // avança — não conforme cada corte individual. "offsetSeconds" é a soma
     // das durações de todas as cenas ANTERIORES a essa, calculada antes do
-    // loop de corte. "eval=frame" é obrigatório aqui: sem ele, o ffmpeg só
-    // calcula a expressão com "t" UMA vez (no início), e a barra nunca cresce.
+    // loop de corte. Ao contrário do drawtext (que exige "eval=frame" pra não
+    // travar a expressão no valor do 1º frame), o drawbox NÃO tem opção
+    // "eval" — ele já reavalia x/y/w/h a cada frame nativamente. Passar
+    // "eval=frame" aqui derruba o filtro inteiro com "Option 'eval' not
+    // found" nesse build do ffmpeg.wasm (@ffmpeg/core 0.12.9), fazendo TODAS
+    // as cenas falharem em cascata — é essa a causa raiz por trás do erro
+    // "Todas as cenas ficaram vazias/corrompidas...".
     function buildProgressBarFilter(offsetSeconds, totalSeconds) {
         const total = Math.max(totalSeconds, 0.1).toFixed(3);
         const offset = offsetSeconds.toFixed(3);
-        return `drawbox=x=0:y=ih-10:w='iw*min(1\\,(${offset}+t)/${total})':h=10:color=#7C7FFF:t=fill:eval=frame`;
+        return `drawbox=x=0:y=ih-10:w='iw*min(1\\,(${offset}+t)/${total})':h=10:color=#7C7FFF:t=fill`;
     }
 
     // Baixa um arquivo de UMA url mostrando progresso real (bytes recebidos), em vez
