@@ -1040,15 +1040,33 @@
          encaixar um no tamanho do outro. Roda com o mesmo motor ffmpeg.wasm já
          carregado pelo corte acima. -->
     <div class="card" id="aiSyncCard">
-        <h3>🎙️ Sincronizar Narração Externa (ElevenLabs)</h3>
-        <p class="desc">Gerou a narração no ElevenLabs e o tempo não bateu exato com o corte? Suba o áudio aqui — o app ajusta automaticamente a velocidade de um dos dois pra ficarem do mesmo tamanho, sem precisar abrir o CapCut.</p>
+        <h3>🎙️ Sincronizar Narração</h3>
+        <p class="desc">Gerou a narração no ElevenLabs e o tempo não bateu exato com o corte? Suba o áudio — ou deixe a própria IA gerar uma narração energética automaticamente. De qualquer jeito, o app ajusta a velocidade de um dos dois pra ficarem do mesmo tamanho, sem precisar abrir o CapCut.</p>
 
         <label>Vídeo a sincronizar:</label>
         <p id="aiSyncVideoSourceHint" style="font-size:0.75rem;color:var(--text-muted);margin:2px 0 8px;">Usando automaticamente o vídeo cortado acima. Se preferir, envie outro arquivo:</p>
         <input type="file" id="aiSyncVideoOverride" accept="video/*">
 
-        <label style="margin-top:12px;">Narração pronta (MP3/WAV do ElevenLabs):</label>
-        <input type="file" id="aiSyncAudioInput" accept="audio/*">
+        <label style="margin-top:12px;">Como gerar a narração?</label>
+        <div class="feature-list" style="margin-top:6px;">
+            <label class="checkbox-item">
+                <input type="radio" name="aiSyncSource" value="upload" id="aiSyncSourceUpload" checked>
+                <span><strong>📤 Enviar áudio pronto</strong> — arquivo MP3/WAV gerado no ElevenLabs (ou outro serviço).</span>
+            </label>
+            <label class="checkbox-item">
+                <input type="radio" name="aiSyncSource" value="auto" id="aiSyncSourceAuto">
+                <span><strong>🎤 Gerar narração automática com voz sintética energética</strong> — voz humanizada, animada/empolgante, gerada pela própria IA a partir do roteiro já criado acima, sem precisar sair do app nem escolher um áudio pronto.</span>
+            </label>
+        </div>
+
+        <div id="aiSyncUploadBlock" style="margin-top:12px;">
+            <label>Narração pronta (MP3/WAV do ElevenLabs):</label>
+            <input type="file" id="aiSyncAudioInput" accept="audio/*">
+        </div>
+
+        <div id="aiSyncAutoBlock" style="display:none; margin-top:12px; font-size:0.78rem; color:var(--text-muted); background:#0b1220; border:1px dashed var(--accent-indigo); border-radius:8px; padding:10px 12px; line-height:1.5;">
+            🎤 Voz fixa <strong>Puck (Animada / Empolgante)</strong>, com instrução extra de interpretação bem humanizada e energética. Usa o roteiro (cenas + narração) já gerado no card acima e a mesma <strong>Chave de API do Gemini</strong> preenchida ali — gere o roteiro primeiro se ainda não gerou.
+        </div>
 
         <label style="margin-top:12px;">O que deve se ajustar?</label>
         <div class="feature-list" style="margin-top:6px;">
@@ -1064,7 +1082,7 @@
 
         <label class="checkbox-item" style="margin-top:12px;">
             <input type="checkbox" id="aiSyncGoToDorama" checked>
-            <span><strong>Ao terminar, ir direto para a aba Dorama</strong> com o vídeo sincronizado já carregado, pronto pra editar.</span>
+            <span><strong>Ao terminar, ir direto para a aba Dorama</strong> — já leva o vídeo sincronizado, preenche o título e a frase de curiosidade/gancho automaticamente (usando o roteiro gerado acima) e inicia o processamento da aba sozinho.</span>
         </label>
 
         <button id="aiSyncBtn" class="btn-action" style="width:100%; margin-top:14px;">🔗 Sincronizar e Baixar</button>
@@ -4296,6 +4314,69 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
         });
     }
 
+    // Alterna a visibilidade dos dois jeitos de gerar a narração no
+    // sincronizador: upload manual vs. geração automática com voz de IA.
+    const aiSyncSourceUpload = document.getElementById('aiSyncSourceUpload');
+    const aiSyncSourceAuto = document.getElementById('aiSyncSourceAuto');
+    const aiSyncUploadBlock = document.getElementById('aiSyncUploadBlock');
+    const aiSyncAutoBlock = document.getElementById('aiSyncAutoBlock');
+    function refreshSyncSourceUI() {
+        const isAuto = aiSyncSourceAuto.checked;
+        aiSyncUploadBlock.style.display = isAuto ? 'none' : 'block';
+        aiSyncAutoBlock.style.display = isAuto ? 'block' : 'none';
+    }
+    aiSyncSourceUpload.addEventListener('change', refreshSyncSourceUI);
+    aiSyncSourceAuto.addEventListener('change', refreshSyncSourceUI);
+
+    // Voz e estilo de interpretação fixos para a narração automática do
+    // sincronizador — sempre humanizada, animada e cheia de energia,
+    // independente do que estiver selecionado em "Voz do Narrador (IA)" lá
+    // em cima (aquele campo é usado no corte principal; este é dedicado).
+    const AUTO_SYNC_VOICE = 'Puck';
+    const AUTO_SYNC_TONE = 'muito animado, empolgante e energético, com entusiasmo genuíno, entonação humana bem viva e ritmo vibrante — como um criador de conteúdo super envolvido contando a história, nunca robótico ou monótono';
+    const AUTO_SYNC_GAP_MS = 280; // silêncio entre cenas concatenadas, pra narração não parecer atropelada
+
+    function concatPcmScenesWithGaps(pcmChunks, sampleRate, gapMs) {
+        const gapBytes = Math.round(sampleRate * (gapMs / 1000)) * 2; // s16le mono
+        const gap = new Uint8Array(gapBytes); // silêncio = zeros
+        let totalLen = 0;
+        pcmChunks.forEach((c, i) => { totalLen += c.length + (i < pcmChunks.length - 1 ? gap.length : 0); });
+        const out = new Uint8Array(totalLen);
+        let offset = 0;
+        pcmChunks.forEach((c, i) => {
+            out.set(c, offset);
+            offset += c.length;
+            if (i < pcmChunks.length - 1) { out.set(gap, offset); offset += gap.length; }
+        });
+        return out;
+    }
+
+    // Gera a narração completa automaticamente (uma chamada de TTS por cena,
+    // igual ao pipeline principal) usando o roteiro já criado no card de
+    // roteiro/IA acima (currentCuts) e devolve um arquivo WAV pronto pra
+    // entrar no mesmo fluxo de sincronização por duração.
+    async function generateAutoSyncNarrationFile(onProgress) {
+        const apiKey = document.getElementById('aiApiKey').value.trim();
+        if (!apiKey) {
+            throw new Error('Preencha sua Chave de API do Gemini no card "Resumidor & Roteirista IA" acima antes de gerar a narração automática.');
+        }
+        const scenesComTexto = (currentCuts || []).filter(c => (c.narracao || '').trim());
+        if (scenesComTexto.length === 0) {
+            throw new Error('Nenhum roteiro com narração encontrado ainda. Gere o roteiro no card "Resumidor & Roteirista IA" acima primeiro.');
+        }
+
+        const ai = new GoogleGenAI({ apiKey });
+        const pcmChunks = [];
+        for (let i = 0; i < scenesComTexto.length; i++) {
+            onProgress(`Gerando narração automática (cena ${i + 1} de ${scenesComTexto.length})...`);
+            const { pcmBytes } = await generateNarrationAudioWithRetry(ai, scenesComTexto[i].narracao, AUTO_SYNC_VOICE, AUTO_SYNC_TONE);
+            pcmChunks.push(pcmBytes);
+        }
+        const fullPcm = concatPcmScenesWithGaps(pcmChunks, TTS_SAMPLE_RATE, AUTO_SYNC_GAP_MS);
+        const wavBlob = pcmToWavBlob(fullPcm);
+        return new File([wavBlob], 'narracao_automatica_ia.wav', { type: 'audio/wav' });
+    }
+
     document.getElementById('aiSyncBtn').addEventListener('click', async () => {
         const syncBtn = document.getElementById('aiSyncBtn');
         const syncStatus = document.getElementById('aiSyncStatus');
@@ -4306,11 +4387,15 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
         const resultVideo = document.getElementById('aiSyncResultVideo');
         const resultDownload = document.getElementById('aiSyncDownloadLink');
         const mode = document.querySelector('input[name="aiSyncMode"]:checked').value;
+        const sourceMode = document.querySelector('input[name="aiSyncSource"]:checked').value;
 
-        const audioFile = audioInput.files && audioInput.files[0];
-        if (!audioFile) {
-            alert('Escolha o arquivo de narração (MP3/WAV) primeiro.');
-            return;
+        let audioFile = null;
+        if (sourceMode === 'upload') {
+            audioFile = audioInput.files && audioInput.files[0];
+            if (!audioFile) {
+                alert('Escolha o arquivo de narração (MP3/WAV) primeiro, ou marque "Gerar narração automática com voz sintética energética".');
+                return;
+            }
         }
 
         let videoSourceBlob = videoOverrideInput.files && videoOverrideInput.files[0];
@@ -4328,6 +4413,10 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
         resultBox.style.display = 'none';
         let ff, videoName, audioName, outputName;
         try {
+            if (sourceMode === 'auto') {
+                audioFile = await generateAutoSyncNarrationFile((msg) => { syncStatus.innerText = msg; });
+            }
+
             syncStatus.innerText = 'Medindo duração do vídeo e da narração...';
             const [videoDuration, audioDuration] = await Promise.all([
                 probeMediaDuration(videoSourceBlob, 'video'),
@@ -4398,16 +4487,37 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
                 : `✅ Pronto! Vídeo ajustado para acompanhar os ${audioDuration.toFixed(1)}s da narração.`;
 
             // Se marcado, já joga o vídeo recém-sincronizado na fila da aba
-            // Dorama e troca pra lá, pra seguir editando sem precisar baixar
-            // e reenviar o arquivo manualmente.
+            // Dorama, preenche título e frase de curiosidade/gancho com o que
+            // a IA já gerou no roteiro, troca pra lá e inicia o processamento
+            // sozinho — sem precisar baixar, reenviar nem preencher nada
+            // manualmente.
             const goToDoramaChk = document.getElementById('aiSyncGoToDorama');
             if (goToDoramaChk && goToDoramaChk.checked) {
                 const syncedFile = new File([blob], 'resumo_narrado_sincronizado.mp4', { type: 'video/mp4' });
                 fileQueues.dorama = [syncedFile];
-                syncStatus.innerText += ' Indo para a aba Dorama...';
+
+                // Título = frase-gancho curta da cena 0 (ex: manchete de até 8
+                // palavras); Subtítulo = frase de curiosidade sobre o vídeo
+                // inteiro. Ambos vêm do roteiro já gerado no card acima —
+                // caem de volta pro valor atual do campo se a IA não tiver
+                // gerado nenhum dos dois nesta rodada.
+                const doramaTitleInput = tabDoramaContent.querySelector('.hook-text-input');
+                const primeiroGancho = (currentCuts && currentCuts[0] && currentCuts[0].gancho || '').trim();
+                if (doramaTitleInput && primeiroGancho) doramaTitleInput.value = primeiroGancho;
+                if (doramaHookSubtitle && currentHookPhrase) doramaHookSubtitle.value = currentHookPhrase;
+
+                syncStatus.innerText += ' Indo para a aba Dorama e iniciando o processamento...';
                 const switched = goToDoramaTab();
                 if (!switched) {
                     syncStatus.innerText += ' (não foi possível trocar de aba automaticamente agora — troque manualmente quando puder).';
+                } else {
+                    // Pequeno atraso pra deixar o preview/crop box da aba
+                    // Dorama terminar de montar (loadPreviewForTab é
+                    // parcialmente assíncrono) antes de disparar o processamento.
+                    setTimeout(() => {
+                        const doramaProcessBtn = tabDoramaContent.querySelector('.process-btn');
+                        if (doramaProcessBtn && !doramaProcessBtn.disabled) doramaProcessBtn.click();
+                    }, 700);
                 }
             }
         } catch (err) {
