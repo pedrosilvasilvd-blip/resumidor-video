@@ -957,6 +957,12 @@
         </div>
 
         <div class="form-group" style="margin-top: 15px;">
+            <label for="aiReadingWpm">Velocidade de Leitura p/ Calcular o Tamanho dos Cortes (palavras por minuto)</label>
+            <input type="number" id="aiReadingWpm" value="150" min="60" max="300" step="1">
+            <p style="font-size:0.75rem;color:var(--text-muted);margin:4px 0 0;">🎯 É esse número que decide o tamanho de cada corte (não o áudio do Gemini) — por isso é o ajuste mais importante pra a narração bater EXATO com o áudio que você gerar no ElevenLabs depois. Padrão (150) é uma média; toda voz/velocidade do ElevenLabs fala num ritmo levemente diferente. Pra calibrar pra sua voz: gere no ElevenLabs um texto de teste com um número redondo de palavras (ex: 100), veja quantos segundos o áudio durou, e calcule <code>palavras ÷ (segundos/60)</code> — cole o resultado aqui. Depois de calibrado uma vez, os próximos roteiros já saem no tamanho certo.</p>
+        </div>
+
+        <div class="form-group" style="margin-top: 15px;">
             <label for="aiAspectRatio">Formato de Saída</label>
             <select id="aiAspectRatio">
                 <option value="original">Original (sem cortar as bordas)</option>
@@ -2102,6 +2108,10 @@
             await regenerateNarrationForScene(Number(btn.dataset.index));
         } else if (action === 'download-legenda') {
             downloadLegendaSrt();
+        } else if (action === 'copy-narracao') {
+            await copyTextToClipboard(currentCuts.map(c => (c.narracao || '').trim()).filter(Boolean).join('\n\n'), btn, '📋 Copiar narração completa (p/ ElevenLabs)');
+        } else if (action === 'copy-hook-phrase') {
+            await copyTextToClipboard(currentHookPhrase, btn, '📋 Copiar');
         }
     });
     document.getElementById('aiVideoFile').addEventListener('change', (e) => {
@@ -2196,6 +2206,7 @@
     let currentFile = null;
     let currentCuts = [];
     let currentNarrationAudios = []; // PCM (s16le) por cena, mesmo índice de currentCuts
+    let currentHookPhrase = ''; // Frase de Curiosidade / Gancho Emocional (legenda pra postar), gerada junto com o roteiro
     let ffmpeg = null;
     // Nome-base (sem extensão) do vídeo cortado E da legenda .srt — os dois são
     // salvos com o MESMO nome (só a extensão muda), pra ficar óbvio qual
@@ -2393,6 +2404,7 @@
         if (saved.tone) document.getElementById('aiTone').value = saved.tone;
         if (saved.voice) document.getElementById('aiVoice').value = saved.voice;
         if (saved.aspectRatio) document.getElementById('aiAspectRatio').value = saved.aspectRatio;
+        if (saved.readingWpm) document.getElementById('aiReadingWpm').value = saved.readingWpm;
         // Se nunca foi salvo, mantém o padrão do HTML (marcado). Se já foi salvo
         // alguma vez, respeita a última escolha do usuário (mesmo que seja "desligar").
         if (saved.viralMode !== undefined) document.getElementById('aiViralMode').checked = saved.viralMode;
@@ -2410,6 +2422,7 @@
             tone: document.getElementById('aiTone').value,
             voice: document.getElementById('aiVoice').value,
             aspectRatio: document.getElementById('aiAspectRatio').value,
+            readingWpm: document.getElementById('aiReadingWpm').value,
             viralMode: document.getElementById('aiViralMode').checked,
             skipNarration: document.getElementById('aiSkipNarration').checked,
             rememberApiKey,
@@ -2420,7 +2433,7 @@
         } catch (e) { /* localStorage indisponível/cheio — ignora silenciosamente */ }
     }
 
-    ['aiTargetTime', 'aiTone', 'aiVoice', 'aiAspectRatio', 'aiViralMode', 'aiSkipNarration', 'aiApiKey', 'aiRememberApiKey'].forEach(id => {
+    ['aiTargetTime', 'aiTone', 'aiVoice', 'aiAspectRatio', 'aiReadingWpm', 'aiViralMode', 'aiSkipNarration', 'aiApiKey', 'aiRememberApiKey'].forEach(id => {
         document.getElementById(id).addEventListener('change', saveSettings);
     });
     loadSettings();
@@ -2611,7 +2624,8 @@
             // 3. Gerar o roteiro em JSON estruturado (para conseguirmos cortar o vídeo depois)
             status.innerText = "4/5: Gerando tabela de cortes e roteiro...";
 
-            const targetWords = targetTime * 140;
+            const readingWpm = getReadingWpm();
+            const targetWords = Math.round(targetTime * readingWpm);
             const isViralMode = document.getElementById('aiViralMode').checked;
             const maxSceneSeconds = isTurboToneSelected() ? 4 : 6;
             const turboRules = isTurboToneSelected() ? `
@@ -2630,9 +2644,10 @@ REGRAS OBRIGATÓRIAS:
 1. Narração exclusivamente em TERCEIRA PESSOA, com tom ${tone}.
 2. O texto total de narração deve ter cerca de ${targetWords} palavras.
 3. Escolha as melhores cenas e mapeie exatamente em qual momento do vídeo original o corte deve acontecer para coincidir com a narração.
-4. MUITO IMPORTANTE: a duração de CADA corte (fim - início) deve ser compatível com o tempo de leitura da narração DAQUELA cena, e não apenas com o total do vídeo. Use como referência ~2,3 palavras por segundo (140 palavras/minuto). Se a narração de uma cena tem 20 palavras, o corte dessa cena precisa ter pelo menos ~9 segundos — nunca faça um corte mais curto que o tempo de leitura da sua própria narração.
+4. MUITO IMPORTANTE: a duração de CADA corte (fim - início) deve ser compatível com o tempo de leitura da narração DAQUELA cena, e não apenas com o total do vídeo. Use como referência ~${(readingWpm / 60).toFixed(2)} palavras por segundo (${readingWpm} palavras/minuto). Se a narração de uma cena tem 20 palavras, o corte dessa cena precisa ter pelo menos ~${Math.ceil(20 / (readingWpm / 60))} segundos — nunca faça um corte mais curto que o tempo de leitura da sua própria narração.
 5. Os campos "inicio" e "fim" devem ser o timestamp exato do vídeo original no formato HH:MM:SS (ex: 00:01:23).
-6. Retorne as cenas em ordem cronológica do vídeo original.${turboRules}${viralRules}`;
+6. Retorne as cenas em ordem cronológica do vídeo original.${turboRules}${viralRules}
+${turboRules && viralRules ? '11' : (turboRules || viralRules) ? '10' : '7'}. Além das cenas, escreva também uma "fraseCuriosidade": uma frase de curiosidade / gancho emocional sobre o vídeo INTEIRO (não sobre uma cena isolada), no estilo de legenda/descrição de post de TikTok — algo que desperte curiosidade pra fazer a pessoa clicar e assistir. Curta (até 20 palavras), sem hashtags, sem emojis em excesso (no máximo 1-2).`;
 
             // ID conferido na documentação oficial do Gemini API em 11/08/2026 —
             // gemini-3.6-flash é o modelo GA atual da família 3.x Flash (sucessor
@@ -2650,23 +2665,30 @@ REGRAS OBRIGATÓRIAS:
                 config: {
                     responseMimeType: 'application/json',
                     responseSchema: {
-                        type: Type.ARRAY,
-                        items: {
-                            type: Type.OBJECT,
-                            properties: {
-                                cena: { type: Type.STRING, description: 'Nome ou número curto da cena.' },
-                                inicio: { type: Type.STRING, description: 'Timestamp de início no vídeo original, formato HH:MM:SS.' },
-                                fim: { type: Type.STRING, description: 'Timestamp de fim no vídeo original, formato HH:MM:SS.' },
-                                narracao: { type: Type.STRING, description: 'Narração em 3ª pessoa para esse trecho.' },
-                                visual: { type: Type.STRING, description: 'Descrição curta do que aparece na cena.' },
-                                ...(isViralMode ? {
-                                    gancho: { type: Type.STRING, description: 'Frase-gancho de até 8 palavras — preenchida SÓ na primeira cena (índice 0); string vazia nas demais.' }
-                                } : {})
+                        type: Type.OBJECT,
+                        properties: {
+                            cenas: {
+                                type: Type.ARRAY,
+                                items: {
+                                    type: Type.OBJECT,
+                                    properties: {
+                                        cena: { type: Type.STRING, description: 'Nome ou número curto da cena.' },
+                                        inicio: { type: Type.STRING, description: 'Timestamp de início no vídeo original, formato HH:MM:SS.' },
+                                        fim: { type: Type.STRING, description: 'Timestamp de fim no vídeo original, formato HH:MM:SS.' },
+                                        narracao: { type: Type.STRING, description: 'Narração em 3ª pessoa para esse trecho.' },
+                                        visual: { type: Type.STRING, description: 'Descrição curta do que aparece na cena.' },
+                                        ...(isViralMode ? {
+                                            gancho: { type: Type.STRING, description: 'Frase-gancho de até 8 palavras — preenchida SÓ na primeira cena (índice 0); string vazia nas demais.' }
+                                        } : {})
+                                    },
+                                    propertyOrdering: isViralMode
+                                        ? ['cena', 'inicio', 'fim', 'narracao', 'visual', 'gancho']
+                                        : ['cena', 'inicio', 'fim', 'narracao', 'visual']
+                                }
                             },
-                            propertyOrdering: isViralMode
-                                ? ['cena', 'inicio', 'fim', 'narracao', 'visual', 'gancho']
-                                : ['cena', 'inicio', 'fim', 'narracao', 'visual']
-                        }
+                            fraseCuriosidade: { type: Type.STRING, description: 'Frase de curiosidade / gancho emocional sobre o vídeo inteiro, para usar como legenda de post. Até 20 palavras.' }
+                        },
+                        propertyOrdering: ['cenas', 'fraseCuriosidade']
                     }
                 }
             }), {
@@ -2676,8 +2698,11 @@ REGRAS OBRIGATÓRIAS:
             });
 
             let cuts;
+            let hookPhrase = '';
             try {
-                cuts = JSON.parse(response.text);
+                const parsed = JSON.parse(response.text);
+                cuts = parsed.cenas;
+                hookPhrase = (parsed.fraseCuriosidade || '').trim();
                 if (!Array.isArray(cuts) || cuts.length === 0) {
                     throw new Error('formato inesperado (esperava uma lista de cenas)');
                 }
@@ -2691,6 +2716,7 @@ REGRAS OBRIGATÓRIAS:
             adjustCutsForNarration(cuts); // 1ª estimativa, por contagem de palavras
             currentCuts = cuts;
             currentNarrationAudios = [];
+            currentHookPhrase = hookPhrase;
 
             if (skipNarration) {
                 // Usuário pediu pra não gerar narração sintética — pula a etapa
@@ -2875,9 +2901,20 @@ REGRAS OBRIGATÓRIAS:
         processBtn.disabled = false;
     }
 
+    // Lê a velocidade de leitura calibrada pelo usuário (palavras/minuto) —
+    // é ela que decide o tamanho de cada corte quando não temos a duração
+    // REAL de um áudio (Gemini ou ElevenLabs), então calibrar esse número
+    // pra voz/ritmo real usada no ElevenLabs é o que faz o corte final bater
+    // exato com o áudio gerado lá fora. Cai pro padrão (150) se o campo
+    // estiver vazio ou com um valor fora de uma faixa razoável.
+    function getReadingWpm() {
+        const el = document.getElementById('aiReadingWpm');
+        const v = el ? parseFloat(el.value) : NaN;
+        return (isFinite(v) && v >= 60 && v <= 300) ? v : 150;
+    }
+
     // Corrige na marra: se a narração de uma cena é mais longa que o tempo de vídeo
     // reservado para ela, estica o "fim" do corte (sem invadir a cena seguinte).
-    const PALAVRAS_POR_SEGUNDO = 2.33; // ~140 palavras/minuto
 
     // Estica (se preciso) o "fim" de UMA cena para caber "neededSeconds" de
     // narração, sem invadir o início da próxima cena. Extraído à parte para
@@ -2921,7 +2958,7 @@ REGRAS OBRIGATÓRIAS:
                 neededSeconds = realDurations[i] + 0.4;
             } else {
                 const wordCount = (cut.narracao || '').trim().split(/\s+/).filter(Boolean).length;
-                neededSeconds = wordCount / PALAVRAS_POR_SEGUNDO;
+                neededSeconds = wordCount / (getReadingWpm() / 60);
             }
 
             stretchCutIfNeeded(cuts, i, neededSeconds);
@@ -3109,10 +3146,22 @@ REGRAS OBRIGATÓRIAS:
             toolbarHtml = `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
                 <button data-action="edit-roteiro" style="background-color:#334155;">✏️ Editar roteiro</button>
                 <button data-action="download-legenda" style="background-color:#334155;">⬇️ Baixar legenda (.srt)</button>
+                <button data-action="copy-narracao" style="background-color:#334155;">📋 Copiar narração completa (p/ ElevenLabs)</button>
             </div>`;
         }
 
-        let html = toolbarHtml + '<table class="cuts-table"><thead><tr>' +
+        let hookPhraseHtml = '';
+        if (!editable && currentHookPhrase) {
+            hookPhraseHtml = `<div style="background:rgba(129,140,248,0.12);border:1px dashed #818cf8;border-radius:8px;padding:10px 12px;margin-bottom:14px;">
+                <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:4px;">💡 Frase de Curiosidade / Gancho Emocional (legenda pra usar no post):</div>
+                <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                    <span style="font-weight:600;">"${escapeHtml(currentHookPhrase)}"</span>
+                    <button data-action="copy-hook-phrase" style="background-color:#334155;font-size:0.72rem;padding:5px 10px;">📋 Copiar</button>
+                </div>
+            </div>`;
+        }
+
+        let html = toolbarHtml + hookPhraseHtml + '<table class="cuts-table"><thead><tr>' +
             '<th>Cena</th><th>Início</th><th>Fim</th><th>Narração (3ª pessoa)</th><th>Visual</th>' +
             '</tr></thead><tbody>';
 
@@ -3169,11 +3218,22 @@ REGRAS OBRIGATÓRIAS:
                 ? `<div style="font-size:0.75rem;color:#FFE600;margin-bottom:4px;">🪝 Gancho (aparece em destaque nos 1ºs segundos): "${escapeHtml(c.gancho)}"</div>`
                 : '';
 
+            // Contagem de palavras + duração estimada de leitura (na velocidade
+            // calibrada em "aiReadingWpm") lado a lado com a duração real do
+            // corte, pra dar pro usuário conferir de olho, ANTES de colar no
+            // ElevenLabs, se o texto está do tamanho certo pro corte.
+            const wordCount = (c.narracao || '').trim().split(/\s+/).filter(Boolean).length;
+            const estSeconds = wordCount / (getReadingWpm() / 60);
+            const cutSeconds = timeToSeconds(c.fim) - timeToSeconds(c.inicio);
+            const medidaHtml = wordCount
+                ? `<div style="font-size:0.7rem;color:var(--text-muted);margin-top:4px;">📝 ${wordCount} palavras • ~${estSeconds.toFixed(1)}s de leitura estimada (corte: ${cutSeconds.toFixed(1)}s)</div>`
+                : '';
+
             html += `<tr${linhaCor}>
                 <td data-label="Cena">${escapeHtml(c.cena || '')}</td>
                 <td data-label="Início">${escapeHtml(c.inicio || '')}</td>
                 <td data-label="Fim">${escapeHtml(c.fim || '')}${marcador}</td>
-                <td data-label="Narração">${ganchoHtml}${escapeHtml(c.narracao || '')}${audioHtml}</td>
+                <td data-label="Narração">${ganchoHtml}${escapeHtml(c.narracao || '')}${medidaHtml}${audioHtml}</td>
                 <td data-label="Visual">${escapeHtml(c.visual || '')}</td>
             </tr>`;
         });
@@ -3194,6 +3254,26 @@ REGRAS OBRIGATÓRIAS:
             }
         }
         resultOutput.innerHTML = html;
+    }
+
+    // Copia um texto pro clipboard e dá um feedback visual rápido no próprio
+    // botão clicado (troca o texto por "✅ Copiado!" por 1.5s e volta ao normal).
+    async function copyTextToClipboard(text, btn, originalLabel) {
+        if (!text) {
+            alert('Nada pra copiar ainda.');
+            return;
+        }
+        try {
+            await navigator.clipboard.writeText(text);
+            if (btn) {
+                const prev = btn.innerText;
+                btn.innerText = '✅ Copiado!';
+                setTimeout(() => { btn.innerText = originalLabel || prev; }, 1500);
+            }
+        } catch (err) {
+            console.error('Falha ao copiar pro clipboard:', err);
+            alert('Não consegui copiar automaticamente. Copie manualmente o texto.');
+        }
     }
 
     function escapeHtml(str) {
