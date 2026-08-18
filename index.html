@@ -79,6 +79,7 @@
       transition: all 0.2s;
     }
     .nav-btn:hover { background: #111827; color: #fff; }
+    .nav-btn.nav-locked { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
     .nav-btn.active.found-tab {
       background: rgba(56, 189, 248, 0.12);
       border-color: var(--accent-cyan);
@@ -788,6 +789,14 @@
             <option value="podcast_banner">3. Banner Jornalístico / Noticiário Dark</option>
           </select>
 
+          <label>Música de Fundo (opcional):</label>
+          <input type="file" class="bgm-input" accept="audio/*">
+          <div class="control-row">
+            <span>Volume da Música:</span>
+            <input type="range" class="bgm-volume-range" min="0" max="1" step="0.05" value="0.35">
+            <span class="control-val bgm-volume-val">35%</span>
+          </div>
+
           <div class="feature-list">
             <label class="checkbox-item">
               <input type="checkbox" class="shake-chk" checked>
@@ -866,6 +875,14 @@
             <option value="cold_thriller">Cold Thriller (Tom Frio e Alto Contraste)</option>
             <option value="vintage_film">Vintage 35mm (Filme de Cinema Clássico)</option>
           </select>
+
+          <label>Música de Fundo (opcional):</label>
+          <input type="file" class="bgm-input" accept="audio/*">
+          <div class="control-row">
+            <span>Volume da Música:</span>
+            <input type="range" class="bgm-volume-range" min="0" max="1" step="0.05" value="0.35">
+            <span class="control-val bgm-volume-val">35%</span>
+          </div>
 
           <div class="feature-list">
             <label class="checkbox-item">
@@ -1017,6 +1034,49 @@
             <a id="aiDownloadLink" class="download-link" download="resumo_final.mp4">⬇️ Baixar vídeo cortado</a>
         </div>
     </div>
+
+    <!-- Sincronizador de Narração Externa (ElevenLabs) — substitui o passo manual
+         de levar o vídeo cortado + o áudio do ElevenLabs pro CapCut só pra
+         encaixar um no tamanho do outro. Roda com o mesmo motor ffmpeg.wasm já
+         carregado pelo corte acima. -->
+    <div class="card" id="aiSyncCard">
+        <h3>🎙️ Sincronizar Narração Externa (ElevenLabs)</h3>
+        <p class="desc">Gerou a narração no ElevenLabs e o tempo não bateu exato com o corte? Suba o áudio aqui — o app ajusta automaticamente a velocidade de um dos dois pra ficarem do mesmo tamanho, sem precisar abrir o CapCut.</p>
+
+        <label>Vídeo a sincronizar:</label>
+        <p id="aiSyncVideoSourceHint" style="font-size:0.75rem;color:var(--text-muted);margin:2px 0 8px;">Usando automaticamente o vídeo cortado acima. Se preferir, envie outro arquivo:</p>
+        <input type="file" id="aiSyncVideoOverride" accept="video/*">
+
+        <label style="margin-top:12px;">Narração pronta (MP3/WAV do ElevenLabs):</label>
+        <input type="file" id="aiSyncAudioInput" accept="audio/*">
+
+        <label style="margin-top:12px;">O que deve se ajustar?</label>
+        <div class="feature-list" style="margin-top:6px;">
+            <label class="checkbox-item">
+                <input type="radio" name="aiSyncMode" value="audio_to_video" checked>
+                <span><strong>Manter a duração do VÍDEO</strong> — a narração acelera ou desacelera levemente pra caber exata no corte. Ideal quando a diferença é pequena (poucos segundos); acima de ~15% a voz começa a soar perceptivelmente diferente.</span>
+            </label>
+            <label class="checkbox-item">
+                <input type="radio" name="aiSyncMode" value="video_to_audio">
+                <span><strong>Manter a duração da NARRAÇÃO</strong> — o vídeo acelera ou desacelera pra acompanhar o áudio inteiro, sem cortar nem repetir nenhum trecho da narração. A voz mantém o tom normal; o vídeo é que fica mais rápido/lento.</span>
+            </label>
+        </div>
+
+        <label class="checkbox-item" style="margin-top:12px;">
+            <input type="checkbox" id="aiSyncGoToDorama" checked>
+            <span><strong>Ao terminar, ir direto para a aba Dorama</strong> com o vídeo sincronizado já carregado, pronto pra editar.</span>
+        </label>
+
+        <button id="aiSyncBtn" class="btn-action" style="width:100%; margin-top:14px;">🔗 Sincronizar e Baixar</button>
+        <div id="aiSyncStatus" role="status" aria-live="polite" style="margin-top:8px; font-size:0.85rem; color:var(--accent-cyan);"></div>
+
+        <div id="aiSyncResultBox" style="display:none; margin-top:14px;">
+            <video id="aiSyncResultVideo" controls></video>
+            <div style="text-align: center;">
+                <a id="aiSyncDownloadLink" class="download-link" download="resumo_narrado_sync.mp4">⬇️ Baixar vídeo sincronizado</a>
+            </div>
+        </div>
+    </div>
           </div>
         </div>
       </div>
@@ -1106,6 +1166,13 @@
   const mainControlsColumn = document.getElementById('mainControlsColumn');
 
   let activeTab = 'found';
+  // Trava usada pra impedir troca de aba durante a gravação (abas 1 e 2
+  // reaproveitam o mesmo elemento <video> pra preview E pra exportação —
+  // trocar de aba no meio disparava loadPreviewForTab(), que sobrescrevia
+  // video.src/video.load() do vídeo que ainda estava sendo gravado, fazendo
+  // o loop de renderFrame() enxergar video.paused=true e encerrar o
+  // MediaRecorder cedo demais — resultado: MP4 baixado incompleto).
+  let isExportingVideo = false;
 
   function resetNavTabs() {
     [tabBtnFound, tabBtnDorama, tabBtnAi, tabBtnDownloader].forEach(btn => btn.classList.remove('active'));
@@ -1113,6 +1180,7 @@
   }
 
   tabBtnFound.addEventListener('click', () => {
+    if (isExportingVideo) { alert('⏳ Aguarde o processamento do vídeo atual terminar antes de trocar de aba — trocar agora gera um MP4 incompleto.'); return; }
     activeTab = 'found';
     resetNavTabs();
     tabBtnFound.classList.add('active');
@@ -1126,21 +1194,29 @@
     renderInteractivePreview();
   });
 
-  tabBtnDorama.addEventListener('click', () => {
+  // Extraído em função própria para poder ser chamado tanto pelo clique no
+  // menu quanto programaticamente (ex: redirecionamento automático após o
+  // Sincronizador de Narração Externa terminar).
+  function goToDoramaTab() {
+    if (isExportingVideo) { alert('⏳ Aguarde o processamento do vídeo atual terminar antes de trocar de aba — trocar agora gera um MP4 incompleto.'); return false; }
     activeTab = 'dorama';
     resetNavTabs();
     tabBtnDorama.classList.add('active');
     tabDoramaContent.classList.add('active');
-    
+
     appDashboard.className = 'dashboard dorama-theme';
     blindPreviewColumn.style.display = 'flex';
     mainControlsColumn.style.display = 'block';
     loadPreviewForTab('dorama');
     syncActiveTabElements();
     renderInteractivePreview();
-  });
+    return true;
+  }
+
+  tabBtnDorama.addEventListener('click', goToDoramaTab);
 
   tabBtnAi.addEventListener('click', () => {
+    if (isExportingVideo) { alert('⏳ Aguarde o processamento do vídeo atual terminar antes de trocar de aba — trocar agora gera um MP4 incompleto.'); return; }
     activeTab = 'ai';
     resetNavTabs();
     tabBtnAi.classList.add('active');
@@ -1152,6 +1228,7 @@
   });
 
   tabBtnDownloader.addEventListener('click', () => {
+    if (isExportingVideo) { alert('⏳ Aguarde o processamento do vídeo atual terminar antes de trocar de aba — trocar agora gera um MP4 incompleto.'); return; }
     activeTab = 'downloader';
     resetNavTabs();
     tabBtnDownloader.classList.add('active');
@@ -1248,6 +1325,8 @@
       stego: container.querySelector('.stego-chk'),
       audio: container.querySelector('.audio-chk'),
       ducking: container.querySelector('.audio-ducking-chk'),
+      bgmInput: container.querySelector('.bgm-input'),
+      bgmVolume: container.querySelector('.bgm-volume-range'),
       processBtn: container.querySelector('.process-btn')
     };
   }
@@ -1314,6 +1393,13 @@
     range.addEventListener('input', (e) => {
       const container = e.target.closest('.tab-content');
       container.querySelector('.trim-end-val').innerText = `${parseFloat(e.target.value).toFixed(1)}s`;
+    });
+  });
+
+  document.querySelectorAll('.bgm-volume-range').forEach(range => {
+    range.addEventListener('input', (e) => {
+      const container = e.target.closest('.tab-content');
+      container.querySelector('.bgm-volume-val').innerText = `${Math.round(parseFloat(e.target.value) * 100)}%`;
     });
   });
 
@@ -1744,9 +1830,9 @@
         resolve();
       };
 
-      video.onloadedmetadata = () => {
+      video.onloadedmetadata = async () => {
         let recordedChunks = [];
-        let audioCtx, audioSource, audioDest, osc, duckingGain;
+        let audioCtx, audioSource, audioDest, osc, duckingGain, bgmSource;
         const stream = canvas.captureStream(30);
         const stopTime = Math.max(config.cutStart + 0.5, video.duration - config.cutEnd);
 
@@ -1782,6 +1868,30 @@
             osc.start();
           }
 
+          // Música de fundo (opcional): decodifica o arquivo escolhido pelo
+          // usuário e injeta direto no mesmo destino de áudio da gravação —
+          // não depende de tocar um <audio> visível na página, então funciona
+          // mesmo com a aba em segundo plano. Toca em loop pra cobrir cortes
+          // de qualquer duração e entra numa gainNode própria (volume separado
+          // do áudio original do vídeo, que já passa pelo highshelf/ducking
+          // acima).
+          if (config.bgmFile) {
+            try {
+              const arrayBuf = await config.bgmFile.arrayBuffer();
+              const audioBuf = await audioCtx.decodeAudioData(arrayBuf);
+              bgmSource = audioCtx.createBufferSource();
+              bgmSource.buffer = audioBuf;
+              bgmSource.loop = true;
+              const bgmGain = audioCtx.createGain();
+              bgmGain.gain.value = Number.isFinite(config.bgmVolume) ? config.bgmVolume : 0.35;
+              bgmSource.connect(bgmGain);
+              bgmGain.connect(audioDest);
+              bgmSource.start();
+            } catch (bgmErr) {
+              console.warn('Não foi possível decodificar a música de fundo:', bgmErr);
+            }
+          }
+
           audioDest.stream.getAudioTracks().forEach(track => stream.addTrack(track));
         } catch (err) {
           console.warn("Pipeline de áudio:", err);
@@ -1802,11 +1912,13 @@
         mediaRecorder.onerror = (e) => {
           console.error('Erro no MediaRecorder:', e);
           if (osc) { try { osc.stop(); } catch (_) {} }
+          if (bgmSource) { try { bgmSource.stop(); } catch (_) {} }
           resolve();
         };
 
         mediaRecorder.onstop = () => {
           if (osc) { try { osc.stop(); } catch (_) {} }
+          if (bgmSource) { try { bgmSource.stop(); } catch (_) {} }
 
           const blob = new Blob(recordedChunks, { type: 'video/mp4' });
           const url = URL.createObjectURL(blob);
@@ -2011,6 +2123,8 @@
       if (queue.length === 0) return;
       btn.disabled = true;
       cropBox.style.display = 'none';
+      isExportingVideo = true;
+      document.querySelectorAll('.nav-btn').forEach(navBtn => navBtn.classList.add('nav-locked'));
 
       const ctrl = getActiveControls();
       const baseTitle = ctrl.hookText.value.trim();
@@ -2026,7 +2140,9 @@
         mirror: ctrl.mirror ? ctrl.mirror.checked : false,
         stego: ctrl.stego.checked,
         audio: ctrl.audio.checked,
-        ducking: ctrl.ducking ? ctrl.ducking.checked : false
+        ducking: ctrl.ducking ? ctrl.ducking.checked : false,
+        bgmFile: (ctrl.bgmInput && ctrl.bgmInput.files && ctrl.bgmInput.files[0]) ? ctrl.bgmInput.files[0] : null,
+        bgmVolume: ctrl.bgmVolume ? parseFloat(ctrl.bgmVolume.value) : 0.35
       };
 
       try {
@@ -2044,6 +2160,8 @@
         // para nunca mais precisar recarregar a página para tentar de novo.
         if (config.isCropActive && currentPreviewMode === 'overlay') cropBox.style.display = 'block';
         btn.disabled = false;
+        isExportingVideo = false;
+        document.querySelectorAll('.nav-btn').forEach(navBtn => navBtn.classList.remove('nav-locked'));
       }
     });
   });
@@ -4130,6 +4248,180 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
             releaseWakeLock();
         }
     }
+
+    // ===== Sincronizador de Narração Externa (ElevenLabs) =====
+    // Resolve o mesmo problema que antes exigia CapCut: vídeo cortado com uma
+    // duração, narração do ElevenLabs com outra. Em vez de encaixar isso na
+    // mão, medimos as duas durações (via <video>/<audio>.duration, sem
+    // precisar de ffprobe) e aplicamos UM filtro ffmpeg pra igualar:
+    //   - áudio→vídeo: atempo (muda a velocidade da voz, mantém o vídeo como está)
+    //   - vídeo→áudio: setpts (muda a velocidade do vídeo, mantém a voz como está)
+    // atempo só aceita fator entre 0.5x e 2x por instância — buildAtempoChain
+    // decompõe fatores fora dessa faixa em uma cadeia de vários atempo.
+    function buildAtempoChain(factor) {
+        if (!isFinite(factor) || factor <= 0) return 'atempo=1.000';
+        const MIN = 0.5, MAX = 2.0;
+        const parts = [];
+        let remaining = factor;
+        if (remaining > MAX) {
+            while (remaining > MAX) { parts.push(MAX); remaining /= MAX; }
+            parts.push(remaining);
+        } else if (remaining < MIN) {
+            while (remaining < MIN) { parts.push(MIN); remaining /= MIN; }
+            parts.push(remaining);
+        } else {
+            parts.push(remaining);
+        }
+        return parts.map(p => `atempo=${p.toFixed(4)}`).join(',');
+    }
+
+    // Lê a duração de um arquivo de vídeo/áudio criando um elemento
+    // temporário — evita precisar rodar ffprobe só pra isso.
+    function probeMediaDuration(fileOrBlob, kind) {
+        return new Promise((resolve, reject) => {
+            const el = document.createElement(kind === 'audio' ? 'audio' : 'video');
+            el.preload = 'metadata';
+            const objUrl = URL.createObjectURL(fileOrBlob);
+            el.onloadedmetadata = () => {
+                const dur = el.duration;
+                URL.revokeObjectURL(objUrl);
+                if (!isFinite(dur) || dur <= 0) reject(new Error('Duração inválida (arquivo pode estar corrompido).'));
+                else resolve(dur);
+            };
+            el.onerror = () => {
+                URL.revokeObjectURL(objUrl);
+                reject(new Error('Não consegui ler esse arquivo — confira se o formato é suportado pelo navegador.'));
+            };
+            el.src = objUrl;
+        });
+    }
+
+    document.getElementById('aiSyncBtn').addEventListener('click', async () => {
+        const syncBtn = document.getElementById('aiSyncBtn');
+        const syncStatus = document.getElementById('aiSyncStatus');
+        const videoOverrideInput = document.getElementById('aiSyncVideoOverride');
+        const audioInput = document.getElementById('aiSyncAudioInput');
+        const finalVideoEl = document.getElementById('aiFinalVideo');
+        const resultBox = document.getElementById('aiSyncResultBox');
+        const resultVideo = document.getElementById('aiSyncResultVideo');
+        const resultDownload = document.getElementById('aiSyncDownloadLink');
+        const mode = document.querySelector('input[name="aiSyncMode"]:checked').value;
+
+        const audioFile = audioInput.files && audioInput.files[0];
+        if (!audioFile) {
+            alert('Escolha o arquivo de narração (MP3/WAV) primeiro.');
+            return;
+        }
+
+        let videoSourceBlob = videoOverrideInput.files && videoOverrideInput.files[0];
+        if (!videoSourceBlob) {
+            if (!finalVideoEl.src || finalVideoEl.src === window.location.href) {
+                alert('Nenhum vídeo cortado disponível ainda nesta sessão. Corte um vídeo acima primeiro, ou envie um vídeo manualmente no campo "Vídeo a sincronizar".');
+                return;
+            }
+            syncStatus.innerText = 'Lendo o vídeo cortado acima...';
+            const resp = await fetch(finalVideoEl.src);
+            videoSourceBlob = await resp.blob();
+        }
+
+        syncBtn.disabled = true;
+        resultBox.style.display = 'none';
+        let ff, videoName, audioName, outputName;
+        try {
+            syncStatus.innerText = 'Medindo duração do vídeo e da narração...';
+            const [videoDuration, audioDuration] = await Promise.all([
+                probeMediaDuration(videoSourceBlob, 'video'),
+                probeMediaDuration(audioFile, 'audio')
+            ]);
+
+            const diff = Math.abs(audioDuration - videoDuration);
+            const diffPct = (diff / videoDuration) * 100;
+
+            syncStatus.innerText = `Vídeo: ${videoDuration.toFixed(1)}s · Narração: ${audioDuration.toFixed(1)}s (diferença de ${diffPct.toFixed(0)}%). Carregando motor de edição...`;
+
+            ff = await getFFmpeg(
+                (msg) => { /* log silencioso aqui, igual ao restante do app */ },
+                (pct) => { syncStatus.innerText = `Baixando motor de edição... ${pct}%`; }
+            );
+
+            videoName = 'sync_input.mp4';
+            audioName = 'sync_narration.' + (audioFile.name.split('.').pop() || 'mp3');
+            outputName = 'sync_output.mp4';
+
+            syncStatus.innerText = 'Preparando arquivos...';
+            await ff.writeFile(videoName, (await fetchFile(videoSourceBlob)).slice());
+            await ff.writeFile(audioName, (await fetchFile(audioFile)).slice());
+
+            syncStatus.innerText = 'Sincronizando e exportando (pode levar um pouco)...';
+
+            if (mode === 'audio_to_video') {
+                // Narração se ajusta ao tamanho do vídeo. -shortest+apad garante
+                // que pequenas sobras de arredondamento do atempo não deixem o
+                // arquivo final maior/menor que o vídeo original.
+                const factor = audioDuration / videoDuration;
+                const atempoChain = buildAtempoChain(factor);
+                await ff.exec([
+                    '-i', videoName, '-i', audioName,
+                    '-filter:a', `${atempoChain},apad`,
+                    '-map', '0:v:0', '-map', '1:a:0',
+                    '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k',
+                    '-t', videoDuration.toFixed(3),
+                    outputName
+                ]);
+            } else {
+                // Vídeo se ajusta ao tamanho da narração — a voz não muda de
+                // velocidade nem de tom, o vídeo que fica mais rápido/lento.
+                const ptsFactor = audioDuration / videoDuration;
+                await ff.exec([
+                    '-i', videoName, '-i', audioName,
+                    '-filter:v', `setpts=${ptsFactor.toFixed(4)}*PTS`,
+                    '-map', '0:v:0', '-map', '1:a:0',
+                    '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20',
+                    '-c:a', 'aac', '-b:a', '192k',
+                    '-t', audioDuration.toFixed(3),
+                    outputName
+                ]);
+            }
+
+            const data = await ff.readFile(outputName);
+            const blob = new Blob([data.buffer], { type: 'video/mp4' });
+            const url = trackObjectURL(URL.createObjectURL(blob));
+
+            resultVideo.src = url;
+            resultDownload.href = url;
+            resultDownload.download = 'resumo_narrado_sincronizado.mp4';
+            resultBox.style.display = 'block';
+            resultBox.scrollIntoView({ behavior: 'smooth' });
+
+            syncStatus.innerText = mode === 'audio_to_video'
+                ? `✅ Pronto! Narração ajustada para caber nos ${videoDuration.toFixed(1)}s do vídeo.`
+                : `✅ Pronto! Vídeo ajustado para acompanhar os ${audioDuration.toFixed(1)}s da narração.`;
+
+            // Se marcado, já joga o vídeo recém-sincronizado na fila da aba
+            // Dorama e troca pra lá, pra seguir editando sem precisar baixar
+            // e reenviar o arquivo manualmente.
+            const goToDoramaChk = document.getElementById('aiSyncGoToDorama');
+            if (goToDoramaChk && goToDoramaChk.checked) {
+                const syncedFile = new File([blob], 'resumo_narrado_sincronizado.mp4', { type: 'video/mp4' });
+                fileQueues.dorama = [syncedFile];
+                syncStatus.innerText += ' Indo para a aba Dorama...';
+                const switched = goToDoramaTab();
+                if (!switched) {
+                    syncStatus.innerText += ' (não foi possível trocar de aba automaticamente agora — troque manualmente quando puder).';
+                }
+            }
+        } catch (err) {
+            console.error('Erro ao sincronizar narração externa:', err);
+            syncStatus.innerText = '❌ Erro ao sincronizar: ' + (err.message || err);
+        } finally {
+            if (ff) {
+                for (const f of [videoName, audioName, outputName]) {
+                    if (f) await safeDeleteFile(ff, f);
+                }
+            }
+            syncBtn.disabled = false;
+        }
+    });
 
 </script>
 
