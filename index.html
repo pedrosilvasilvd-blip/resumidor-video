@@ -773,11 +773,12 @@
 
           <label>Estilo do Gancho Inicial:</label>
           <select class="intro-style-select">
-            <option value="none">0. Nenhum (Começar Direto)</option>
-            <option value="classified" selected>1. Arquivo Secreto / Alerta Vermelho (Dinâmico)</option>
+            <option value="none" selected>0. Nenhum (Começar Direto) — recomendado</option>
+            <option value="classified">1. Arquivo Secreto / Alerta Vermelho (Dinâmico)</option>
             <option value="breaking">2. Plantão Urgente / Breaking News</option>
             <option value="radar">3. Radar Militar / Scanning de Criatura</option>
           </select>
+          <p class="intro-retention-hint" style="font-size:0.75rem;color:var(--text-muted);margin:4px 0 0;">⚠ Cartões de gancho agora tocam o vídeo (com zoom leve) por trás do texto e duram só ~1s — mas "Nenhum" continua sendo o mais seguro pra retenção: qualquer tela sem movimento real nos primeiros instantes é o principal motivo de o espectador abandonar o vídeo em 0:01.</p>
 
           <label>Estilo do Overlay (Durante o Vídeo):</label>
           <select class="overlay-style-select">
@@ -844,12 +845,13 @@
           <label>Frase de Curiosidade / Gancho Emocional:</label>
           <input type="text" id="doramaHookSubtitle" value="Ela escondeu seu rosto de toda a escola...">
 
-          <label>Estilo do Gancho Inicial (Primeiros 2s):</label>
+          <label>Estilo do Gancho Inicial (~1s, vídeo já em movimento por trás):</label>
           <select class="intro-style-select">
-            <option value="none">0. Nenhum (Iniciar direto)</option>
-            <option value="dorama_card" selected>1. Cartão de Novela / Cinema Card</option>
+            <option value="none" selected>0. Nenhum (Iniciar direto) — recomendado</option>
+            <option value="dorama_card">1. Cartão de Novela / Cinema Card</option>
             <option value="dorama_question">2. Pergunta de Retenção ("O que você faria?")</option>
           </select>
+          <p class="intro-retention-hint" style="font-size:0.75rem;color:var(--text-muted);margin:4px 0 0;">⚠ O card de gancho era uma tela 100% estática por 2.2s — analisamos um vídeo real da conta com essa opção e a retenção despencou (maioria dos espectadores parou em 0:01, 9% de retenção média). Corrigido: agora o vídeo já toca com leve zoom por trás do texto e o card dura só ~1s. Ainda assim, "Nenhum" é a opção mais segura — comece direto na cena mais forte.</p>
 
           <label>Layout & Enquadramento Cinematográfico:</label>
           <select class="overlay-style-select" id="doramaOverlaySelect">
@@ -1500,89 +1502,52 @@
         ctx.fillStyle = '#94a3b8';
         ctx.font = 'bold 24px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('(Gancho Inicial Desativado)', TARGET_W / 2, TARGET_H / 2);
+        ctx.fillText('(Gancho Inicial Desativado — recomendado)', TARGET_W / 2, TARGET_H / 2);
         return;
       }
 
-      ctx.fillStyle = '#0a0d14';
+      // Preview agora reflete o que realmente sai no MP4 exportado: o vídeo já
+      // visível/em movimento (aqui mostramos o frame atual como aproximação,
+      // já que no export ele estará tocando) com um painel translúcido do
+      // gancho por cima — não mais uma tela 100% opaca e parada.
+      ctx.fillStyle = '#000';
       ctx.fillRect(0, 0, TARGET_W, TARGET_H);
+      const { mainX, mainY, mainW, mainH } = getVideoRenderLayout();
+      ctx.save();
+      ctx.globalAlpha = 0.25;
+      ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, -TARGET_W * 0.2, -TARGET_H * 0.1, TARGET_W * 1.4, TARGET_H * 1.2);
+      ctx.restore();
+      ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, mainX, mainY, mainW, mainH);
 
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-      for (let i = 0; i < 30; i++) {
-        ctx.fillRect(Math.random() * TARGET_W, Math.random() * TARGET_H, 2, 2);
-      }
+      const panelY = TARGET_H * 0.34;
+      const panelH = TARGET_H * 0.30;
+      const grad = ctx.createLinearGradient(0, panelY, 0, panelY + panelH);
+      grad.addColorStop(0, 'rgba(3, 7, 18, 0)');
+      grad.addColorStop(0.25, 'rgba(3, 7, 18, 0.82)');
+      grad.addColorStop(0.75, 'rgba(3, 7, 18, 0.82)');
+      grad.addColorStop(1, 'rgba(3, 7, 18, 0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, panelY, TARGET_W, panelH);
 
+      ctx.textAlign = 'center';
       if (activeTab === 'found') {
-        if (introStyle === 'classified') {
-          ctx.strokeStyle = '#ef4444';
-          ctx.lineWidth = 4;
-          ctx.strokeRect(30, 30, TARGET_W - 60, TARGET_H - 60);
-          ctx.fillStyle = '#ef4444';
-          ctx.font = 'bold 32px monospace';
-          ctx.textAlign = 'center';
-          ctx.fillText('⚠ ATENÇÃO: ARQUIVO RARO', TARGET_W / 2, TARGET_H / 2 - 35);
-          ctx.fillStyle = '#ffffff';
-          ctx.font = 'bold 22px sans-serif';
-          ctx.fillText(currentTitle.toUpperCase(), TARGET_W / 2, TARGET_H / 2 + 25);
-        } else if (introStyle === 'breaking') {
-          ctx.fillStyle = '#b91c1c';
-          ctx.fillRect(0, 0, TARGET_W, TARGET_H);
-          ctx.fillStyle = '#000';
-          ctx.fillRect(20, TARGET_H / 2 - 100, TARGET_W - 40, 200);
-          ctx.fillStyle = '#facc15';
-          ctx.font = '900 40px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText('🔴 URGENTE / AO VIVO', TARGET_W / 2, TARGET_H / 2 - 30);
-          ctx.fillStyle = '#ffffff';
-          ctx.font = 'bold 24px sans-serif';
-          ctx.fillText(currentTitle.toUpperCase(), TARGET_W / 2, TARGET_H / 2 + 40);
-        } else if (introStyle === 'radar') {
-          ctx.fillStyle = '#022c22';
-          ctx.fillRect(0, 0, TARGET_W, TARGET_H);
-          ctx.strokeStyle = '#10b981';
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.arc(TARGET_W / 2, TARGET_H / 2, 140, 0, Math.PI * 2);
-          ctx.stroke();
-          ctx.fillStyle = '#34d399';
-          ctx.font = 'bold 28px monospace';
-          ctx.textAlign = 'center';
-          ctx.fillText('SCANNER DE ANOMALIA ATIVO', TARGET_W / 2, TARGET_H / 2 - 50);
-          ctx.fillStyle = '#ffffff';
-          ctx.font = 'bold 22px monospace';
-          ctx.fillText(currentTitle.toUpperCase(), TARGET_W / 2, TARGET_H / 2 + 30);
-        }
+        ctx.fillStyle = '#ef4444';
+        ctx.font = 'bold 20px sans-serif';
+        ctx.fillText('⚠ ATENÇÃO: ARQUIVO RARO', TARGET_W / 2, panelY + panelH * 0.32);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 28px sans-serif';
+        ctx.fillText(currentTitle.toUpperCase(), TARGET_W / 2, panelY + panelH * 0.58);
       } else {
-        if (introStyle === 'dorama_card') {
-          ctx.fillStyle = '#180710';
-          ctx.fillRect(0, 0, TARGET_W, TARGET_H);
-          ctx.strokeStyle = '#f43f5e';
-          ctx.lineWidth = 2;
-          ctx.strokeRect(40, 60, TARGET_W - 80, TARGET_H - 120);
-
-          ctx.fillStyle = '#f43f5e';
-          ctx.font = 'bold 20px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText('🎬 RESUMO CINEMA & DORAMA', TARGET_W / 2, TARGET_H / 2 - 70);
-
-          ctx.fillStyle = '#ffffff';
-          ctx.font = 'bold 30px sans-serif';
-          ctx.fillText(currentTitle.toUpperCase(), TARGET_W / 2, TARGET_H / 2 - 10);
-
+        ctx.fillStyle = '#f43f5e';
+        ctx.font = 'bold 20px sans-serif';
+        ctx.fillText(introStyle === 'dorama_question' ? 'O QUE VOCÊ FARIA?' : '🎬 RESUMO CINEMA & DORAMA', TARGET_W / 2, panelY + panelH * 0.32);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 28px sans-serif';
+        ctx.fillText(currentTitle.toUpperCase(), TARGET_W / 2, panelY + panelH * 0.58);
+        if (doramaHookSubtitle.value) {
           ctx.fillStyle = '#fbcfe8';
-          ctx.font = 'italic 20px sans-serif';
-          ctx.fillText(`"${doramaHookSubtitle.value}"`, TARGET_W / 2, TARGET_H / 2 + 60);
-        } else if (introStyle === 'dorama_question') {
-          ctx.fillStyle = '#090a10';
-          ctx.fillRect(0, 0, TARGET_W, TARGET_H);
-          ctx.fillStyle = '#f43f5e';
-          ctx.font = '900 36px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText('O QUE VOCÊ FARIA?', TARGET_W / 2, TARGET_H / 2 - 50);
-
-          ctx.fillStyle = '#ffffff';
-          ctx.font = 'bold 24px sans-serif';
-          ctx.fillText(doramaHookSubtitle.value, TARGET_W / 2, TARGET_H / 2 + 20);
+          ctx.font = 'italic 18px sans-serif';
+          ctx.fillText(`"${doramaHookSubtitle.value}"`, TARGET_W / 2, panelY + panelH * 0.82);
         }
       }
       return;
@@ -1855,7 +1820,19 @@
 
         mediaRecorder.start();
 
-        const introDuration = (config.introStyle === 'none') ? 0 : 2.2;
+        // ANTES: introDuration = 2.2s de tela 100% estática (só um "pulse" de
+        // 1.5px no texto) antes do vídeo sequer começar a tocar. Analisando as
+        // métricas reais de um vídeo publicado com essa opção: retenção média
+        // de 9%, e a MAIORIA dos espectadores abandonou em 0:01 — ou seja,
+        // ainda dentro da introdução estática. Uma tela parada nos primeiros
+        // instantes se parece com um anúncio/tela de carregamento e é
+        // exatamente o gatilho que faz a pessoa passar o vídeo. Corrigido:
+        // o vídeo já começa a tocar (com leve zoom) desde o frame 1, o texto
+        // do gancho fica sobre um painel translúcido por cima da cena real, e
+        // a duração cai para ~1s (ainda dá tempo de ler o gancho, sem
+        // congelar a tela). Ver também os selects de "Estilo do Gancho
+        // Inicial" no HTML, que agora vêm com "Nenhum" selecionado por padrão.
+        const introDuration = (config.introStyle === 'none') ? 0 : 1.0;
         const startTime = Date.now();
         let videoStarted = false;
         let frameIndex = 0;
@@ -1887,50 +1864,10 @@
         function renderFrame() {
           const elapsed = (Date.now() - startTime) / 1000;
           frameIndex++;
+          const inIntro = introDuration > 0 && elapsed < introDuration;
 
-          if (introDuration > 0 && elapsed < introDuration) {
-            ctx.fillStyle = '#0a0d14';
-            ctx.fillRect(0, 0, TARGET_W, TARGET_H);
-
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-            for (let i = 0; i < 35; i++) {
-              ctx.fillRect(Math.random() * TARGET_W, Math.random() * TARGET_H, 2, 2);
-            }
-
-            const textPulse = Math.sin(frameIndex * 0.15) * 1.5;
-
-            if (activeTab === 'found') {
-              ctx.strokeStyle = '#ef4444';
-              ctx.lineWidth = 4;
-              ctx.strokeRect(30, 30, TARGET_W - 60, TARGET_H - 60);
-              ctx.fillStyle = '#ef4444';
-              ctx.font = 'bold 32px monospace';
-              ctx.textAlign = 'center';
-              ctx.fillText('⚠ ATENÇÃO: ARQUIVO RARO', TARGET_W / 2, TARGET_H / 2 - 35 + textPulse);
-              ctx.fillStyle = '#ffffff';
-              ctx.font = 'bold 22px sans-serif';
-              ctx.fillText(currentTitle.toUpperCase(), TARGET_W / 2, TARGET_H / 2 + 25 + textPulse);
-            } else {
-              ctx.fillStyle = '#180710';
-              ctx.fillRect(0, 0, TARGET_W, TARGET_H);
-              ctx.strokeStyle = '#f43f5e';
-              ctx.lineWidth = 2;
-              ctx.strokeRect(40, 60, TARGET_W - 80, TARGET_H - 120);
-              ctx.fillStyle = '#f43f5e';
-              ctx.font = 'bold 20px sans-serif';
-              ctx.textAlign = 'center';
-              ctx.fillText('🎬 RESUMO CINEMA & DORAMA', TARGET_W / 2, TARGET_H / 2 - 70);
-              ctx.fillStyle = '#ffffff';
-              ctx.font = 'bold 30px sans-serif';
-              ctx.fillText(currentTitle.toUpperCase(), TARGET_W / 2, TARGET_H / 2 - 10 + textPulse);
-              ctx.fillStyle = '#fbcfe8';
-              ctx.font = 'italic 20px sans-serif';
-              ctx.fillText(`"${doramaHookSubtitle.value}"`, TARGET_W / 2, TARGET_H / 2 + 60 + textPulse);
-            }
-            requestAnimationFrame(render);
-            return;
-          }
-
+          // O vídeo agora começa a tocar já no primeiro frame (mesmo durante o
+          // gancho), pra nunca existir um trecho 100% parado no início do MP4.
           if (!videoStarted) {
             video.currentTime = config.cutStart;
             video.playbackRate = 1.04;
@@ -1938,7 +1875,7 @@
             videoStarted = true;
           }
 
-          if (video.paused || video.ended || video.currentTime >= stopTime) {
+          if (!inIntro && (video.paused || video.ended || video.currentTime >= stopTime)) {
             if (mediaRecorder.state === "recording") mediaRecorder.stop();
             return;
           }
@@ -1952,6 +1889,10 @@
             shakeY = Math.cos(frameIndex * 0.20) * 1.2;
           }
 
+          // Leve zoom-in (efeito Ken Burns) enquanto o gancho está na tela —
+          // reforça a sensação de movimento contínuo em vez de frame congelado.
+          const introZoom = inIntro ? 1 + 0.06 * (elapsed / introDuration) : 1;
+
           ctx.save();
           ctx.globalAlpha = 0.25;
           ctx.drawImage(video, sx, sy, sw, sh, -TARGET_W * 0.2, -TARGET_H * 0.1, TARGET_W * 1.4, TARGET_H * 1.2);
@@ -1961,8 +1902,14 @@
           if (config.mirror) {
             ctx.translate(destX + destW + shakeX, destY + shakeY);
             ctx.scale(-1, 1);
+            ctx.translate(destW / 2, destH / 2);
+            ctx.scale(introZoom, introZoom);
+            ctx.translate(-destW / 2, -destH / 2);
             ctx.drawImage(video, sx, sy, sw, sh, 0, 0, destW, destH);
           } else {
+            ctx.translate(destX + destW / 2 + shakeX, destY + destH / 2 + shakeY);
+            ctx.scale(introZoom, introZoom);
+            ctx.translate(-(destX + destW / 2), -(destY + destH / 2));
             ctx.drawImage(video, sx, sy, sw, sh, destX + shakeX, destY + shakeY, destW, destH);
           }
           ctx.restore();
@@ -1970,6 +1917,46 @@
           ctx.strokeStyle = activeTab === 'found' ? 'rgba(56, 189, 248, 0.4)' : 'rgba(244, 63, 94, 0.4)';
           ctx.lineWidth = 2;
           ctx.strokeRect(destX + shakeX, destY + shakeY, destW, destH);
+
+          // Painel translúcido do gancho, por CIMA do vídeo já em movimento —
+          // substitui a antiga tela opaca. Unificamos 'classified'/'breaking'/
+          // 'radar'/'dorama_card'/'dorama_question' num único painel de texto,
+          // já que a diferença entre eles nunca foi o problema de retenção.
+          if (inIntro) {
+            const panelY = TARGET_H * 0.34;
+            const panelH = TARGET_H * 0.30;
+            const grad = ctx.createLinearGradient(0, panelY, 0, panelY + panelH);
+            grad.addColorStop(0, 'rgba(3, 7, 18, 0)');
+            grad.addColorStop(0.25, 'rgba(3, 7, 18, 0.82)');
+            grad.addColorStop(0.75, 'rgba(3, 7, 18, 0.82)');
+            grad.addColorStop(1, 'rgba(3, 7, 18, 0)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, panelY, TARGET_W, panelH);
+
+            const headlineByStyle = {
+              classified: '⚠ ATENÇÃO: ARQUIVO RARO',
+              breaking: '🔴 URGENTE / AO VIVO',
+              radar: 'SCANNER DE ANOMALIA ATIVO',
+              dorama_card: '🎬 RESUMO CINEMA & DORAMA',
+              dorama_question: 'O QUE VOCÊ FARIA?'
+            };
+            const accent = activeTab === 'found' ? '#ef4444' : '#f43f5e';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = accent;
+            ctx.font = 'bold 20px sans-serif';
+            ctx.fillText(
+              headlineByStyle[config.introStyle] || (activeTab === 'found' ? '⚠ ATENÇÃO: ARQUIVO RARO' : '🎬 RESUMO CINEMA & DORAMA'),
+              TARGET_W / 2, panelY + panelH * 0.32
+            );
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 28px sans-serif';
+            ctx.fillText(currentTitle.toUpperCase(), TARGET_W / 2, panelY + panelH * 0.58);
+            if (activeTab === 'dorama' && doramaHookSubtitle.value) {
+              ctx.fillStyle = '#fbcfe8';
+              ctx.font = 'italic 18px sans-serif';
+              ctx.fillText(`"${doramaHookSubtitle.value}"`, TARGET_W / 2, panelY + panelH * 0.82);
+            }
+          }
 
           if (config.stego) {
             ctx.save();
