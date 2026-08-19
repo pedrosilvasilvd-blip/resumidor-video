@@ -1065,10 +1065,6 @@
                 <input type="radio" name="aiSyncSource" value="auto" id="aiSyncSourceAuto">
                 <span><strong>🎤 Gerar narração automática com IA (Gemini)</strong> — voz humanizada, animada/empolgante, gerada a partir do roteiro já criado acima. Usa a cota da sua Chave de API.</span>
             </label>
-            <label class="checkbox-item">
-                <input type="radio" name="aiSyncSource" value="browser" id="aiSyncSourceBrowser">
-                <span><strong>🗣️ Voz do navegador — grátis, sem API/cota</strong> — usa a voz nativa de texto-pra-fala do seu computador. Menos natural que a IA, mas nunca dá erro de cota. Só funciona no Chrome/Edge do computador (ver detalhes abaixo).</span>
-            </label>
         </div>
 
         <div id="aiSyncUploadBlock" style="margin-top:12px;">
@@ -1079,11 +1075,6 @@
         <div id="aiSyncAutoBlock" style="display:none; margin-top:12px; font-size:0.78rem; color:var(--text-muted); background:#0b1220; border:1px dashed var(--accent-indigo); border-radius:8px; padding:10px 12px; line-height:1.5;">
             🎤 Voz fixa <strong>Puck (Animada / Empolgante)</strong>, com instrução extra de interpretação bem humanizada e energética. Usa o roteiro (cenas + narração) já gerado no card acima e a mesma <strong>Chave de API do Gemini</strong> preenchida ali — gere o roteiro primeiro se ainda não gerou. Sujeito ao limite de cota da sua chave (o plano gratuito libera só 3 narrações por minuto — o app espera e tenta de novo sozinho quando esbarra nisso, mas pode demorar um pouco).
         </div>
-
-        <div id="aiSyncBrowserBlock" style="display:none; margin-top:12px; font-size:0.78rem; color:var(--text-muted); background:#0b1220; border:1px dashed var(--accent-emerald); border-radius:8px; padding:10px 12px; line-height:1.5;">
-            🗣️ Usa a voz de texto-pra-fala embutida no seu sistema (Windows/Mac/Chrome), sem chamar nenhuma API — não gasta cota nem precisa de chave. Em troca: <strong>1)</strong> o navegador vai pedir permissão de "compartilhar tela/aba" — escolha <strong>"Esta guia" (This Tab)</strong> e marque <strong>"Compartilhar áudio da guia"</strong> (é só um truque técnico pra gravar o próprio som da página, nada sai do seu computador); <strong>2)</strong> só funciona no <strong>Chrome ou Edge do computador</strong> (não funciona no celular nem no Firefox/Safari); <strong>3)</strong> a voz soa mais robótica/menos humanizada que a da IA, e a qualidade depende de quais vozes em português estão instaladas no seu sistema.
-        </div>
-
 
         <label style="margin-top:12px;">O que deve se ajustar?</label>
         <div class="feature-list" style="margin-top:6px;">
@@ -2812,7 +2803,7 @@ Analise este vídeo anexado e crie um roteiro de resumo compactado para exatamen
 
 REGRAS OBRIGATÓRIAS:
 1. Narração exclusivamente em TERCEIRA PESSOA, com tom ${tone}.
-2. O texto total de narração deve ter cerca de ${targetWords} palavras.
+2. O texto total de narração deve ter NO MÍNIMO ${targetWords} palavras (pode ter um pouco mais; NUNCA menos). É proibido entregar um roteiro mais curto que isso — se sobrar pouco material forte no vídeo, aprofunde a narração das cenas escolhidas (mais detalhes, mais contexto) em vez de encurtar o total.
 3. Escolha as melhores cenas e mapeie exatamente em qual momento do vídeo original o corte deve acontecer para coincidir com a narração.
 4. MUITO IMPORTANTE: a duração de CADA corte (fim - início) deve ser compatível com o tempo de leitura da narração DAQUELA cena, e não apenas com o total do vídeo. Use como referência ~${(readingWpm / 60).toFixed(2)} palavras por segundo (${readingWpm} palavras/minuto). Se a narração de uma cena tem 20 palavras, o corte dessa cena precisa ter pelo menos ~${Math.ceil(20 / (readingWpm / 60))} segundos — nunca faça um corte mais curto que o tempo de leitura da sua própria narração.
 5. Os campos "inicio" e "fim" devem ser o timestamp exato do vídeo original no formato HH:MM:SS (ex: 00:01:23).
@@ -2896,6 +2887,8 @@ ${turboRules && viralRules ? '11' : (turboRules || viralRules) ? '10' : '7'}. Al
                 // de legenda e guia dos cortes), só o áudio falado que não é
                 // produzido.
                 currentNarrationAudios = cuts.map(() => null);
+                enforceMinimumTotalDuration(cuts, targetMinutes * 60, videoDurationSeconds);
+                currentCuts = cuts;
                 status.innerText = "Roteiro gerado (narração sintética desativada — o corte vai manter o áudio original em todas as cenas).";
             } else {
                 // 5. Gera a narração em voz sintética de cada cena. Fazemos isso cena a
@@ -2939,6 +2932,7 @@ ${turboRules && viralRules ? '11' : (turboRules || viralRules) ? '10' : '7'}. Al
                     if (i < cuts.length - 1) await sleep(1200);
                 }
                 adjustCutsForNarration(cuts, realDurations); // reajuste fino, com duração real (onde disponível)
+                enforceMinimumTotalDuration(cuts, targetMinutes * 60, videoDurationSeconds); // nunca entrega menos do que o tempo pedido
                 currentCuts = cuts;
 
                 if (falhasNarracao === 0) {
@@ -3142,6 +3136,48 @@ ${turboRules && viralRules ? '11' : (turboRules || viralRules) ? '10' : '7'}. Al
             }
 
             stretchCutIfNeeded(cuts, i, neededSeconds);
+        }
+        return cuts;
+    }
+
+    // Soma a duração de todas as cenas do roteiro (fim - início de cada uma).
+    // É essa soma que vira a duração do vídeo final cortado/concatenado.
+    function getTotalCutsDuration(cuts) {
+        return cuts.reduce((sum, c) => sum + (timeToSeconds(c.fim) - timeToSeconds(c.inicio)), 0);
+    }
+
+    // Garante que o resumo final NUNCA fique mais curto do que o tempo pedido
+    // em "Duração do Resumo" (aiTargetTime) — mesmo que a IA tenha escrito um
+    // roteiro/narração mais curto que o pedido, ou que a narração de todas as
+    // cenas tenha saído mais rápida que o estimado. Se sobrar tempo faltando
+    // depois do ajuste por narração (adjustCutsForNarration), esticamos o
+    // "fim" das cenas — começando pela última — usando trecho real do vídeo
+    // original logo depois do corte (sem invadir a cena seguinte nem passar
+    // do fim do vídeo original). Isso pode adicionar alguns segundos de
+    // imagem sem narração no final de uma cena, o que é preferível a entregar
+    // um resumo mais curto do que o usuário pediu.
+    function enforceMinimumTotalDuration(cuts, targetSeconds, videoDurationSeconds) {
+        if (!cuts || !cuts.length || !targetSeconds) return cuts;
+        let missing = targetSeconds - getTotalCutsDuration(cuts);
+        if (missing <= 0.5) return cuts; // já bate ou passa do tempo pedido
+
+        for (let i = cuts.length - 1; i >= 0 && missing > 0.5; i--) {
+            const cut = cuts[i];
+            const end = timeToSeconds(cut.fim);
+
+            let maxEnd = videoDurationSeconds ? videoDurationSeconds : (end + missing);
+            // Não deixa esticar por cima do início da próxima cena.
+            if (i < cuts.length - 1) {
+                const nextStart = timeToSeconds(cuts[i + 1].inicio);
+                maxEnd = Math.min(maxEnd, nextStart);
+            }
+
+            const room = maxEnd - end;
+            if (room <= 0) continue; // sem espaço nesta cena, tenta a anterior
+
+            const add = Math.min(room, missing);
+            cut.fim = secondsToTime(end + add);
+            missing -= add;
         }
         return cuts;
     }
@@ -4374,20 +4410,17 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
         });
     }
 
-    // Alterna a visibilidade dos três jeitos de gerar a narração no
-    // sincronizador: upload manual, IA (Gemini) e voz do navegador.
+    // Alterna a visibilidade dos dois jeitos de gerar a narração no
+    // sincronizador: upload manual e IA (Gemini).
     const aiSyncSourceUpload = document.getElementById('aiSyncSourceUpload');
     const aiSyncSourceAuto = document.getElementById('aiSyncSourceAuto');
-    const aiSyncSourceBrowser = document.getElementById('aiSyncSourceBrowser');
     const aiSyncUploadBlock = document.getElementById('aiSyncUploadBlock');
     const aiSyncAutoBlock = document.getElementById('aiSyncAutoBlock');
-    const aiSyncBrowserBlock = document.getElementById('aiSyncBrowserBlock');
     function refreshSyncSourceUI() {
         aiSyncUploadBlock.style.display = aiSyncSourceUpload.checked ? 'block' : 'none';
         aiSyncAutoBlock.style.display = aiSyncSourceAuto.checked ? 'block' : 'none';
-        aiSyncBrowserBlock.style.display = aiSyncSourceBrowser.checked ? 'block' : 'none';
     }
-    [aiSyncSourceUpload, aiSyncSourceAuto, aiSyncSourceBrowser].forEach(el => el.addEventListener('change', refreshSyncSourceUI));
+    [aiSyncSourceUpload, aiSyncSourceAuto].forEach(el => el.addEventListener('change', refreshSyncSourceUI));
 
     // Voz e estilo de interpretação fixos para a narração automática do
     // sincronizador — sempre humanizada, animada e cheia de energia,
@@ -4450,112 +4483,6 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
         return new File([wavBlob], 'narracao_automatica_ia.wav', { type: 'audio/wav' });
     }
 
-    // Espera a lista de vozes do navegador carregar — em vários navegadores
-    // speechSynthesis.getVoices() volta vazio na primeira chamada e só
-    // preenche depois do evento 'voiceschanged'.
-    function waitForBrowserVoices() {
-        return new Promise((resolve) => {
-            const existing = speechSynthesis.getVoices();
-            if (existing.length > 0) { resolve(existing); return; }
-            const onChange = () => {
-                speechSynthesis.removeEventListener('voiceschanged', onChange);
-                resolve(speechSynthesis.getVoices());
-            };
-            speechSynthesis.addEventListener('voiceschanged', onChange);
-            // Alguns navegadores nunca disparam o evento se já não houver
-            // vozes — não trava esperando pra sempre.
-            setTimeout(() => resolve(speechSynthesis.getVoices()), 1500);
-        });
-    }
-
-    // Escolhe a melhor voz em português disponível no sistema. Prioriza
-    // vozes "neurais/online" (geralmente têm nomes como "Google" ou
-    // "Natural"/"Online" no navegador) por soarem menos robóticas; cai pra
-    // qualquer voz pt-BR/pt-PT, e por último pra voz padrão do navegador.
-    function pickBrowserVoice(voices) {
-        const pt = voices.filter(v => /^pt(-|_)/i.test(v.lang));
-        if (pt.length === 0) return null;
-        const preferida = pt.find(v => /google|natural|online|neural/i.test(v.name));
-        return preferida || pt.find(v => /^pt-br/i.test(v.lang)) || pt[0];
-    }
-
-    // Gera a narração completa usando a voz de texto-pra-fala EMBUTIDA no
-    // navegador (Web Speech API) — grátis, sem chave de API e sem cota, mas
-    // com uma limitação técnica: navegadores não deixam gravar o áudio da
-    // fala sintetizada diretamente, então usamos um truque — capturamos o
-    // áudio da própria aba via getDisplayMedia (a mesma API usada pra
-    // compartilhar tela em videochamadas) enquanto o texto é falado, e
-    // gravamos esse áudio da aba com o MediaRecorder. Só funciona no
-    // Chrome/Edge de computador.
-    async function generateBrowserTtsNarrationFile(onProgress) {
-        if (!('speechSynthesis' in window) || typeof MediaRecorder === 'undefined') {
-            throw new Error('Seu navegador não suporta voz nativa (Web Speech API) ou gravação de áudio (MediaRecorder). Tente no Chrome ou Edge de computador.');
-        }
-        const scenesComTexto = (currentCuts || []).filter(c => (c.narracao || '').trim());
-        if (scenesComTexto.length === 0) {
-            throw new Error('Nenhum roteiro com narração encontrado ainda. Gere o roteiro no card "Resumidor & Roteirista IA" acima primeiro.');
-        }
-
-        onProgress('Escolhendo a voz do sistema...');
-        const voices = await waitForBrowserVoices();
-        const voice = pickBrowserVoice(voices);
-
-        onProgress('Pedindo permissão pra gravar o áudio da aba (escolha "Esta guia" + "Compartilhar áudio")...');
-        let displayStream;
-        try {
-            displayStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
-        } catch (permErr) {
-            throw new Error('Permissão de captura de áudio negada ou cancelada — sem ela não dá pra gravar a voz do navegador. Tente de novo e marque "Compartilhar áudio da guia".');
-        }
-        const audioTracks = displayStream.getAudioTracks();
-        if (audioTracks.length === 0) {
-            displayStream.getTracks().forEach(t => t.stop());
-            throw new Error('Nenhum áudio foi compartilhado — ao escolher a tela/guia, marque a opção "Compartilhar áudio da guia" (Share tab audio) antes de confirmar.');
-        }
-        // Para as trilhas de vídeo (não precisamos delas, só do áudio) — isso
-        // também some com o retângulo de compartilhamento de vídeo na tela.
-        displayStream.getVideoTracks().forEach(t => t.stop());
-        const audioOnlyStream = new MediaStream(audioTracks);
-
-        const mimeType = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus']
-            .find(mt => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(mt)) || '';
-        const recorder = new MediaRecorder(audioOnlyStream, mimeType ? { mimeType } : undefined);
-        const chunks = [];
-        recorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunks.push(e.data); };
-
-        const stopped = new Promise((resolve) => { recorder.onstop = resolve; });
-        recorder.start();
-
-        try {
-            for (let i = 0; i < scenesComTexto.length; i++) {
-                onProgress(`🗣️ Falando cena ${i + 1} de ${scenesComTexto.length} (voz do navegador)...`);
-                await new Promise((resolve, reject) => {
-                    const utter = new SpeechSynthesisUtterance(scenesComTexto[i].narracao);
-                    if (voice) utter.voice = voice;
-                    utter.lang = (voice && voice.lang) || 'pt-BR';
-                    utter.rate = 1.12;  // levemente mais rápido — soa mais animado
-                    utter.pitch = 1.08; // levemente mais agudo — soa mais empolgado
-                    utter.onend = resolve;
-                    utter.onerror = (e) => reject(new Error('Falha ao sintetizar a fala do navegador: ' + (e.error || 'erro desconhecido')));
-                    speechSynthesis.speak(utter);
-                });
-                if (i < scenesComTexto.length - 1) await sleep(400); // pausa curta entre cenas
-            }
-        } finally {
-            speechSynthesis.cancel();
-            recorder.stop();
-            await stopped;
-            audioOnlyStream.getTracks().forEach(t => t.stop());
-            displayStream.getTracks().forEach(t => t.stop());
-        }
-
-        if (chunks.length === 0) {
-            throw new Error('Nada foi gravado — confira se a opção "Compartilhar áudio da guia" ficou marcada e se o volume do sistema não está mudo.');
-        }
-        const blob = new Blob(chunks, { type: mimeType || 'audio/webm' });
-        return new File([blob], 'narracao_voz_navegador.webm', { type: blob.type });
-    }
-
     document.getElementById('aiSyncBtn').addEventListener('click', async () => {
         const syncBtn = document.getElementById('aiSyncBtn');
         const syncStatus = document.getElementById('aiSyncStatus');
@@ -4594,8 +4521,6 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
         try {
             if (sourceMode === 'auto') {
                 audioFile = await generateAutoSyncNarrationFile((msg) => { syncStatus.innerText = msg; });
-            } else if (sourceMode === 'browser') {
-                audioFile = await generateBrowserTtsNarrationFile((msg) => { syncStatus.innerText = msg; });
             }
 
             syncStatus.innerText = 'Medindo duração do vídeo e da narração...';
