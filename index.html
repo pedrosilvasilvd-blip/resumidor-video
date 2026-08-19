@@ -1453,6 +1453,46 @@
   const TARGET_W = 720;
   const TARGET_H = 1280;
 
+  // --- Otimização: reaproveitamento de blob URLs e cache de áudio decodificado ---
+  // Antes, cada troca de vídeo (preview ou produção) criava uma URL de objeto
+  // nova via URL.createObjectURL() e NUNCA revogava a anterior. Numa fila
+  // longa isso ia acumulando referências penduradas no navegador a cada item
+  // processado, aumentando a pressão de memória e o número de pausas de
+  // Garbage Collector — exatamente o padrão de "vai ficando mais lento e
+  // trava um pouquinho" ao longo de uma fila. Agora centralizamos a troca de
+  // fonte do <video> nesta função, que sempre revoga a URL anterior antes de
+  // criar a próxima.
+  let currentVideoObjectURL = null;
+  function setSharedVideoSource(fileOrBlob) {
+    if (currentVideoObjectURL) {
+      URL.revokeObjectURL(currentVideoObjectURL);
+      currentVideoObjectURL = null;
+    }
+    const url = URL.createObjectURL(fileOrBlob);
+    currentVideoObjectURL = url;
+    video.src = url;
+    return url;
+  }
+
+  // Cache da música de fundo já decodificada: antes, cada vídeo da fila
+  // decodificava o MESMO arquivo de MP3/WAV do zero (audioCtx.decodeAudioData
+  // é um trabalho pesado de CPU), mesmo quando era exatamente o mesmo arquivo
+  // repetido em todos os itens da fila. Agora só decodifica uma vez por
+  // arquivo e reaproveita o AudioBuffer resultante nos itens seguintes.
+  let bgmDecodeCache = { file: null, buffer: null };
+  async function getDecodedBgmBuffer(audioCtx, file) {
+    const sameFile = bgmDecodeCache.file === file
+      || (bgmDecodeCache.file && file
+          && bgmDecodeCache.file.name === file.name
+          && bgmDecodeCache.file.size === file.size
+          && bgmDecodeCache.file.lastModified === file.lastModified);
+    if (sameFile && bgmDecodeCache.buffer) return bgmDecodeCache.buffer;
+    const arrayBuf = await file.arrayBuffer();
+    const audioBuf = await audioCtx.decodeAudioData(arrayBuf);
+    bgmDecodeCache = { file, buffer: audioBuf };
+    return audioBuf;
+  }
+
   // Cada aba (found/dorama) tem sua própria fila de vídeos, independente da outra.
   let fileQueues = { found: [], dorama: [] };
   function getCurrentQueue() { return fileQueues[activeTab] || []; }
@@ -1472,6 +1512,10 @@
     };
 
     if (queue.length === 0) {
+      if (currentVideoObjectURL) {
+        URL.revokeObjectURL(currentVideoObjectURL);
+        currentVideoObjectURL = null;
+      }
       video.removeAttribute('src');
       video.load();
       if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1486,7 +1530,7 @@
     if (ctrl.processBtn) ctrl.processBtn.disabled = false;
     status.innerText = `${queue.length} vídeo(s) na fila.`;
 
-    video.src = URL.createObjectURL(queue[0]);
+    setSharedVideoSource(queue[0]);
     video.load();
     video.onloadedmetadata = () => {
       if (ctrl.trimStart) {
@@ -2076,7 +2120,7 @@
   function processVideoItem(file, currentTitle, index, total, config) {
     return new Promise((resolve) => {
       status.innerText = `Renderizando (${index + 1}/${total}): "${currentTitle}"...`;
-      video.src = URL.createObjectURL(file);
+      setSharedVideoSource(file);
       video.muted = false;
       video.load();
 
@@ -2141,8 +2185,7 @@
           // acima).
           if (config.bgmFile) {
             try {
-              const arrayBuf = await config.bgmFile.arrayBuffer();
-              const audioBuf = await audioCtx.decodeAudioData(arrayBuf);
+              const audioBuf = await getDecodedBgmBuffer(audioCtx, config.bgmFile);
               bgmSource = audioCtx.createBufferSource();
               bgmSource.buffer = audioBuf;
               bgmSource.loop = true;
