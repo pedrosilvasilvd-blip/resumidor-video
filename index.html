@@ -1827,6 +1827,36 @@
     return '';
   }
 
+  // O requestAnimationFrame do navegador é throttlado/pausado quando a aba fica
+  // minimizada ou em segundo plano — o que travava a exportação (abas "Found" e
+  // "Dorama") bem no meio do processo, sempre que o usuário trocava de aba ou
+  // minimizava a janela. Um Web Worker não sofre esse throttling da mesma forma
+  // (não é um contexto de documento/aba), então usamos um worker rodando um
+  // setInterval simples como "metrônomo": ele só manda um "tick" pra thread
+  // principal, que continua sendo quem de fato desenha no canvas (Workers não
+  // têm acesso a DOM/canvas 2D com <video> como fonte). Cada produção de vídeo
+  // cria e derruba seu próprio worker.
+  function createRenderTicker() {
+    const workerCode = `
+      let timer = null;
+      self.onmessage = (e) => {
+        const msg = e.data || {};
+        if (msg.cmd === 'start') {
+          if (timer) clearInterval(timer);
+          timer = setInterval(() => self.postMessage('tick'), msg.interval || 33);
+        } else if (msg.cmd === 'stop') {
+          if (timer) { clearInterval(timer); timer = null; }
+        }
+      };
+    `;
+    const blobUrl = URL.createObjectURL(new Blob([workerCode], { type: 'application/javascript' }));
+    const worker = new Worker(blobUrl);
+    // O worker guarda uma referência à própria blob URL só pra facilitar a
+    // revogação depois de terminado (evita vazar URLs de objeto).
+    worker._blobUrl = blobUrl;
+    return worker;
+  }
+
   // O elemento <video> só pode ser conectado UMA ÚNICA VEZ a um MediaElementSourceNode
   // durante toda a vida da página. Criar isso de novo a cada produção (como era antes)
   // lança um erro na 2ª produção em diante e travava o fluxo. Por isso o contexto de
@@ -1937,12 +1967,14 @@
         // em vez de deixar a fila travada para sempre.
         mediaRecorder.onerror = (e) => {
           console.error('Erro no MediaRecorder:', e);
+          stopRenderTicker();
           if (osc) { try { osc.stop(); } catch (_) {} }
           if (bgmSource) { try { bgmSource.stop(); } catch (_) {} }
           resolve();
         };
 
         mediaRecorder.onstop = () => {
+          stopRenderTicker();
           if (osc) { try { osc.stop(); } catch (_) {} }
           if (bgmSource) { try { bgmSource.stop(); } catch (_) {} }
 
@@ -1983,14 +2015,31 @@
 
         const { mainX: destX, mainY: destY, mainW: destW, mainH: destH } = getVideoRenderLayout();
 
+        // Ticker via Web Worker: substitui o requestAnimationFrame como "pulso" do
+        // loop (ver createRenderTicker acima) — não trava quando a aba vai pra
+        // segundo plano. renderStopped evita chamar render() de novo depois que o
+        // worker já recebeu o comando de parar (o postMessage de 'stop' não é
+        // instantâneo, pode haver um 'tick' em trânsito).
+        let renderStopped = false;
+        const renderTicker = createRenderTicker();
+        function stopRenderTicker() {
+          if (renderStopped) return;
+          renderStopped = true;
+          renderTicker.postMessage({ cmd: 'stop' });
+          renderTicker.terminate();
+          URL.revokeObjectURL(renderTicker._blobUrl);
+        }
+
         // Envolve o loop de desenho em try/catch: se algum frame falhar, paramos a
         // gravação (ou resolvemos a Promise) em vez de deixar o processo travado
         // silenciosamente, exigindo recarregar a página.
         function render() {
+          if (renderStopped) return;
           try {
             renderFrame();
           } catch (err) {
             console.error('Erro ao renderizar frame:', err);
+            stopRenderTicker();
             if (mediaRecorder.state === 'recording') {
               mediaRecorder.stop();
             } else {
@@ -1998,6 +2047,7 @@
             }
           }
         }
+        renderTicker.onmessage = render;
 
         function renderFrame() {
           const elapsed = (Date.now() - startTime) / 1000;
@@ -2014,6 +2064,7 @@
           }
 
           if (!inIntro && (video.paused || video.ended || video.currentTime >= stopTime)) {
+            stopRenderTicker();
             if (mediaRecorder.state === "recording") mediaRecorder.stop();
             return;
           }
@@ -2135,10 +2186,14 @@
             }
           }
 
-          requestAnimationFrame(render);
+          // O próximo frame é disparado pelo 'tick' do worker (ver renderTicker.onmessage
+          // = render, acima) — não reagenda por si só como o requestAnimationFrame fazia.
         }
 
-        render();
+        // Dispara o primeiro tick a ~30fps (33ms). O worker segue mandando 'tick'
+        // continuamente, mesmo com a aba minimizada/em segundo plano, até
+        // stopRenderTicker() ser chamado (fim do corte ou erro).
+        renderTicker.postMessage({ cmd: 'start', interval: 33 });
       };
     });
   }
@@ -2172,6 +2227,10 @@
       };
 
       try {
+        // Pede UM wake lock que cobre a fila inteira (mesmo padrão usado nas abas
+        // 3 e 4 — ver acquireWakeLock/releaseWakeLock), pra tela não apagar/dormir
+        // no meio de uma exportação longa.
+        await acquireWakeLock();
         for (let i = 0; i < queue.length; i++) {
           const currentTitle = incrementText(baseTitle, i);
           await processVideoItem(queue[i], currentTitle, i, queue.length, config);
@@ -2187,6 +2246,7 @@
         if (config.isCropActive && currentPreviewMode === 'overlay') cropBox.style.display = 'block';
         btn.disabled = false;
         isExportingVideo = false;
+        releaseWakeLock();
         document.querySelectorAll('.nav-btn').forEach(navBtn => navBtn.classList.remove('nav-locked'));
       }
     });
@@ -2521,6 +2581,15 @@
             wakeLockSentinel = null;
         }
     }
+
+    // Este bloco é um <script type="module">, que tem escopo próprio — funções
+    // declaradas aqui NÃO ficam visíveis para o <script> comum de cima (onde
+    // ficam as abas "Found Footage" e "Dorama"). Expondo em window, as duas
+    // abas passam a compartilhar o MESMO wake lock com refcount (uma única
+    // "tela ligada" cobrindo tudo, em vez de cada aba brigando pelo próprio
+    // lock).
+    window.acquireWakeLock = acquireWakeLock;
+    window.releaseWakeLock = releaseWakeLock;
 
     // Se o navegador soltou o lock sozinho (ex: minimizar o app e voltar) mas
     // ainda temos processamento em andamento (refCount > 0), tenta pedir de
