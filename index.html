@@ -102,6 +102,55 @@
     }
     .nav-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
 
+    /* Pasta de Destino (onde salvar os arquivos processados) */
+    .save-location-box {
+      margin-top: 18px;
+      padding: 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      background: #0b1120;
+    }
+    .save-location-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-bottom: 6px;
+    }
+    .save-location-current {
+      font-size: 0.78rem;
+      color: var(--text-main);
+      word-break: break-word;
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+    .save-location-btn {
+      width: 100%;
+      padding: 7px 8px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      border-radius: 7px;
+      border: 1px solid var(--accent-cyan);
+      background: rgba(56, 189, 248, 0.1);
+      color: var(--accent-cyan);
+      cursor: pointer;
+      margin-bottom: 6px;
+    }
+    .save-location-btn:hover { background: rgba(56, 189, 248, 0.2); }
+    .save-location-btn.save-location-clear {
+      border-color: #475569;
+      background: transparent;
+      color: var(--text-muted);
+    }
+    .save-location-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .save-location-hint {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      line-height: 1.3;
+      margin-top: 2px;
+    }
+
     /* Área Principal */
     .main-content {
       flex: 1;
@@ -695,7 +744,116 @@
         Baixar Vídeos TikTok
       </button>
     </nav>
+
+    <div class="save-location-box" id="saveLocationBox">
+      <div class="save-location-label">📁 Salvar arquivos em</div>
+      <div class="save-location-current" id="saveLocationCurrent">Padrão do navegador (Downloads)</div>
+      <button class="save-location-btn" id="chooseSaveFolderBtn" type="button">Escolher pasta...</button>
+      <button class="save-location-btn save-location-clear" id="clearSaveFolderBtn" type="button" style="display:none;">Usar padrão</button>
+      <div class="save-location-hint" id="saveLocationHint"></div>
+    </div>
   </aside>
+
+  <!-- Pasta de destino: onde salvar os arquivos processados -->
+  <script>
+    (function () {
+      let saveDirectoryHandle = null;
+      const supportsFSAccess = typeof window.showDirectoryPicker === 'function';
+
+      const saveLocationCurrent = document.getElementById('saveLocationCurrent');
+      const chooseSaveFolderBtn = document.getElementById('chooseSaveFolderBtn');
+      const clearSaveFolderBtn = document.getElementById('clearSaveFolderBtn');
+      const saveLocationHint = document.getElementById('saveLocationHint');
+
+      if (!supportsFSAccess) {
+        chooseSaveFolderBtn.disabled = true;
+        saveLocationHint.innerText = 'Seu navegador não permite escolher pasta automaticamente (funciona no Chrome/Edge). Os arquivos vão para a pasta padrão de Downloads — dá pra configurar o navegador pra perguntar onde salvar a cada download.';
+      }
+
+      chooseSaveFolderBtn.addEventListener('click', async () => {
+        try {
+          const handle = await window.showDirectoryPicker();
+          const perm = await handle.requestPermission({ mode: 'readwrite' });
+          if (perm !== 'granted') throw new Error('Permissão de escrita para a pasta não foi concedida.');
+          saveDirectoryHandle = handle;
+          saveLocationCurrent.innerText = `📂 ${handle.name}`;
+          saveLocationHint.innerText = '';
+          clearSaveFolderBtn.style.display = 'block';
+        } catch (err) {
+          if (err && err.name !== 'AbortError') {
+            console.warn('Erro ao escolher pasta de destino:', err);
+            saveLocationHint.innerText = 'Não foi possível usar essa pasta: ' + (err.message || err);
+          }
+        }
+      });
+
+      clearSaveFolderBtn.addEventListener('click', () => {
+        saveDirectoryHandle = null;
+        saveLocationCurrent.innerText = 'Padrão do navegador (Downloads)';
+        clearSaveFolderBtn.style.display = 'none';
+      });
+
+      // Download tradicional via <a download> (usado como fallback e quando
+      // nenhuma pasta foi escolhida).
+      function triggerBrowserDownload(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
+      }
+
+      // Helper único usado por todo o app pra salvar um arquivo processado:
+      // se o usuário escolheu uma pasta, grava direto nela; senão cai no
+      // download padrão do navegador.
+      window.saveProcessedBlob = async function saveProcessedBlob(blob, filename) {
+        if (saveDirectoryHandle) {
+          try {
+            const perm = await saveDirectoryHandle.queryPermission({ mode: 'readwrite' });
+            if (perm !== 'granted') {
+              const req = await saveDirectoryHandle.requestPermission({ mode: 'readwrite' });
+              if (req !== 'granted') throw new Error('Permissão de escrita da pasta expirou.');
+            }
+            const fileHandle = await saveDirectoryHandle.getFileHandle(filename, { create: true });
+            const writable = await fileHandle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+            return;
+          } catch (err) {
+            console.warn('Falha ao salvar na pasta escolhida, usando download padrão do navegador:', err);
+          }
+        }
+        triggerBrowserDownload(blob, filename);
+      };
+
+      // Faz um link de download (<a href download>) respeitar a pasta
+      // escolhida: intercepta o clique, busca o blob a partir da própria
+      // blob URL do link e grava na pasta em vez de abrir o download padrão.
+      window.wireDownloadLinkToSaveFolder = function wireDownloadLinkToSaveFolder(link) {
+        if (!link) return;
+        link.addEventListener('click', async (e) => {
+          if (!saveDirectoryHandle || !link.href) return;
+          e.preventDefault();
+          try {
+            const resp = await fetch(link.href);
+            const blob = await resp.blob();
+            await window.saveProcessedBlob(blob, link.download || 'arquivo.mp4');
+          } catch (err) {
+            console.warn('Falha ao salvar na pasta escolhida, abrindo download padrão:', err);
+            const a = document.createElement('a');
+            a.href = link.href;
+            a.download = link.download;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+          }
+        });
+      };
+    })();
+  </script>
 
   <!-- Painel Principal -->
   <main class="main-content">
@@ -2029,13 +2187,9 @@
           if (bgmSource) { try { bgmSource.stop(); } catch (_) {} }
 
           const blob = new Blob(recordedChunks, { type: 'video/mp4' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
           const safeName = currentTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-          a.download = `${activeTab}_${safeName}_${Date.now()}.mp4`;
-          a.click();
-          resolve();
+          const filename = `${activeTab}_${safeName}_${Date.now()}.mp4`;
+          window.saveProcessedBlob(blob, filename).then(resolve).catch(resolve);
         };
 
         mediaRecorder.start();
@@ -4788,16 +4942,7 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
     try {
       const response = await fetch(videoUrl);
       const blob = await response.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+      await window.saveProcessedBlob(blob, filename);
       return true;
     } catch (err) {
       const a = document.createElement('a');
@@ -5003,6 +5148,11 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
       downloadUrlsBtn.disabled = false;
     }
   });
+
+  // Liga os links de download das abas de Resumo IA e Sincronização à pasta
+  // de destino escolhida na barra lateral, se houver uma selecionada.
+  window.wireDownloadLinkToSaveFolder(document.getElementById('aiDownloadLink'));
+  window.wireDownloadLinkToSaveFolder(document.getElementById('aiSyncDownloadLink'));
 </script>
 
 </body>
