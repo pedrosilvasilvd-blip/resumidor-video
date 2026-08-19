@@ -789,6 +789,12 @@
             <option value="podcast_banner">3. Banner Jornalístico / Noticiário Dark</option>
           </select>
 
+          <div class="control-row">
+            <span>Volume do Vídeo Original:</span>
+            <input type="range" class="video-volume-range" min="0" max="3" step="0.05" value="1.5">
+            <span class="control-val video-volume-val">150%</span>
+          </div>
+
           <label>Música de Fundo (opcional):</label>
           <input type="file" class="bgm-input" accept="audio/*">
           <div class="control-row">
@@ -869,12 +875,21 @@
             <option value="netflix_style" selected>3. Layout Estilo Streaming / Player Minimalista</option>
           </select>
 
+          <label>Nome do Canal / Marca (aparece no topo, layout Streaming):</label>
+          <input type="text" class="channel-name-input" value="TOP CORTES" maxlength="20">
+
           <label>Filtro de Gradação de Cor (Color Grading):</label>
           <select id="doramaColorFilter">
             <option value="warm_korea">K-Drama Warm (Cores Vivas e Pele Suave)</option>
             <option value="cold_thriller">Cold Thriller (Tom Frio e Alto Contraste)</option>
             <option value="vintage_film">Vintage 35mm (Filme de Cinema Clássico)</option>
           </select>
+
+          <div class="control-row">
+            <span>Volume do Vídeo Original:</span>
+            <input type="range" class="video-volume-range" min="0" max="3" step="0.05" value="1.5">
+            <span class="control-val video-volume-val">150%</span>
+          </div>
 
           <label>Música de Fundo (opcional):</label>
           <input type="file" class="bgm-input" accept="audio/*">
@@ -1346,6 +1361,7 @@
       captionText: container.querySelector('.caption-text-input'),
       introStyle: container.querySelector('.intro-style-select'),
       overlayStyle: container.querySelector('.overlay-style-select'),
+      channelName: container.querySelector('.channel-name-input'),
       shake: container.querySelector('.shake-chk'),
       mirror: container.querySelector('.mirror-chk'),
       stego: container.querySelector('.stego-chk'),
@@ -1353,6 +1369,7 @@
       ducking: container.querySelector('.audio-ducking-chk'),
       bgmInput: container.querySelector('.bgm-input'),
       bgmVolume: container.querySelector('.bgm-volume-range'),
+      videoVolume: container.querySelector('.video-volume-range'),
       processBtn: container.querySelector('.process-btn')
     };
   }
@@ -1386,7 +1403,7 @@
     renderInteractivePreview();
   });
 
-  document.querySelectorAll('.hook-text-input, .caption-style-select, .caption-text-input, .intro-style-select, .overlay-style-select, #doramaHookSubtitle, #doramaColorFilter').forEach(el => {
+  document.querySelectorAll('.hook-text-input, .caption-style-select, .caption-text-input, .intro-style-select, .overlay-style-select, .channel-name-input, #doramaHookSubtitle, #doramaColorFilter').forEach(el => {
     el.addEventListener('input', renderInteractivePreview);
     el.addEventListener('change', renderInteractivePreview);
   });
@@ -1426,6 +1443,13 @@
     range.addEventListener('input', (e) => {
       const container = e.target.closest('.tab-content');
       container.querySelector('.bgm-volume-val').innerText = `${Math.round(parseFloat(e.target.value) * 100)}%`;
+    });
+  });
+
+  document.querySelectorAll('.video-volume-range').forEach(range => {
+    range.addEventListener('input', (e) => {
+      const container = e.target.closest('.tab-content');
+      container.querySelector('.video-volume-val').innerText = `${Math.round(parseFloat(e.target.value) * 100)}%`;
     });
   });
 
@@ -1600,6 +1624,24 @@
     ctx.restore();
   }
 
+  // Desenha texto reduzindo o tamanho da fonte automaticamente até caber em
+  // maxWidth, em vez de deixar cortado/sobrepondo outros elementos do overlay
+  // (ex.: nome do canal x título do dorama, no layout Streaming). ctx.font já
+  // deve estar setado com o peso/família desejados antes de chamar isso — a
+  // função só ajusta o tamanho em px.
+  function fitText(ctx, text, x, y, maxWidth, baseSize) {
+    const fontParts = ctx.font.split(' ');
+    const sizeIdx = fontParts.findIndex(p => /px$/.test(p));
+    let size = baseSize;
+    while (size > 10) {
+      fontParts[sizeIdx] = `${size}px`;
+      ctx.font = fontParts.join(' ');
+      if (ctx.measureText(text).width <= maxWidth) break;
+      size -= 1;
+    }
+    ctx.fillText(text, x, y);
+  }
+
   function renderInteractivePreview() {
     if (!video.videoWidth || activeTab === 'ai' || activeTab === 'downloader') return;
     const ctrl = getActiveControls();
@@ -1719,16 +1761,17 @@
         ctx.textAlign = 'center';
         ctx.fillText(currentTitle.toUpperCase(), TARGET_W / 2, 72);
       } else if (overlay === 'netflix_style') {
+        const channelName = (ctrl.channelName && ctrl.channelName.value.trim()) ? ctrl.channelName.value.trim().toUpperCase() : 'TOP CORTES';
         ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
         ctx.fillRect(0, 40, TARGET_W, 60);
         ctx.fillStyle = '#f43f5e';
         ctx.font = '900 24px sans-serif';
         ctx.textAlign = 'left';
-        ctx.fillText('TOP CORTES', 30, 78);
+        fitText(ctx, channelName, 30, 78, TARGET_W * 0.5, 24);
         ctx.fillStyle = '#fff';
         ctx.font = 'bold 20px sans-serif';
         ctx.textAlign = 'right';
-        ctx.fillText(currentTitle, TARGET_W - 30, 78);
+        fitText(ctx, currentTitle, TARGET_W - 30, 78, TARGET_W * 0.42, 20);
       }
     }
   }
@@ -1906,11 +1949,18 @@
           duckingGain = audioCtx.createGain();
           duckingGain.gain.value = (activeTab === 'dorama' && config.ducking) ? 0.18 : 1.0;
 
+          // Ganho do áudio original do vídeo — controlado pelo slider "Volume do
+          // Vídeo Original" (0% a 300%, padrão 150%). Fica isolado do ducking e
+          // do volume da música de fundo, que têm seus próprios ganhos.
+          const videoVolumeGain = audioCtx.createGain();
+          videoVolumeGain.gain.value = Number.isFinite(config.videoVolume) ? config.videoVolume : 1.5;
+
           // Desconecta ligações de produções anteriores antes de refazer a cadeia,
           // senão o áudio continuaria sendo enviado também para streams antigas.
           audioSource.disconnect();
           audioSource.connect(bq);
-          bq.connect(duckingGain);
+          bq.connect(videoVolumeGain);
+          videoVolumeGain.connect(duckingGain);
           duckingGain.connect(audioDest);
 
           if (config.audio) {
@@ -2183,6 +2233,18 @@
               ctx.font = 'bold 24px sans-serif';
               ctx.textAlign = 'center';
               ctx.fillText(currentTitle.toUpperCase(), TARGET_W / 2, 72);
+            } else if (overlay === 'netflix_style') {
+              const channelName = (config.channelName && config.channelName.trim()) ? config.channelName.trim().toUpperCase() : 'TOP CORTES';
+              ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+              ctx.fillRect(0, 40, TARGET_W, 60);
+              ctx.fillStyle = '#f43f5e';
+              ctx.font = '900 24px sans-serif';
+              ctx.textAlign = 'left';
+              fitText(ctx, channelName, 30, 78, TARGET_W * 0.5, 24);
+              ctx.fillStyle = '#fff';
+              ctx.font = 'bold 20px sans-serif';
+              ctx.textAlign = 'right';
+              fitText(ctx, currentTitle, TARGET_W - 30, 78, TARGET_W * 0.42, 20);
             }
           }
 
@@ -2217,13 +2279,15 @@
         captionText: ctrl.captionText ? ctrl.captionText.value : '',
         introStyle: ctrl.introStyle.value,
         overlayStyle: ctrl.overlayStyle.value,
+        channelName: ctrl.channelName ? ctrl.channelName.value : '',
         shake: ctrl.shake.checked,
         mirror: ctrl.mirror ? ctrl.mirror.checked : false,
         stego: ctrl.stego.checked,
         audio: ctrl.audio.checked,
         ducking: ctrl.ducking ? ctrl.ducking.checked : false,
         bgmFile: (ctrl.bgmInput && ctrl.bgmInput.files && ctrl.bgmInput.files[0]) ? ctrl.bgmInput.files[0] : null,
-        bgmVolume: ctrl.bgmVolume ? parseFloat(ctrl.bgmVolume.value) : 0.35
+        bgmVolume: ctrl.bgmVolume ? parseFloat(ctrl.bgmVolume.value) : 0.35,
+        videoVolume: ctrl.videoVolume ? parseFloat(ctrl.videoVolume.value) : 1.5
       };
 
       try {
