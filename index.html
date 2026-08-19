@@ -1000,6 +1000,14 @@
             <p style="font-size:0.75rem;color:var(--text-muted);margin:4px 0 0;">Ativa 3 coisas de uma vez: (1) exige que a IA abra com o momento mais forte do vídeo inteiro, com uma frase-gancho em destaque nos 2-3s iniciais; (2) regra de ritmo mais rígida no roteiro (cortes mais curtos, espalhados pelo vídeo todo); (3) barra de progresso fina no rodapé. Não queima legenda na imagem — o roteiro/legenda é exportado à parte em .srt, já no mesmo tempo do vídeo final, pra você sincronizar com o áudio gerado no ElevenLabs. Deixa o processamento um pouco mais lento (o vídeo ainda precisa ser reprocessado pelo gancho e pela barra).</p>
         </div>
 
+        <div class="form-group" style="margin-top: 15px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                <input type="checkbox" id="aiAutoCut" style="width:auto;">
+                ✂️ Cortar automaticamente assim que o roteiro terminar (sem perguntar)
+            </label>
+            <p style="font-size:0.75rem;color:var(--text-muted);margin:4px 0 0;">Pula a pergunta "quer que eu corte o vídeo?" — assim que o roteiro e a narração terminarem, o corte começa sozinho, igual já acontece automaticamente quando você processa vários vídeos de uma vez (fila).</p>
+        </div>
+
         <p style="font-size:0.78rem; color:var(--text-muted); margin: 16px 0 0; line-height:1.5;">
             💳 Cada processamento consome a cota/saldo da <strong>sua</strong> chave de API do Gemini — o upload do vídeo, a geração do roteiro e a narração de cada cena são chamadas pagas (a chave tem uma cota gratuita limitada; acima dela, cobra por uso). Acompanhe o consumo em
             <a href="https://aistudio.google.com/app/apikey" target="_blank" class="apiKey-link">aistudio.google.com</a>.
@@ -1055,7 +1063,11 @@
             </label>
             <label class="checkbox-item">
                 <input type="radio" name="aiSyncSource" value="auto" id="aiSyncSourceAuto">
-                <span><strong>🎤 Gerar narração automática com voz sintética energética</strong> — voz humanizada, animada/empolgante, gerada pela própria IA a partir do roteiro já criado acima, sem precisar sair do app nem escolher um áudio pronto.</span>
+                <span><strong>🎤 Gerar narração automática com IA (Gemini)</strong> — voz humanizada, animada/empolgante, gerada a partir do roteiro já criado acima. Usa a cota da sua Chave de API.</span>
+            </label>
+            <label class="checkbox-item">
+                <input type="radio" name="aiSyncSource" value="browser" id="aiSyncSourceBrowser">
+                <span><strong>🗣️ Voz do navegador — grátis, sem API/cota</strong> — usa a voz nativa de texto-pra-fala do seu computador. Menos natural que a IA, mas nunca dá erro de cota. Só funciona no Chrome/Edge do computador (ver detalhes abaixo).</span>
             </label>
         </div>
 
@@ -1065,8 +1077,13 @@
         </div>
 
         <div id="aiSyncAutoBlock" style="display:none; margin-top:12px; font-size:0.78rem; color:var(--text-muted); background:#0b1220; border:1px dashed var(--accent-indigo); border-radius:8px; padding:10px 12px; line-height:1.5;">
-            🎤 Voz fixa <strong>Puck (Animada / Empolgante)</strong>, com instrução extra de interpretação bem humanizada e energética. Usa o roteiro (cenas + narração) já gerado no card acima e a mesma <strong>Chave de API do Gemini</strong> preenchida ali — gere o roteiro primeiro se ainda não gerou.
+            🎤 Voz fixa <strong>Puck (Animada / Empolgante)</strong>, com instrução extra de interpretação bem humanizada e energética. Usa o roteiro (cenas + narração) já gerado no card acima e a mesma <strong>Chave de API do Gemini</strong> preenchida ali — gere o roteiro primeiro se ainda não gerou. Sujeito ao limite de cota da sua chave (o plano gratuito libera só 3 narrações por minuto — o app espera e tenta de novo sozinho quando esbarra nisso, mas pode demorar um pouco).
         </div>
+
+        <div id="aiSyncBrowserBlock" style="display:none; margin-top:12px; font-size:0.78rem; color:var(--text-muted); background:#0b1220; border:1px dashed var(--accent-emerald); border-radius:8px; padding:10px 12px; line-height:1.5;">
+            🗣️ Usa a voz de texto-pra-fala embutida no seu sistema (Windows/Mac/Chrome), sem chamar nenhuma API — não gasta cota nem precisa de chave. Em troca: <strong>1)</strong> o navegador vai pedir permissão de "compartilhar tela/aba" — escolha <strong>"Esta guia" (This Tab)</strong> e marque <strong>"Compartilhar áudio da guia"</strong> (é só um truque técnico pra gravar o próprio som da página, nada sai do seu computador); <strong>2)</strong> só funciona no <strong>Chrome ou Edge do computador</strong> (não funciona no celular nem no Firefox/Safari); <strong>3)</strong> a voz soa mais robótica/menos humanizada que a da IA, e a qualidade depende de quais vozes em português estão instaladas no seu sistema.
+        </div>
+
 
         <label style="margin-top:12px;">O que deve se ajustar?</label>
         <div class="feature-list" style="margin-top:6px;">
@@ -2192,12 +2209,26 @@
     import { FFmpeg } from '@ffmpeg/ffmpeg';
     import { fetchFile } from '@ffmpeg/util';
 
-    document.getElementById('aiProcessBtn').addEventListener('click', () => {
+    document.getElementById('aiProcessBtn').addEventListener('click', async () => {
         const files = document.getElementById('aiVideoFile').files;
         if (files.length > 1) {
             runBatchQueue(Array.from(files));
         } else {
-            processVideo();
+            const roteiroOk = await processVideo();
+            // Se marcado, corta automaticamente assim que o roteiro/narração
+            // terminarem — igual ao que a fila (vários vídeos) já faz sozinha,
+            // só que aqui é opcional pro caso de um vídeo só.
+            const autoCutChk = document.getElementById('aiAutoCut');
+            if (roteiroOk && autoCutChk && autoCutChk.checked) {
+                const confirmBox = document.getElementById('aiConfirmBox');
+                const confirmQuestion = confirmBox.querySelector('p');
+                const confirmButtons = confirmBox.querySelector('.confirm-buttons');
+                if (confirmQuestion) confirmQuestion.style.display = 'none';
+                if (confirmButtons) confirmButtons.style.display = 'none';
+                await cortarVideo();
+                if (confirmQuestion) confirmQuestion.style.display = '';
+                if (confirmButtons) confirmButtons.style.display = '';
+            }
         }
     });
     document.getElementById('aiBtnSimCortar').addEventListener('click', cortarVideo);
@@ -2382,6 +2413,17 @@
         return /"code":\s*503|"status":\s*"UNAVAILABLE"|"code":\s*429|"status":\s*"RESOURCE_EXHAUSTED"|overloaded|high demand|try again later/i.test(msg);
     }
 
+    // Erro de cota (429/RESOURCE_EXHAUSTED) costuma vir com um "retryDelay"
+    // (em segundos) dizendo exatamente quanto esperar — normalmente bem mais
+    // que a espera exponencial padrão (2s/4s/8s), então quando esse campo
+    // existe usamos ele em vez de adivinhar.
+    function extractRetryDelayMs(err) {
+        const msg = String((err && err.message) || err || '');
+        const m = msg.match(/"retryDelay"\s*:\s*"(\d+(?:\.\d+)?)s"/);
+        if (!m) return null;
+        return Math.ceil(parseFloat(m[1]) * 1000) + 500; // pequena folga de segurança
+    }
+
     function sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
@@ -2394,7 +2436,7 @@
     // (ver isTransientApiError). Chamadores com outros tipos de falha
     // conhecida e passageira (ex: o TTS às vezes devolve resposta vazia) podem
     // passar seu próprio predicado para também entrar no retry.
-    async function withRetries(fn, { attempts = 3, baseDelayMs = 2000, onRetry, shouldRetry = isTransientApiError } = {}) {
+    async function withRetries(fn, { attempts = 3, baseDelayMs = 2000, maxDelayMs = 65000, onRetry, shouldRetry = isTransientApiError } = {}) {
         let lastErr;
         for (let i = 0; i < attempts; i++) {
             try {
@@ -2403,8 +2445,13 @@
                 lastErr = err;
                 const isLastAttempt = i === attempts - 1;
                 if (isLastAttempt || !shouldRetry(err)) throw err;
-                const waitMs = baseDelayMs * Math.pow(2, i);
-                if (onRetry) onRetry(i + 1, attempts, waitMs);
+                // Cota da API (429) costuma dizer exatamente quanto esperar —
+                // usamos isso quando disponível em vez da espera exponencial,
+                // que é curta demais pra esse tipo de erro (ex: 54s sugeridos
+                // pelo Gemini vs. 2s/4s/8s do padrão).
+                const suggested = extractRetryDelayMs(err);
+                const waitMs = Math.min(suggested || (baseDelayMs * Math.pow(2, i)), maxDelayMs);
+                if (onRetry) onRetry(i + 1, attempts, waitMs, !!suggested);
                 await sleep(waitMs);
             }
         }
@@ -2868,7 +2915,13 @@ ${turboRules && viralRules ? '11' : (turboRules || viralRules) ? '10' : '7'}. Al
                     status.innerText = `5/5: Narrando cena ${i + 1} de ${cuts.length}...`;
                     try {
                         const { pcmBytes, durationSeconds } = await generateNarrationAudioWithRetry(
-                            ai, cuts[i].narracao, voiceName, tone
+                            ai, cuts[i].narracao, voiceName, tone,
+                            (attempt, attempts, waitMs, isQuota) => {
+                                const waitSec = Math.round(waitMs / 1000);
+                                status.innerText = isQuota
+                                    ? `⏳ Cota da API atingida na cena ${i + 1} — aguardando ${waitSec}s (tentativa ${attempt}/${attempts})...`
+                                    : `5/5: Tentando de novo a cena ${i + 1} em ${waitSec}s (tentativa ${attempt}/${attempts})...`;
+                            }
                         );
                         currentNarrationAudios[i] = pcmBytes;
                         realDurations[i] = durationSeconds;
@@ -2880,6 +2933,10 @@ ${turboRules && viralRules ? '11' : (turboRules || viralRules) ? '10' : '7'}. Al
                         cuts[i]._narracaoFalhou = true;
                         falhasNarracao++;
                     }
+                    // Pequena pausa entre cenas — o tier gratuito do TTS libera só
+                    // 3 requisições/minuto, então espaçar reduz a chance de
+                    // estourar a cota no meio do roteiro.
+                    if (i < cuts.length - 1) await sleep(1200);
                 }
                 adjustCutsForNarration(cuts, realDurations); // reajuste fino, com duração real (onde disponível)
                 currentCuts = cuts;
@@ -3493,13 +3550,16 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
 
     // O TTS do Gemini às vezes devolve tokens de texto em vez de áudio (bug
     // documentado do modelo em preview), falha com erro 500 numa pequena
-    // porcentagem das chamadas, ou devolve 503 "alta demanda" nos horários de
-    // pico — por isso tentamos de novo automaticamente (com espera crescente
-    // nos casos de sobrecarga) antes de desistir dessa cena.
-    async function generateNarrationAudioWithRetry(ai, text, voiceName, tone) {
+    // porcentagem das chamadas, ou devolve 429/503 (cota ou "alta demanda")
+    // nos horários de pico — por isso tentamos de novo automaticamente
+    // (respeitando o "retryDelay" sugerido pela API quando existe, ver
+    // withRetries) antes de desistir dessa cena. attempts=4 porque o limite
+    // gratuito de TTS é de só 3 requisições/minuto — depois de um 429, quase
+    // sempre vale a pena esperar o tempo sugerido e tentar mais uma vez.
+    async function generateNarrationAudioWithRetry(ai, text, voiceName, tone, onRetry) {
         return withRetries(
             () => generateNarrationAudio(ai, text, voiceName, tone),
-            { attempts: 3, baseDelayMs: 1500, shouldRetry: () => true }
+            { attempts: 4, baseDelayMs: 1500, shouldRetry: () => true, onRetry }
         );
     }
 
@@ -4314,19 +4374,20 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
         });
     }
 
-    // Alterna a visibilidade dos dois jeitos de gerar a narração no
-    // sincronizador: upload manual vs. geração automática com voz de IA.
+    // Alterna a visibilidade dos três jeitos de gerar a narração no
+    // sincronizador: upload manual, IA (Gemini) e voz do navegador.
     const aiSyncSourceUpload = document.getElementById('aiSyncSourceUpload');
     const aiSyncSourceAuto = document.getElementById('aiSyncSourceAuto');
+    const aiSyncSourceBrowser = document.getElementById('aiSyncSourceBrowser');
     const aiSyncUploadBlock = document.getElementById('aiSyncUploadBlock');
     const aiSyncAutoBlock = document.getElementById('aiSyncAutoBlock');
+    const aiSyncBrowserBlock = document.getElementById('aiSyncBrowserBlock');
     function refreshSyncSourceUI() {
-        const isAuto = aiSyncSourceAuto.checked;
-        aiSyncUploadBlock.style.display = isAuto ? 'none' : 'block';
-        aiSyncAutoBlock.style.display = isAuto ? 'block' : 'none';
+        aiSyncUploadBlock.style.display = aiSyncSourceUpload.checked ? 'block' : 'none';
+        aiSyncAutoBlock.style.display = aiSyncSourceAuto.checked ? 'block' : 'none';
+        aiSyncBrowserBlock.style.display = aiSyncSourceBrowser.checked ? 'block' : 'none';
     }
-    aiSyncSourceUpload.addEventListener('change', refreshSyncSourceUI);
-    aiSyncSourceAuto.addEventListener('change', refreshSyncSourceUI);
+    [aiSyncSourceUpload, aiSyncSourceAuto, aiSyncSourceBrowser].forEach(el => el.addEventListener('change', refreshSyncSourceUI));
 
     // Voz e estilo de interpretação fixos para a narração automática do
     // sincronizador — sempre humanizada, animada e cheia de energia,
@@ -4369,12 +4430,130 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
         const pcmChunks = [];
         for (let i = 0; i < scenesComTexto.length; i++) {
             onProgress(`Gerando narração automática (cena ${i + 1} de ${scenesComTexto.length})...`);
-            const { pcmBytes } = await generateNarrationAudioWithRetry(ai, scenesComTexto[i].narracao, AUTO_SYNC_VOICE, AUTO_SYNC_TONE);
+            const { pcmBytes } = await generateNarrationAudioWithRetry(
+                ai, scenesComTexto[i].narracao, AUTO_SYNC_VOICE, AUTO_SYNC_TONE,
+                (attempt, attempts, waitMs, isQuota) => {
+                    const waitSec = Math.round(waitMs / 1000);
+                    onProgress(isQuota
+                        ? `⏳ Cota da API atingida na cena ${i + 1} — aguardando ${waitSec}s (tentativa ${attempt}/${attempts})...`
+                        : `Tentando de novo a cena ${i + 1} em ${waitSec}s (tentativa ${attempt}/${attempts})...`);
+                }
+            );
             pcmChunks.push(pcmBytes);
+            // Pequena pausa entre cenas (mesmo sem erro) — o tier gratuito do
+            // TTS libera só 3 requisições/minuto, então espaçar as chamadas
+            // reduz a chance de estourar a cota no meio da narração.
+            if (i < scenesComTexto.length - 1) await sleep(1200);
         }
         const fullPcm = concatPcmScenesWithGaps(pcmChunks, TTS_SAMPLE_RATE, AUTO_SYNC_GAP_MS);
         const wavBlob = pcmToWavBlob(fullPcm);
         return new File([wavBlob], 'narracao_automatica_ia.wav', { type: 'audio/wav' });
+    }
+
+    // Espera a lista de vozes do navegador carregar — em vários navegadores
+    // speechSynthesis.getVoices() volta vazio na primeira chamada e só
+    // preenche depois do evento 'voiceschanged'.
+    function waitForBrowserVoices() {
+        return new Promise((resolve) => {
+            const existing = speechSynthesis.getVoices();
+            if (existing.length > 0) { resolve(existing); return; }
+            const onChange = () => {
+                speechSynthesis.removeEventListener('voiceschanged', onChange);
+                resolve(speechSynthesis.getVoices());
+            };
+            speechSynthesis.addEventListener('voiceschanged', onChange);
+            // Alguns navegadores nunca disparam o evento se já não houver
+            // vozes — não trava esperando pra sempre.
+            setTimeout(() => resolve(speechSynthesis.getVoices()), 1500);
+        });
+    }
+
+    // Escolhe a melhor voz em português disponível no sistema. Prioriza
+    // vozes "neurais/online" (geralmente têm nomes como "Google" ou
+    // "Natural"/"Online" no navegador) por soarem menos robóticas; cai pra
+    // qualquer voz pt-BR/pt-PT, e por último pra voz padrão do navegador.
+    function pickBrowserVoice(voices) {
+        const pt = voices.filter(v => /^pt(-|_)/i.test(v.lang));
+        if (pt.length === 0) return null;
+        const preferida = pt.find(v => /google|natural|online|neural/i.test(v.name));
+        return preferida || pt.find(v => /^pt-br/i.test(v.lang)) || pt[0];
+    }
+
+    // Gera a narração completa usando a voz de texto-pra-fala EMBUTIDA no
+    // navegador (Web Speech API) — grátis, sem chave de API e sem cota, mas
+    // com uma limitação técnica: navegadores não deixam gravar o áudio da
+    // fala sintetizada diretamente, então usamos um truque — capturamos o
+    // áudio da própria aba via getDisplayMedia (a mesma API usada pra
+    // compartilhar tela em videochamadas) enquanto o texto é falado, e
+    // gravamos esse áudio da aba com o MediaRecorder. Só funciona no
+    // Chrome/Edge de computador.
+    async function generateBrowserTtsNarrationFile(onProgress) {
+        if (!('speechSynthesis' in window) || typeof MediaRecorder === 'undefined') {
+            throw new Error('Seu navegador não suporta voz nativa (Web Speech API) ou gravação de áudio (MediaRecorder). Tente no Chrome ou Edge de computador.');
+        }
+        const scenesComTexto = (currentCuts || []).filter(c => (c.narracao || '').trim());
+        if (scenesComTexto.length === 0) {
+            throw new Error('Nenhum roteiro com narração encontrado ainda. Gere o roteiro no card "Resumidor & Roteirista IA" acima primeiro.');
+        }
+
+        onProgress('Escolhendo a voz do sistema...');
+        const voices = await waitForBrowserVoices();
+        const voice = pickBrowserVoice(voices);
+
+        onProgress('Pedindo permissão pra gravar o áudio da aba (escolha "Esta guia" + "Compartilhar áudio")...');
+        let displayStream;
+        try {
+            displayStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+        } catch (permErr) {
+            throw new Error('Permissão de captura de áudio negada ou cancelada — sem ela não dá pra gravar a voz do navegador. Tente de novo e marque "Compartilhar áudio da guia".');
+        }
+        const audioTracks = displayStream.getAudioTracks();
+        if (audioTracks.length === 0) {
+            displayStream.getTracks().forEach(t => t.stop());
+            throw new Error('Nenhum áudio foi compartilhado — ao escolher a tela/guia, marque a opção "Compartilhar áudio da guia" (Share tab audio) antes de confirmar.');
+        }
+        // Para as trilhas de vídeo (não precisamos delas, só do áudio) — isso
+        // também some com o retângulo de compartilhamento de vídeo na tela.
+        displayStream.getVideoTracks().forEach(t => t.stop());
+        const audioOnlyStream = new MediaStream(audioTracks);
+
+        const mimeType = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus']
+            .find(mt => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(mt)) || '';
+        const recorder = new MediaRecorder(audioOnlyStream, mimeType ? { mimeType } : undefined);
+        const chunks = [];
+        recorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+
+        const stopped = new Promise((resolve) => { recorder.onstop = resolve; });
+        recorder.start();
+
+        try {
+            for (let i = 0; i < scenesComTexto.length; i++) {
+                onProgress(`🗣️ Falando cena ${i + 1} de ${scenesComTexto.length} (voz do navegador)...`);
+                await new Promise((resolve, reject) => {
+                    const utter = new SpeechSynthesisUtterance(scenesComTexto[i].narracao);
+                    if (voice) utter.voice = voice;
+                    utter.lang = (voice && voice.lang) || 'pt-BR';
+                    utter.rate = 1.12;  // levemente mais rápido — soa mais animado
+                    utter.pitch = 1.08; // levemente mais agudo — soa mais empolgado
+                    utter.onend = resolve;
+                    utter.onerror = (e) => reject(new Error('Falha ao sintetizar a fala do navegador: ' + (e.error || 'erro desconhecido')));
+                    speechSynthesis.speak(utter);
+                });
+                if (i < scenesComTexto.length - 1) await sleep(400); // pausa curta entre cenas
+            }
+        } finally {
+            speechSynthesis.cancel();
+            recorder.stop();
+            await stopped;
+            audioOnlyStream.getTracks().forEach(t => t.stop());
+            displayStream.getTracks().forEach(t => t.stop());
+        }
+
+        if (chunks.length === 0) {
+            throw new Error('Nada foi gravado — confira se a opção "Compartilhar áudio da guia" ficou marcada e se o volume do sistema não está mudo.');
+        }
+        const blob = new Blob(chunks, { type: mimeType || 'audio/webm' });
+        return new File([blob], 'narracao_voz_navegador.webm', { type: blob.type });
     }
 
     document.getElementById('aiSyncBtn').addEventListener('click', async () => {
@@ -4393,7 +4572,7 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
         if (sourceMode === 'upload') {
             audioFile = audioInput.files && audioInput.files[0];
             if (!audioFile) {
-                alert('Escolha o arquivo de narração (MP3/WAV) primeiro, ou marque "Gerar narração automática com voz sintética energética".');
+                alert('Escolha o arquivo de narração (MP3/WAV) primeiro, ou marque uma das opções de narração automática.');
                 return;
             }
         }
@@ -4415,6 +4594,8 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
         try {
             if (sourceMode === 'auto') {
                 audioFile = await generateAutoSyncNarrationFile((msg) => { syncStatus.innerText = msg; });
+            } else if (sourceMode === 'browser') {
+                audioFile = await generateBrowserTtsNarrationFile((msg) => { syncStatus.innerText = msg; });
             }
 
             syncStatus.innerText = 'Medindo duração do vídeo e da narração...';
