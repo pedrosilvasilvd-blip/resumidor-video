@@ -4,738 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TikTok Blind Engine Pro + Central Multiferramentas</title>
-  <style>
-    :root {
-      --bg-main: #030712;
-      --panel-bg: #0f172a;
-      --card-bg: #020617;
-      --border-color: #1e293b;
-      --accent-cyan: #38bdf8;
-      --accent-rose: #f43f5e;
-      --accent-indigo: #818cf8;
-      --accent-emerald: #10b981;
-      --accent-yellow: #facc15;
-      --text-main: #f3f4f6;
-      --text-muted: #94a3b8;
-    }
-
-    body {
-      background-color: var(--bg-main);
-      color: var(--text-main);
-      font-family: system-ui, -apple-system, sans-serif;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      height: 100vh;
-      overflow: hidden;
-      box-sizing: border-box;
-    }
-
-    /* Menu Lateral */
-    .sidebar {
-      width: 255px;
-      background: #090d16;
-      border-right: 1px solid var(--border-color);
-      display: flex;
-      flex-direction: column;
-      padding: 20px 12px;
-      flex-shrink: 0;
-      height: 100vh;
-      box-sizing: border-box;
-    }
-    .brand-logo {
-      font-size: 1.05rem;
-      font-weight: 900;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 24px;
-      padding: 0 8px;
-    }
-    .brand-logo span {
-      background: linear-gradient(135deg, #38bdf8, #f43f5e, #10b981);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    .nav-tabs {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .nav-btn {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 14px;
-      border-radius: 10px;
-      background: transparent;
-      border: 1px solid transparent;
-      color: var(--text-muted);
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      text-align: left;
-      transition: all 0.2s;
-    }
-    .nav-btn:hover { background: #111827; color: #fff; }
-    .nav-btn.nav-locked { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
-    .nav-btn.active.found-tab {
-      background: rgba(56, 189, 248, 0.12);
-      border-color: var(--accent-cyan);
-      color: var(--accent-cyan);
-    }
-    .nav-btn.active.dorama-tab {
-      background: rgba(244, 63, 94, 0.12);
-      border-color: var(--accent-rose);
-      color: var(--accent-rose);
-    }
-    .nav-btn.active.ai-tab {
-      background: rgba(129, 140, 248, 0.12);
-      border-color: var(--accent-indigo);
-      color: var(--accent-indigo);
-    }
-    .nav-btn.active.downloader-tab {
-      background: rgba(16, 185, 129, 0.12);
-      border-color: var(--accent-emerald);
-      color: var(--accent-emerald);
-    }
-    .nav-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
-
-    /* Pasta de Destino (onde salvar os arquivos processados) */
-    .save-location-box {
-      margin-top: 18px;
-      padding: 12px;
-      border: 1px solid var(--border-color);
-      border-radius: 10px;
-      background: #0b1120;
-    }
-    .save-location-label {
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-      margin-bottom: 6px;
-    }
-    .save-location-current {
-      font-size: 0.78rem;
-      color: var(--text-main);
-      word-break: break-word;
-      margin-bottom: 8px;
-      line-height: 1.3;
-    }
-    .save-location-btn {
-      width: 100%;
-      padding: 7px 8px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      border-radius: 7px;
-      border: 1px solid var(--accent-cyan);
-      background: rgba(56, 189, 248, 0.1);
-      color: var(--accent-cyan);
-      cursor: pointer;
-      margin-bottom: 6px;
-    }
-    .save-location-btn:hover { background: rgba(56, 189, 248, 0.2); }
-    .save-location-btn.save-location-clear {
-      border-color: #475569;
-      background: transparent;
-      color: var(--text-muted);
-    }
-    .save-location-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    .save-location-hint {
-      font-size: 0.68rem;
-      color: var(--text-muted);
-      line-height: 1.3;
-      margin-top: 2px;
-    }
-
-    /* Área Principal */
-    .main-content {
-      flex: 1;
-      display: flex;
-      justify-content: center;
-      height: 100vh;
-      padding: 20px;
-      box-sizing: border-box;
-      overflow: hidden;
-    }
-
-    .dashboard {
-      width: 100%;
-      max-width: 1400px;
-      display: grid;
-      grid-template-columns: 310px 1fr;
-      gap: 20px;
-      height: 100%;
-      align-items: stretch;
-    }
-
-    .dashboard.full-mode {
-      grid-template-columns: 1fr;
-      max-width: 100%;
-    }
-
-    .ai-grid-container {
-      display: grid;
-      grid-template-columns: 380px 1fr;
-      gap: 20px;
-      height: calc(100vh - 40px);
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    .ai-left-panel, .ai-right-panel {
-      background: var(--panel-bg);
-      border-radius: 16px;
-      border: 1px solid var(--border-color);
-      padding: 20px;
-      overflow-y: auto;
-      height: 100%;
-      box-sizing: border-box;
-      box-shadow: 0 20px 45px rgba(0,0,0,0.85);
-    }
-
-    .ai-left-panel::-webkit-scrollbar, .ai-right-panel::-webkit-scrollbar, .controls-column::-webkit-scrollbar {
-      width: 6px;
-    }
-    .ai-left-panel::-webkit-scrollbar-thumb, .ai-right-panel::-webkit-scrollbar-thumb, .controls-column::-webkit-scrollbar-thumb {
-      background: #334155;
-      border-radius: 4px;
-    }
-
-    /* Monitor Fixo (Abas 1 e 2) */
-    .preview-column {
-      background: var(--panel-bg);
-      padding: 14px;
-      border-radius: 16px;
-      border: 1px solid var(--border-color);
-      box-shadow: 0 20px 45px rgba(0,0,0,0.85);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      height: calc(100vh - 40px);
-      box-sizing: border-box;
-      flex-shrink: 0;
-    }
-    .preview-header {
-      font-size: 0.85rem;
-      font-weight: bold;
-      margin-bottom: 8px;
-      width: 100%;
-      text-align: center;
-    }
-    .preview-modes {
-      display: flex;
-      gap: 6px;
-      width: 100%;
-      margin-bottom: 8px;
-    }
-    .mode-btn {
-      flex: 1;
-      padding: 6px 4px;
-      font-size: 0.72rem;
-      font-weight: bold;
-      background: #1e293b;
-      color: var(--text-muted);
-      border: 1px solid #334155;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    .mode-btn.active { background: #fff; color: #030712; border-color: #fff; }
-
-    .preview-wrapper {
-      position: relative;
-      width: 100%;
-      max-width: 270px;
-      aspect-ratio: 9 / 16;
-      max-height: calc(100vh - 165px);
-      background: #000;
-      border-radius: 8px;
-      overflow: hidden;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      border: 1px solid var(--border-color);
-    }
-    canvas { width: 100%; height: 100%; object-fit: contain; display: block; }
-
-    #cropBox {
-      position: absolute;
-      border: 2px solid var(--accent-cyan);
-      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.65);
-      cursor: move;
-      box-sizing: border-box;
-      touch-action: none;
-      display: none;
-    }
-    .handle { position: absolute; width: 14px; height: 14px; background: var(--accent-cyan); border-radius: 2px; }
-    .handle.tl { top: -7px; left: -7px; cursor: nwse-resize; }
-    .handle.tr { top: -7px; right: -7px; cursor: nesw-resize; }
-    .handle.bl { bottom: -7px; left: -7px; cursor: nesw-resize; }
-    .handle.br { bottom: -7px; right: -7px; cursor: nwse-resize; }
-    .handle.tc { top: -7px; left: calc(50% - 7px); cursor: ns-resize; }
-    .handle.bc { bottom: -7px; left: calc(50% - 7px); cursor: ns-resize; }
-
-    #blurBox {
-      position: absolute;
-      border: 2px dashed var(--accent-yellow);
-      cursor: move;
-      box-sizing: border-box;
-      touch-action: none;
-      display: none;
-      z-index: 5;
-    }
-    #blurBox .handle { background: var(--accent-yellow); }
-
-    #status {
-      text-align: center;
-      font-size: 0.75rem;
-      color: var(--accent-cyan);
-      margin-top: 8px;
-      line-height: 1.3;
-      width: 100%;
-      word-break: break-word;
-    }
-
-    /* Coluna Direita (Controles Abas 1 e 2) */
-    .controls-column {
-      background: var(--panel-bg);
-      padding: 20px 24px;
-      border-radius: 16px;
-      border: 1px solid var(--border-color);
-      box-shadow: 0 20px 45px rgba(0,0,0,0.85);
-      height: calc(100vh - 40px);
-      box-sizing: border-box;
-      overflow-y: auto;
-    }
-
-    h2 { margin: 0 0 6px 0; font-size: 1.2rem; }
-    p.desc { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.4; }
-    label { display: block; font-size: 0.8rem; color: #cbd5e1; margin-top: 10px; margin-bottom: 4px; font-weight: 600; }
-    input[type="file"], input[type="text"], input[type="password"], input[type="number"], textarea, select, button {
-      width: 100%;
-      padding: 9px 10px;
-      border-radius: 8px;
-      border: 1px solid #334155;
-      background: var(--card-bg);
-      color: #fff;
-      box-sizing: border-box;
-      font-size: 0.85rem;
-    }
-    textarea { resize: vertical; min-height: 55px; font-family: inherit; }
-
-    .crop-toggle-box {
-      background: #0b1329;
-      border: 1px solid var(--accent-cyan);
-      border-radius: 8px;
-      padding: 9px 12px;
-      margin-top: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .crop-toggle-box label { margin: 0; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; gap: 8px; }
-    .crop-toggle-box input[type="checkbox"] { width: 17px; height: 17px; cursor: pointer; }
-
-    .approval-box {
-      background: #06140f;
-      border: 1px solid var(--accent-emerald);
-      border-radius: 10px;
-      padding: 12px;
-      margin-top: 12px;
-    }
-    .approval-box .approval-btn {
-      background: var(--accent-emerald);
-      border: none;
-      color: #04150d;
-      font-weight: 800;
-      cursor: pointer;
-    }
-    .approval-box .approval-btn:hover { filter: brightness(1.12); }
-
-    .control-box {
-      background: var(--card-bg);
-      border: 1px solid #334155;
-      border-radius: 10px;
-      padding: 12px;
-      margin-top: 12px;
-    }
-    .control-title { font-size: 0.82rem; font-weight: bold; margin-bottom: 8px; }
-    .control-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.78rem; }
-    .control-row:last-child { margin-bottom: 0; }
-    .control-row input[type="range"] { width: 58%; cursor: pointer; }
-    .control-val { font-weight: bold; font-family: monospace; width: 50px; text-align: right; }
-
-    .feature-list {
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 10px;
-      padding: 12px;
-      margin: 12px 0;
-    }
-    .checkbox-item { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; font-size: 0.8rem; cursor: pointer; }
-    .checkbox-item:last-child { margin-bottom: 0; }
-    .checkbox-item input { cursor: pointer; }
-
-    .btn-action {
-      font-weight: bold;
-      cursor: pointer;
-      margin-top: 14px;
-      border: none;
-      padding: 12px;
-      transition: opacity 0.2s;
-    }
-    .btn-action:hover { opacity: 0.9; }
-    .btn-action:disabled { background: #334155 !important; cursor: not-allowed; color: #64748b; }
-
-    table.cuts-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.82rem;
-      margin-top: 10px;
-    }
-    table.cuts-table th, table.cuts-table td {
-      border: 1px solid var(--border-color);
-      padding: 8px 10px;
-      text-align: left;
-      vertical-align: top;
-    }
-    table.cuts-table th {
-      background-color: #020617;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      font-size: 0.75rem;
-    }
-    table.cuts-table tr:nth-child(even) { background-color: #0b1329; }
-
-    .download-link-btn {
-      display: inline-block;
-      background-color: #16a34a;
-      color: white;
-      text-decoration: none;
-      padding: 10px 18px;
-      border-radius: 6px;
-      font-weight: 600;
-      margin-top: 10px;
-    }
-    .download-link-btn:hover { background-color: #15803d; }
-
-    /* Lista e Itens da Fila de Downloads */
-    .dl-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 14px;
-      background: #020617;
-      border: 1px solid #1e293b;
-      border-radius: 8px;
-      margin-bottom: 8px;
-    }
-    .dl-item-title {
-      font-size: 0.82rem;
-      color: #f3f4f6;
-      max-width: 70%;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .dl-item-btn {
-      background: #10b981;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      padding: 6px 12px;
-      font-size: 0.75rem;
-      font-weight: bold;
-      cursor: pointer;
-      text-decoration: none;
-    }
-
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-
-    .found-theme .preview-header, .found-theme h2, .found-theme .control-title, .found-theme .control-val { color: var(--accent-cyan); }
-    .found-theme input[type="range"] { accent-color: var(--accent-cyan); }
-    .found-theme .btn-action { background: #2563eb; }
-
-    .dorama-theme .preview-header, .dorama-theme h2, .dorama-theme .control-title, .dorama-theme .control-val { color: var(--accent-rose); }
-    .dorama-theme .crop-toggle-box { border-color: var(--accent-rose); background: #200d14; }
-    .dorama-theme .crop-toggle-box label { color: var(--accent-rose); }
-    .dorama-theme input[type="range"] { accent-color: var(--accent-rose); }
-    .dorama-theme .btn-action { background: var(--accent-rose); }
-
-    .ai-theme h2, .ai-theme .control-title, .ai-theme .control-val { color: var(--accent-indigo); }
-    .ai-theme .btn-action { background: #6366f1; }
-
-    .downloader-theme h2, .downloader-theme .control-title { color: var(--accent-emerald); }
-    .downloader-theme .btn-action { background: #10b981; }
-
-    video#sourceVideo { display: none; }
-
-    @media (max-width: 900px) {
-      body { height: auto; overflow: auto; flex-direction: column; }
-      .sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border-color); }
-      .main-content { height: auto; overflow: visible; }
-      .dashboard { grid-template-columns: 1fr; height: auto; }
-      .preview-column { height: auto; }
-      .controls-column { height: auto; overflow: visible; }
-      .preview-wrapper { max-width: 240px; }
-      .ai-grid-container { grid-template-columns: 1fr; height: auto; }
-      #tabAiContent { height: auto; overflow: visible; }
-    }
-
-    /* ===== Estilos da Aba 3 (Resumidor & Roteirista IA) — escopados em .ai30-panel ===== */
-
-    /* Mesmo tratamento visual (fundo, borda, sombra) e o mesmo scroll interno
-       independente que as outras abas já usam (.controls-column, .ai-left-panel,
-       .ai-right-panel) — sem isso, o conteúdo da aba 3 ficava mais alto que a
-       tela e não dava pra rolar até o fim. */
-    #tabAiContent {
-      background: var(--panel-bg);
-      border-radius: 16px;
-      border: 1px solid var(--border-color);
-      box-shadow: 0 20px 45px rgba(0,0,0,0.85);
-      padding: 20px 24px;
-      height: calc(100vh - 40px);
-      box-sizing: border-box;
-      overflow-y: auto;
-    }
-    #tabAiContent::-webkit-scrollbar { width: 6px; }
-    #tabAiContent::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-
-    .ai30-panel {
-      --v30-bg-color: #0f172a;
-      --v30-card-bg: #1e293b;
-      --v30-accent-color: #6366f1;
-      --v30-accent-hover: #4f46e5;
-      --v30-text-color: #f8fafc;
-      --v30-text-muted: #94a3b8;
-      --v30-border-color: #334155;
-    }
-
-    .ai30-panel {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      color: var(--v30-text-color);
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      box-sizing: border-box;
-    }
-
-    .ai30-panel .container {
-      width: 100%;
-      max-width: 900px;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      box-sizing: border-box;
-    }
-
-    .ai30-panel h1 { text-align: center; font-size: 1.8rem; margin-bottom: 5px; }
-    .ai30-panel p.subtitle { text-align: center; color: var(--v30-text-muted); margin-top: 0; }
-
-    .ai30-panel .card {
-      background-color: var(--v30-card-bg);
-      border: 1px solid var(--v30-border-color);
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-      box-sizing: border-box;
-    }
-
-    .ai30-panel .grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 15px;
-    }
-
-    @media (max-width: 600px) { .ai30-panel .grid { grid-template-columns: 1fr; } }
-
-    .ai30-panel .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .ai30-panel label {
-      font-weight: 600;
-      font-size: 0.85rem;
-      color: var(--v30-text-muted);
-      text-transform: uppercase;
-    }
-
-    .ai30-panel input,
-    .ai30-panel select,
-    .ai30-panel textarea {
-      background-color: #0f172a;
-      border: 1px solid var(--v30-border-color);
-      border-radius: 6px;
-      padding: 10px;
-      color: var(--v30-text-color);
-      font-size: 0.95rem;
-      outline: none;
-      box-sizing: border-box;
-    }
-
-    .ai30-panel input:focus, .ai30-panel select:focus { border-color: var(--v30-accent-color); }
-
-    .ai30-panel button {
-      background-color: var(--v30-accent-color);
-      color: white;
-      border: none;
-      border-radius: 6px;
-      padding: 12px 20px;
-      font-weight: 600;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: background-color 0.2s;
-    }
-
-    .ai30-panel button:hover { background-color: var(--v30-accent-hover); }
-    .ai30-panel button:disabled { background-color: #475569; cursor: not-allowed; }
-
-    .ai30-panel #aiStatus {
-      margin-top: 15px;
-      font-weight: bold;
-      color: #818cf8;
-      text-align: center;
-    }
-
-    .ai30-panel .output-box {
-      background-color: #090d16;
-      border: 1px solid var(--v30-border-color);
-      border-radius: 6px;
-      padding: 15px;
-      white-space: pre-wrap;
-      font-family: monospace;
-      font-size: 0.9rem;
-      color: #e2e8f0;
-      max-height: 500px;
-      overflow-y: auto;
-    }
-
-    .ai30-panel .apiKey-link {
-      font-size: 0.8rem;
-      color: var(--v30-accent-color);
-      text-decoration: none;
-    }
-
-    .ai30-panel table.cuts-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.85rem;
-    }
-
-    .ai30-panel table.cuts-table th, .ai30-panel table.cuts-table td {
-      border: 1px solid var(--v30-border-color);
-      padding: 8px 10px;
-      text-align: left;
-      vertical-align: top;
-    }
-
-    .ai30-panel table.cuts-table th {
-      background-color: #0f172a;
-      color: var(--v30-text-muted);
-      text-transform: uppercase;
-      font-size: 0.75rem;
-    }
-
-    .ai30-panel table.cuts-table tr:nth-child(even) { background-color: #182338; }
-
-    /* Em telas estreitas, a tabela vira uma pilha de "cartões": cada linha
-       some das colunas e passa a exibir os campos empilhados, com o nome da
-       coluna como rótulo (via data-label). Sem isso, a tabela de 5 colunas
-       ficava cortada/ilegível no celular. */
-    @media (max-width: 700px) {
-      .ai30-panel table.cuts-table, .ai30-panel table.cuts-table thead, .ai30-panel table.cuts-table tbody,
-      .ai30-panel table.cuts-table th, .ai30-panel table.cuts-table td, .ai30-panel table.cuts-table tr {
-        display: block;
-      }
-      .ai30-panel table.cuts-table thead {
-        position: absolute;
-        width: 1px; height: 1px;
-        overflow: hidden;
-        clip: rect(0 0 0 0);
-      }
-      .ai30-panel table.cuts-table tr {
-        margin-bottom: 14px;
-        border: 1px solid var(--v30-border-color);
-        border-radius: 8px;
-        overflow: hidden;
-      }
-      .ai30-panel table.cuts-table td {
-        border: none;
-        border-bottom: 1px solid var(--v30-border-color);
-        padding-left: 45%;
-        position: relative;
-        min-height: 20px;
-      }
-      .ai30-panel table.cuts-table td:last-child { border-bottom: 0; }
-      .ai30-panel table.cuts-table td::before {
-        content: attr(data-label);
-        position: absolute;
-        left: 10px;
-        top: 8px;
-        width: 40%;
-        font-weight: 600;
-        font-size: 0.7rem;
-        text-transform: uppercase;
-        color: var(--v30-text-muted);
-      }
-    }
-
-    .ai30-panel .confirm-box {
-      margin-top: 20px;
-      padding-top: 20px;
-      border-top: 1px solid var(--v30-border-color);
-      text-align: center;
-    }
-
-    .ai30-panel .confirm-box p { margin-top: 0; color: var(--v30-text-muted); }
-
-    .ai30-panel .confirm-buttons {
-      display: flex;
-      gap: 12px;
-      justify-content: center;
-    }
-
-    .ai30-panel .confirm-buttons button { flex: 1; max-width: 260px; }
-
-    .ai30-panel #aiBtnNaoCortar {
-      background-color: #334155;
-    }
-
-    .ai30-panel #aiBtnNaoCortar:hover { background-color: #475569; }
-
-    .ai30-panel #aiCutProgress {
-      margin-top: 15px;
-      font-weight: bold;
-      color: #818cf8;
-      text-align: center;
-    }
-
-    .ai30-panel #aiVideoResultCard video {
-      width: 100%;
-      border-radius: 8px;
-      margin-bottom: 12px;
-    }
-
-    .ai30-panel .download-link {
-      display: inline-block;
-      background-color: #16a34a;
-      color: white;
-      text-decoration: none;
-      padding: 10px 18px;
-      border-radius: 6px;
-      font-weight: 600;
-    }
-
-    .ai30-panel .download-link:hover { background-color: #15803d; }
-
-  </style>
-
   <script type="importmap">
     {
       "imports": {
@@ -745,43 +13,1445 @@
       }
     }
   </script>
+  <style>
+:root {
+  --bg-main: #060911;
+  --bg-mesh-1: #0c1222;
+  --bg-mesh-2: #05070e;
+  --panel-bg: rgba(13, 19, 33, 0.88);
+  --card-bg: rgba(18, 26, 44, 0.75);
+  --card-bg-elevated: rgba(23, 33, 54, 0.9);
+  --card-border: rgba(255, 255, 255, 0.08);
+  --card-border-hover: rgba(255, 255, 255, 0.18);
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  
+  --accent-cyan: #00f2fe;
+  --accent-cyan-light: #38bdf8;
+  --accent-cyan-glow: rgba(0, 242, 254, 0.25);
+  --accent-cyan-subtle: rgba(0, 242, 254, 0.1);
+  
+  --accent-rose: #f43f5e;
+  --accent-rose-light: #fb7185;
+  --accent-rose-glow: rgba(244, 63, 94, 0.25);
+  --accent-rose-subtle: rgba(244, 63, 94, 0.1);
+  
+  --accent-indigo: #818cf8;
+  --accent-indigo-light: #a5b4fc;
+  --accent-indigo-glow: rgba(129, 140, 248, 0.25);
+  --accent-indigo-subtle: rgba(129, 140, 248, 0.1);
+  --accent-purple: #c084fc;
+  
+  --accent-emerald: #10b981;
+  --accent-emerald-light: #34d399;
+  --accent-emerald-glow: rgba(16, 185, 129, 0.25);
+  --accent-emerald-subtle: rgba(16, 185, 129, 0.1);
+  
+  --accent-yellow: #fbbf24;
+  --accent-yellow-glow: rgba(251, 191, 36, 0.25);
+  
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-dim: #64748b;
+  --text-bright: #ffffff;
+  
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 20px 48px rgba(0, 0, 0, 0.7);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: var(--bg-main);
+  background-image: 
+    radial-gradient(circle at 10% 12%, rgba(56, 189, 248, 0.06) 0%, transparent 40%),
+    radial-gradient(circle at 90% 88%, rgba(244, 63, 94, 0.05) 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(129, 140, 248, 0.03) 0%, transparent 60%);
+  color: var(--text-main);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(10, 15, 26, 0.4);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.22);
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.45);
+}
+
+/* =========================================================================
+   SIDEBAR & NAVIGATION
+   ========================================================================= */
+.sidebar {
+  width: 275px;
+  background: linear-gradient(180deg, #090e1a 0%, #060911 100%);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 14px;
+  flex-shrink: 0;
+  height: 100vh;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 20;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
+}
+
+.brand-logo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 22px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  position: relative;
+  overflow: hidden;
+}
+.brand-logo::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #00f2fe, #f43f5e, #818cf8, #10b981);
+}
+.brand-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.brand-title {
+  font-size: 0.94rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 50%, #94a3b8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-transform: uppercase;
+}
+.brand-badge {
+  font-size: 0.6rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(244, 63, 94, 0.2));
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #38bdf8;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.brand-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.68rem;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+.status-dot-pulse {
+  width: 6px;
+  height: 6px;
+  background: #10b981;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #10b981;
+  animation: pulseDot 2s infinite ease-in-out;
+}
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+.nav-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+.nav-btn-icon-wrap {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.25s;
+}
+.nav-btn svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2;
+  transition: transform 0.2s ease;
+}
+.nav-btn-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+.nav-btn-title {
+  font-size: 0.83rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+.nav-btn-sub {
+  font-size: 0.68rem;
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+.nav-btn:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+  transform: translateX(3px);
+}
+.nav-btn:hover .nav-btn-icon-wrap {
+  background: rgba(255, 255, 255, 0.08);
+  transform: scale(1.05);
+}
+.nav-btn:active {
+  transform: scale(0.98);
+}
+.nav-btn.nav-locked {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Active Tab Themes */
+.nav-btn.active.found-tab {
+  background: linear-gradient(90deg, rgba(0, 242, 254, 0.15) 0%, rgba(0, 242, 254, 0.04) 100%);
+  border-color: rgba(0, 242, 254, 0.35);
+  box-shadow: 0 4px 16px rgba(0, 242, 254, 0.12), inset 0 0 12px rgba(0, 242, 254, 0.05);
+}
+.nav-btn.active.found-tab .nav-btn-title { color: #38bdf8; }
+.nav-btn.active.found-tab .nav-btn-icon-wrap { background: rgba(0, 242, 254, 0.2); color: #00f2fe; }
+
+.nav-btn.active.dorama-tab {
+  background: linear-gradient(90deg, rgba(244, 63, 94, 0.15) 0%, rgba(244, 63, 94, 0.04) 100%);
+  border-color: rgba(244, 63, 94, 0.35);
+  box-shadow: 0 4px 16px rgba(244, 63, 94, 0.12), inset 0 0 12px rgba(244, 63, 94, 0.05);
+}
+.nav-btn.active.dorama-tab .nav-btn-title { color: #fb7185; }
+.nav-btn.active.dorama-tab .nav-btn-icon-wrap { background: rgba(244, 63, 94, 0.2); color: #f43f5e; }
+
+.nav-btn.active.ai-tab {
+  background: linear-gradient(90deg, rgba(129, 140, 248, 0.15) 0%, rgba(129, 140, 248, 0.04) 100%);
+  border-color: rgba(129, 140, 248, 0.35);
+  box-shadow: 0 4px 16px rgba(129, 140, 248, 0.12), inset 0 0 12px rgba(129, 140, 248, 0.05);
+}
+.nav-btn.active.ai-tab .nav-btn-title { color: #a5b4fc; }
+.nav-btn.active.ai-tab .nav-btn-icon-wrap { background: rgba(129, 140, 248, 0.2); color: #818cf8; }
+
+.nav-btn.active.downloader-tab {
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.04) 100%);
+  border-color: rgba(16, 185, 129, 0.35);
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.12), inset 0 0 12px rgba(16, 185, 129, 0.05);
+}
+.nav-btn.active.downloader-tab .nav-btn-title { color: #34d399; }
+.nav-btn.active.downloader-tab .nav-btn-icon-wrap { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+
+/* Storage Location Card */
+.save-location-box {
+  margin-top: auto;
+  padding: 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+.save-location-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.save-location-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.save-location-current {
+  font-size: 0.76rem;
+  color: var(--text-main);
+  word-break: break-word;
+  margin-bottom: 10px;
+  line-height: 1.35;
+  font-weight: 500;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+}
+.save-location-btn {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--accent-cyan-light);
+  background: rgba(56, 189, 248, 0.12);
+  color: var(--accent-cyan-light);
+  cursor: pointer;
+  margin-bottom: 6px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.save-location-btn:hover {
+  background: rgba(56, 189, 248, 0.25);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
+}
+.save-location-btn.save-location-clear {
+  border-color: rgba(148, 163, 184, 0.25);
+  background: transparent;
+  color: var(--text-muted);
+}
+.save-location-btn.save-location-clear:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+}
+.save-location-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.save-location-hint {
+  font-size: 0.67rem;
+  color: var(--text-dim);
+  line-height: 1.3;
+  margin-top: 4px;
+}
+
+.sidebar-specs {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+/* =========================================================================
+   MAIN CONTENT CONTAINER & DASHBOARD LAYOUT
+   ========================================================================= */
+.main-content {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  height: 100vh;
+  padding: 16px;
+  box-sizing: border-box;
+  overflow: hidden;
+  position: relative;
+}
+
+.dashboard {
+  width: 100%;
+  max-width: 1560px;
+  display: grid;
+  grid-template-columns: 330px 1fr;
+  gap: 16px;
+  height: 100%;
+  align-items: stretch;
+}
+
+.dashboard.full-mode {
+  grid-template-columns: 1fr;
+  max-width: 100%;
+}
+
+/* =========================================================================
+   PREVIEW MONITOR COLUMN (ABAS 1 E 2)
+   ========================================================================= */
+.preview-column {
+  background: var(--panel-bg);
+  backdrop-filter: blur(20px);
+  padding: 16px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: calc(100vh - 32px);
+  box-sizing: border-box;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.preview-header-bar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.preview-header {
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.preview-badge-res {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
+  letter-spacing: 0.03em;
+}
+
+.preview-modes {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+  margin-bottom: 12px;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 3px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+}
+.mode-btn {
+  flex: 1;
+  padding: 7px 8px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+.mode-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+.mode-btn.active {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.found-theme .mode-btn.active {
+  background: rgba(0, 242, 254, 0.15);
+  color: var(--accent-cyan);
+  border-color: rgba(0, 242, 254, 0.35);
+  box-shadow: 0 0 12px rgba(0, 242, 254, 0.15);
+}
+.dorama-theme .mode-btn.active {
+  background: rgba(244, 63, 94, 0.15);
+  color: var(--accent-rose-light);
+  border-color: rgba(244, 63, 94, 0.35);
+  box-shadow: 0 0 12px rgba(244, 63, 94, 0.15);
+}
+
+.preview-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 290px;
+  aspect-ratio: 9 / 16;
+  max-height: calc(100vh - 190px);
+  background: #020408;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.9), 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+canvas {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* Bounding Boxes */
+#cropBox {
+  position: absolute;
+  border: 2px solid var(--accent-cyan);
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.65), 0 0 15px rgba(0, 242, 254, 0.3);
+  cursor: move;
+  box-sizing: border-box;
+  touch-action: none;
+  display: none;
+}
+.handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: var(--accent-cyan);
+  border: 1.5px solid #fff;
+  border-radius: 3px;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.8);
+}
+.handle.tl { top: -6px; left: -6px; cursor: nwse-resize; }
+.handle.tr { top: -6px; right: -6px; cursor: nesw-resize; }
+.handle.bl { bottom: -6px; left: -6px; cursor: nesw-resize; }
+.handle.br { bottom: -6px; right: -6px; cursor: nwse-resize; }
+.handle.tc { top: -6px; left: calc(50% - 6px); cursor: ns-resize; }
+.handle.bc { bottom: -6px; left: calc(50% - 6px); cursor: ns-resize; }
+
+#blurBox {
+  position: absolute;
+  border: 2px dashed var(--accent-yellow);
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.35);
+  cursor: move;
+  box-sizing: border-box;
+  touch-action: none;
+  display: none;
+  z-index: 5;
+  background: rgba(251, 191, 36, 0.08);
+}
+#blurBox .handle {
+  background: var(--accent-yellow);
+  border: 1.5px solid #000;
+}
+
+#status {
+  text-align: center;
+  font-size: 0.74rem;
+  color: var(--accent-cyan-light);
+  margin-top: 10px;
+  line-height: 1.4;
+  width: 100%;
+  word-break: break-word;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* =========================================================================
+   CONTROLS COLUMN (ABAS 1 E 2) & CARDS SYSTEM
+   ========================================================================= */
+.controls-column {
+  background: var(--panel-bg);
+  backdrop-filter: blur(20px);
+  padding: 20px 24px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  height: calc(100vh - 32px);
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+.module-header {
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.module-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.module-badge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 20px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.module-badge.cyan {
+  background: rgba(0, 242, 254, 0.15);
+  border: 1px solid rgba(0, 242, 254, 0.3);
+  color: #38bdf8;
+}
+.module-badge.rose {
+  background: rgba(244, 63, 94, 0.15);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  color: #fb7185;
+}
+
+h2 {
+  margin: 0 0 6px 0;
+  font-size: 1.45rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.found-theme h2 {
+  background: linear-gradient(135deg, #ffffff 0%, #38bdf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.dorama-theme h2 {
+  background: linear-gradient(135deg, #ffffff 0%, #fb7185 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+p.desc {
+  font-size: 0.83rem;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Modular Pro Cards */
+.pro-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  margin-top: 14px;
+  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+.pro-card:hover {
+  border-color: var(--card-border-hover);
+}
+.control-title {
+  font-size: 0.86rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 0;
+  color: #fff;
+}
+
+label {
+  display: block;
+  font-size: 0.78rem;
+  color: #cbd5e1;
+  margin-top: 10px;
+  margin-bottom: 5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+input[type="text"], input[type="password"], input[type="number"], textarea, select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #090e1a;
+  color: #fff;
+  box-sizing: border-box;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+  outline: none;
+}
+input[type="text"]:focus, input[type="password"]:focus, input[type="number"]:focus, textarea:focus, select:focus {
+  border-color: rgba(56, 189, 248, 0.5);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+  background: #0d1527;
+}
+.dorama-theme input[type="text"]:focus, .dorama-theme input[type="password"]:focus, .dorama-theme textarea:focus, .dorama-theme select:focus {
+  border-color: rgba(244, 63, 94, 0.5);
+  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.15);
+}
+textarea {
+  resize: vertical;
+  min-height: 60px;
+  font-family: inherit;
+  line-height: 1.45;
+}
+
+/* Custom styled range sliders */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.1);
+  height: 6px;
+  border-radius: 4px;
+  outline: none;
+  border: none;
+  padding: 0;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent-cyan);
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
+  border: 2px solid #ffffff;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 15px rgba(0, 242, 254, 0.8);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent-cyan);
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
+  border: 2px solid #ffffff;
+}
+.dorama-theme input[type="range"]::-webkit-slider-thumb {
+  background: var(--accent-rose);
+  box-shadow: 0 0 10px rgba(244, 63, 94, 0.5);
+}
+.dorama-theme input[type="range"]::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 15px rgba(244, 63, 94, 0.8);
+}
+
+/* File Dropzones */
+.file-dropzone-wrap {
+  position: relative;
+  margin-top: 4px;
+}
+input[type="file"] {
+  width: 100%;
+  padding: 14px 12px;
+  border-radius: var(--radius-sm);
+  border: 1.5px dashed rgba(255, 255, 255, 0.16);
+  background: rgba(9, 14, 26, 0.6);
+  color: #94a3b8;
+  box-sizing: border-box;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+input[type="file"]:hover {
+  border-color: var(--accent-cyan-light);
+  background: rgba(56, 189, 248, 0.05);
+  color: #fff;
+}
+.dorama-theme input[type="file"]:hover {
+  border-color: var(--accent-rose-light);
+  background: rgba(244, 63, 94, 0.05);
+}
+
+/* Crop Toggle Box */
+.crop-toggle-box {
+  background: rgba(0, 242, 254, 0.06);
+  border: 1px solid rgba(0, 242, 254, 0.3);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.2s;
+}
+.crop-toggle-box label {
+  margin: 0;
+  font-size: 0.82rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: #e0f2fe;
+}
+.crop-toggle-box input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--accent-cyan);
+}
+.dorama-theme .crop-toggle-box {
+  border-color: rgba(244, 63, 94, 0.35);
+  background: rgba(244, 63, 94, 0.06);
+}
+.dorama-theme .crop-toggle-box label {
+  color: #ffe4e6;
+}
+.dorama-theme .crop-toggle-box input[type="checkbox"] {
+  accent-color: var(--accent-rose);
+}
+
+/* Approval Shield Box */
+.approval-box {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(6, 78, 59, 0.25) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  margin-top: 14px;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+.approval-box::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #10b981, #34d399);
+}
+.approval-box .approval-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: none;
+  color: #ffffff;
+  font-weight: 800;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.85rem;
+}
+.approval-box .approval-btn:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+}
+.approval-box .approval-btn:active {
+  transform: scale(0.98);
+}
+
+/* Range Controls */
+.control-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 0.8rem;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+}
+.control-row:last-child { margin-bottom: 0; }
+.control-row input[type="range"] {
+  width: 55%;
+  cursor: pointer;
+  height: 6px;
+  border-radius: 3px;
+  background: #1e293b;
+  outline: none;
+}
+.control-val {
+  font-weight: 800;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  width: 55px;
+  text-align: right;
+  font-size: 0.82rem;
+  color: #fff;
+}
+
+/* Checkbox Lists */
+.feature-list {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  margin: 14px 0;
+}
+.checkbox-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  line-height: 1.4;
+  color: #cbd5e1;
+}
+.checkbox-item:last-child { margin-bottom: 0; }
+.checkbox-item input {
+  margin-top: 3px;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* Hero Process Button */
+.btn-action {
+  width: 100%;
+  font-weight: 800;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  margin-top: 18px;
+  border: none;
+  padding: 14px 20px;
+  border-radius: var(--radius-md);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: var(--shadow-md);
+}
+.btn-action:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+.btn-action:active {
+  transform: scale(0.98);
+}
+.btn-action:disabled {
+  background: #1e293b !important;
+  cursor: not-allowed;
+  color: #64748b !important;
+  transform: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+.found-theme .btn-action {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  box-shadow: 0 4px 20px rgba(2, 132, 199, 0.4);
+}
+.found-theme .btn-action:hover {
+  box-shadow: 0 6px 25px rgba(2, 132, 199, 0.6);
+}
+
+.dorama-theme .btn-action {
+  background: linear-gradient(135deg, #f43f5e 0%, #be123c 100%);
+  box-shadow: 0 4px 20px rgba(244, 63, 94, 0.4);
+}
+.dorama-theme .btn-action:hover {
+  box-shadow: 0 6px 25px rgba(244, 63, 94, 0.6);
+}
+
+.ai-theme .btn-action {
+  background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+}
+.ai-theme .btn-action:hover {
+  box-shadow: 0 6px 25px rgba(99, 102, 241, 0.6);
+}
+
+.downloader-theme .btn-action {
+  background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
+}
+.downloader-theme .btn-action:hover {
+  box-shadow: 0 6px 25px rgba(16, 185, 129, 0.6);
+}
+
+/* =========================================================================
+   ABA 3: ROTEIRISTA & RESUMO IA STUDIO (.ai30-panel)
+   ========================================================================= */
+#tabAiContent {
+  background: var(--panel-bg);
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  padding: 24px 30px;
+  height: calc(100vh - 32px);
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.ai30-panel {
+  --v30-bg-color: #090e1a;
+  --v30-card-bg: rgba(18, 26, 44, 0.75);
+  --v30-accent-color: #6366f1;
+  --v30-accent-hover: #4f46e5;
+  --v30-text-color: #f8fafc;
+  --v30-text-muted: #94a3b8;
+  --v30-border-color: rgba(255, 255, 255, 0.08);
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.ai30-panel .container {
+  width: 100%;
+  max-width: 980px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-sizing: border-box;
+}
+
+.ai-hero-header {
+  text-align: center;
+  margin-bottom: 5px;
+}
+.ai30-panel h1 {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 800;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 50%, #c084fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.ai30-panel p.subtitle {
+  text-align: center;
+  color: var(--v30-text-muted);
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.ai30-panel .card {
+  background-color: var(--v30-card-bg);
+  border: 1px solid var(--v30-border-color);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+  box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  box-sizing: border-box;
+}
+
+.ai30-panel .grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.ai30-panel .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ai30-panel label {
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: #cbd5e1;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.ai30-panel input,
+.ai30-panel select,
+.ai30-panel textarea {
+  background-color: #090e1a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-sm);
+  padding: 11px 12px;
+  color: var(--v30-text-color);
+  font-size: 0.88rem;
+  outline: none;
+  box-sizing: border-box;
+  transition: all 0.2s;
+}
+
+.ai30-panel input:focus, .ai30-panel select:focus, .ai30-panel textarea:focus {
+  border-color: var(--accent-indigo);
+  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2);
+}
+
+.ai30-panel button {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 12px 20px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+}
+.ai30-panel button:hover {
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+}
+.ai30-panel button:active {
+  transform: scale(0.98);
+}
+.ai30-panel button:disabled {
+  background: #334155 !important;
+  cursor: not-allowed;
+  filter: none;
+  transform: none;
+  box-shadow: none;
+}
+
+.ai30-panel #aiStatus {
+  margin-top: 15px;
+  font-weight: 700;
+  color: #a5b4fc;
+  text-align: center;
+  font-size: 0.88rem;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  background: rgba(129, 140, 248, 0.08);
+  border: 1px solid rgba(129, 140, 248, 0.2);
+}
+
+.ai30-panel .apiKey-link {
+  font-size: 0.78rem;
+  color: #818cf8;
+  text-decoration: underline;
+  font-weight: 600;
+}
+.ai30-panel .apiKey-link:hover { color: #c084fc; }
+
+/* Cuts Table Pro Styling */
+.ai30-panel table.cuts-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.82rem;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--v30-border-color);
+  margin-top: 12px;
+}
+
+.ai30-panel table.cuts-table th, .ai30-panel table.cuts-table td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.ai30-panel table.cuts-table th {
+  background-color: #0c1222;
+  color: #94a3b8;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.ai30-panel table.cuts-table tr:nth-child(even) { background-color: rgba(255, 255, 255, 0.02); }
+.ai30-panel table.cuts-table tr:hover { background-color: rgba(129, 140, 248, 0.04); }
+
+.ai30-panel .confirm-box {
+  margin-top: 22px;
+  padding: 18px;
+  background: rgba(129, 140, 248, 0.06);
+  border: 1px solid rgba(129, 140, 248, 0.25);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+.ai30-panel .confirm-box p {
+  margin: 0 0 14px 0;
+  color: #f8fafc;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+.ai30-panel .confirm-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+.ai30-panel .confirm-buttons button { flex: 1; max-width: 260px; }
+.ai30-panel #aiBtnSimCortar {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+}
+.ai30-panel #aiBtnNaoCortar {
+  background: #1e293b;
+  box-shadow: none;
+}
+.ai30-panel #aiBtnNaoCortar:hover { background: #334155; }
+
+.ai30-panel #aiCutProgress {
+  margin-top: 15px;
+  font-weight: 700;
+  color: #a5b4fc;
+  text-align: center;
+  font-size: 0.88rem;
+}
+
+.ai30-panel #aiVideoResultCard video {
+  width: 100%;
+  border-radius: var(--radius-md);
+  margin-bottom: 14px;
+  background: #000;
+  border: 1px solid var(--border-color);
+}
+
+.download-link, .download-link-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  text-decoration: none;
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 0.92rem;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.35);
+  transition: all 0.2s;
+}
+.download-link:hover, .download-link-btn:hover {
+  filter: brightness(1.12);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 22px rgba(16, 185, 129, 0.5);
+}
+
+/* =========================================================================
+   ABA 4: DOWNLOADER TIKTOK EM LOTE
+   ========================================================================= */
+.ai-grid-container {
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  gap: 18px;
+  height: calc(100vh - 32px);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ai-left-panel, .ai-right-panel {
+  background: var(--panel-bg);
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  padding: 22px 24px;
+  overflow-y: auto;
+  height: 100%;
+  box-sizing: border-box;
+  box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Download Queue Items */
+.dl-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(18, 26, 44, 0.7);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  margin-bottom: 10px;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s;
+}
+.dl-item:hover {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(23, 33, 54, 0.85);
+}
+.dl-item-title {
+  font-size: 0.82rem;
+  color: #f3f4f6;
+  max-width: 68%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+.dl-item-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 7px 14px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+.dl-item-btn:hover {
+  filter: brightness(1.15);
+}
+
+/* Floating Toast System */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+.toast-pill {
+  pointer-events: auto;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-md);
+  padding: 12px 18px;
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: toastIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  transition: all 0.3s ease;
+}
+.toast-pill.toast-success { border-color: rgba(16, 185, 129, 0.5); }
+.toast-pill.toast-info { border-color: rgba(56, 189, 248, 0.5); }
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+video#sourceVideo { display: none; }
+
+/* Responsive Breakpoints */
+@media (max-width: 1050px) {
+  body { height: auto; overflow: auto; flex-direction: column; }
+  .sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border-color); }
+  .main-content { height: auto; overflow: visible; }
+  .dashboard { grid-template-columns: 1fr; height: auto; }
+  .preview-column { height: auto; }
+  .controls-column { height: auto; overflow: visible; }
+  .preview-wrapper { max-width: 260px; }
+  .ai-grid-container { grid-template-columns: 1fr; height: auto; }
+  #tabAiContent { height: auto; overflow: visible; }
+}
+
+  </style>
 </head>
 <body>
 
-  <!-- Menu Lateral -->
+  <!-- Menu Lateral Pro -->
   <aside class="sidebar">
     <div class="brand-logo">
-      <span>TIKTOK BLIND ENGINE</span>
+      <div class="brand-top">
+        <span class="brand-title">BLIND ENGINE</span>
+        <span class="brand-badge">PRO+ ULTRA</span>
+      </div>
+      <div class="brand-status">
+        <span class="status-dot-pulse"></span>
+        <span>STUDIO ENGINE ACTIVE</span>
+      </div>
     </div>
+
     <nav class="nav-tabs">
       <button class="nav-btn found-tab active" id="tabBtnFound">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-        Found Footage & Terror
+        <div class="nav-btn-icon-wrap">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+        </div>
+        <div class="nav-btn-text">
+          <span class="nav-btn-title">Found Footage & Terror</span>
+          <span class="nav-btn-sub">HUD VHS • Anomalias</span>
+        </div>
       </button>
+
       <button class="nav-btn dorama-tab" id="tabBtnDorama">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"></path></svg>
-        Dorama, Séries & Cinema
+        <div class="nav-btn-icon-wrap">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"></path></svg>
+        </div>
+        <div class="nav-btn-text">
+          <span class="nav-btn-title">Dorama, Séries & Cinema</span>
+          <span class="nav-btn-sub">Color Grading • Split</span>
+        </div>
       </button>
+
       <button class="nav-btn ai-tab" id="tabBtnAi">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-        Roteirista & Resumo IA
+        <div class="nav-btn-icon-wrap">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+        </div>
+        <div class="nav-btn-text">
+          <span class="nav-btn-title">Roteirista & Resumo IA</span>
+          <span class="nav-btn-sub">Gemini 2.0 • TTS Dub</span>
+        </div>
       </button>
+
       <button class="nav-btn downloader-tab" id="tabBtnDownloader">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-        Baixar Vídeos TikTok
+        <div class="nav-btn-icon-wrap">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+        </div>
+        <div class="nav-btn-text">
+          <span class="nav-btn-title">Baixar Vídeos TikTok</span>
+          <span class="nav-btn-sub">Lote & Perfil Pro</span>
+        </div>
       </button>
     </nav>
 
+    <!-- Pasta de destino -->
     <div class="save-location-box" id="saveLocationBox">
-      <div class="save-location-label">📁 Salvar arquivos em</div>
+      <div class="save-location-header">
+        <span class="save-location-label">📁 Destino dos Downloads</span>
+      </div>
       <div class="save-location-current" id="saveLocationCurrent">Padrão do navegador (Downloads)</div>
-      <button class="save-location-btn" id="chooseSaveFolderBtn" type="button">Escolher pasta...</button>
+      <button class="save-location-btn" id="chooseSaveFolderBtn" type="button">
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
+        Escolher pasta...
+      </button>
       <button class="save-location-btn save-location-clear" id="clearSaveFolderBtn" type="button" style="display:none;">Usar padrão</button>
       <div class="save-location-hint" id="saveLocationHint"></div>
     </div>
+
+    <div class="sidebar-specs">
+      <span>⚡ FFmpeg 0.12 WASM</span>
+      <span>🎙️ WebAudio DSP</span>
+    </div>
   </aside>
 
-  <!-- Pasta de destino: onde salvar os arquivos processados -->
+  <!-- Script 1: Save Directory Handle -->
   <script>
     (function () {
       let saveDirectoryHandle = null;
@@ -888,13 +1558,14 @@
 
       <!-- Monitor Fixo das Abas 1 e 2 -->
       <div class="preview-column" id="blindPreviewColumn">
-        <div class="preview-header" id="previewModeTitle">📺 Monitor de Prévia (9:16)</div>
-        
+        <div class="preview-header-bar">
+          <div class="preview-header" id="previewModeTitle">📺 Monitor de Prévia (9:16)</div>
+          <span class="preview-badge-res">9:16 FHD</span>
+        </div>
         <div class="preview-modes">
           <button class="mode-btn active" id="btnPreviewOverlay">👁 Vídeo + Overlay</button>
           <button class="mode-btn" id="btnPreviewIntro">⚠ Gancho Inicial</button>
         </div>
-
         <div class="preview-wrapper" id="previewWrapper">
           <canvas id="previewCanvas"></canvas>
           <div id="cropBox">
@@ -919,24 +1590,34 @@
 
       <!-- Controles das Abas 1 e 2 -->
       <div class="controls-column" id="mainControlsColumn">
-        
+
         <!-- ABA 1: FOUND FOOTAGE & TERROR -->
         <div class="tab-content active" id="tabFoundContent">
-          <h2>Módulo Found Footage & Anomalias</h2>
-          <p class="desc">Layout analógico com HUD de segurança, interferência VHS, esteganografia e legendas virais sincronizadas.</p>
+          <div class="module-header">
+            <div class="module-badge-row">
+              <span class="module-badge cyan">⚡ Módulo Analógico Pro</span>
+            </div>
+            <h2>Módulo Found Footage & Anomalias</h2>
+            <p class="desc">Layout analógico com HUD de segurança, interferência VHS, esteganografia e legendas virais sincronizadas.</p>
+          </div>
 
           <div class="approval-box">
             <div class="control-title" style="color:#10b981;">🛡️ Modo Aprovação (anti-flag)</div>
-            <p style="font-size:0.74rem;color:var(--text-muted);margin:0 0 8px;line-height:1.4;">Aplica de uma vez a configuração contra <strong>não original + baixa qualidade + QR code</strong>: gancho desligado, edição criativa, desfoque de marca/QR, espelhamento, desafino leve e sem marca de canal.</p>
+            <p style="font-size:0.75rem;color:var(--text-muted);margin:4px 0 10px;line-height:1.4;">Aplica de uma vez a configuração contra <strong>não original + baixa qualidade + QR code</strong>: gancho desligado, edição criativa, desfoque de marca/QR, espelhamento, desafino leve e sem marca de canal.</p>
             <button type="button" class="approval-btn">⚡ Aplicar Modo Aprovação</button>
-            <label class="checkbox-item" style="margin-top:8px;">
+            <label class="checkbox-item" style="margin-top:10px;">
               <input type="checkbox" class="fast-chk">
               <span><strong>⚡ Render Rápido (ffmpeg)</strong> — processa mais rápido que tempo real, mantendo a qualidade. Desligado, usa o motor normal (canvas).</span>
             </label>
           </div>
 
-          <label>Selecione os Vídeos:</label>
-          <input type="file" class="video-input" accept="video/*" multiple>
+          <div class="pro-card">
+            <div class="control-title">🎬 Vídeos de Origem</div>
+            <label>Selecione os Vídeos:</label>
+            <div class="file-dropzone-wrap">
+              <input type="file" class="video-input" accept="video/*" multiple>
+            </div>
+          </div>
 
           <div class="crop-toggle-box">
             <label>
@@ -945,9 +1626,9 @@
             <input type="checkbox" class="enable-crop-chk" checked>
           </div>
 
-          <div class="control-box">
+          <div class="pro-card control-box">
             <div class="control-title">💬 Legendas Dinâmicas TikTok (Estilo Viral)</div>
-            <label style="margin-top:0;">Estilo da Legenda:</label>
+            <label style="margin-top:4px;">Estilo da Legenda:</label>
             <select class="caption-style-select">
               <option value="none">0. Desativar Legendas</option>
               <option value="hormozi" selected>🔥 Hormozi Pop (Amarelo Néon + Contorno Preto)</option>
@@ -958,17 +1639,17 @@
             <textarea class="caption-text-input" placeholder="Ex: OLHE O QUE APARECEU NO TOPO DO MASTRO. NINGUÉM CONSEGUIU EXPLICAR ESTA CRIATURA.">OLHE O QUE APARECEU NO TOPO DO MASTRO. NINGUÉM CONSEGUIU EXPLICAR ESTA CRIATURA.</textarea>
           </div>
 
-          <div class="control-box">
+          <div class="pro-card control-box">
             <div class="control-title">🎙️ Narração IA (voz própria — anti "não original")</div>
-            <label style="margin-top:0;">Texto da Narração (o que a voz IA vai falar por cima do vídeo):</label>
+            <label style="margin-top:4px;">Texto da Narração (o que a voz IA vai falar por cima do vídeo):</label>
             <textarea class="narration-text-input" placeholder="Ex: O que apareceu no topo do mastro deixou todo mundo sem explicação. Olha só o que a câmera capturou..."></textarea>
-            <label class="checkbox-item" style="margin-top:8px;">
+            <label class="checkbox-item" style="margin-top:10px;">
               <input type="checkbox" class="narration-chk">
               <span><strong>Ativar narração IA</strong> — gera a voz e mistura no vídeo durante a exportação (usa a Chave de API da aba Roteirista IA).</span>
             </label>
           </div>
 
-          <div class="control-box">
+          <div class="pro-card control-box">
             <div class="control-title">⏱ Corte de Tempo (Início / Fim)</div>
             <div class="control-row">
               <span>Cortar Início:</span>
@@ -982,53 +1663,63 @@
             </div>
           </div>
 
-          <label>Texto Base do Gancho (com numeração):</label>
-          <input type="text" class="hook-text-input" value="REGISTRO DESCLASSIFICADO #1">
+          <div class="pro-card">
+            <div class="control-title">🪝 Gancho Inicial & Identidade</div>
+            <label>Texto Base do Gancho (com numeração):</label>
+            <input type="text" class="hook-text-input" value="REGISTRO DESCLASSIFICADO #1">
 
-          <label>Estilo do Gancho Inicial:</label>
-          <select class="intro-style-select">
-            <option value="none" selected>0. Nenhum (Começar Direto) — recomendado</option>
-            <option value="classified">1. Arquivo Secreto / Alerta Vermelho (Dinâmico)</option>
-            <option value="breaking">2. Plantão Urgente / Breaking News</option>
-            <option value="radar">3. Radar Militar / Scanning de Criatura</option>
-          </select>
-          <p class="intro-retention-hint" style="font-size:0.75rem;color:var(--text-muted);margin:4px 0 0;">⚠ Cartões de gancho agora tocam o vídeo (com zoom leve) por trás do texto e duram só ~1s — mas "Nenhum" continua sendo o mais seguro pra retenção: qualquer tela sem movimento real nos primeiros instantes é o principal motivo de o espectador abandonar o vídeo em 0:01.</p>
+            <label>Estilo do Gancho Inicial:</label>
+            <select class="intro-style-select">
+              <option value="none" selected>0. Nenhum (Começar Direto) — recomendado</option>
+              <option value="classified">1. Arquivo Secreto / Alerta Vermelho (Dinâmico)</option>
+              <option value="breaking">2. Plantão Urgente / Breaking News</option>
+              <option value="radar">3. Radar Militar / Scanning de Criatura</option>
+            </select>
+            <p class="intro-retention-hint" style="font-size:0.73rem;color:var(--text-muted);margin:4px 0 0;line-height:1.4;">⚠ Cartões de gancho agora tocam o vídeo (com zoom leve) por trás do texto e duram só ~1s — mas "Nenhum" continua sendo o mais seguro pra retenção: qualquer tela sem movimento real nos primeiros instantes é o principal motivo de o espectador abandonar o vídeo em 0:01.</p>
 
-          <label>Estilo do Overlay (Durante o Vídeo):</label>
-          <select class="overlay-style-select">
-            <option value="none">0. Nenhum (Sem Elementos na Tela)</option>
-            <option value="rec_hud" selected>1. Câmera de Segurança / REC Analógico</option>
-            <option value="cyber_grid">2. Mira Tática / Grid Cibernético</option>
-            <option value="podcast_banner">3. Banner Jornalístico / Noticiário Dark</option>
-          </select>
-
-          <div class="control-row">
-            <span>Volume do Vídeo Original:</span>
-            <input type="range" class="video-volume-range" min="0" max="3" step="0.05" value="1.5">
-            <span class="control-val video-volume-val">150%</span>
+            <label>Estilo do Overlay (Durante o Vídeo):</label>
+            <select class="overlay-style-select">
+              <option value="none">0. Nenhum (Sem Elementos na Tela)</option>
+              <option value="rec_hud" selected>1. Câmera de Segurança / REC Analógico</option>
+              <option value="cyber_grid">2. Mira Tática / Grid Cibernético</option>
+              <option value="podcast_banner">3. Banner Jornalístico / Noticiário Dark</option>
+            </select>
           </div>
 
-          <label>Música de Fundo (opcional):</label>
-          <input type="file" class="bgm-input" accept="audio/*">
-          <div class="control-row">
-            <span>Volume da Música:</span>
-            <input type="range" class="bgm-volume-range" min="0" max="1" step="0.05" value="0.35">
-            <span class="control-val bgm-volume-val">35%</span>
-          </div>
+          <div class="pro-card">
+            <div class="control-title">🔊 Mixagem de Áudio & Anti-Content ID</div>
+            <div class="control-row">
+              <span>Volume do Vídeo Original:</span>
+              <input type="range" class="video-volume-range" min="0" max="3" step="0.05" value="1.5">
+              <span class="control-val video-volume-val">150%</span>
+            </div>
 
-          <label>🎵 Desafinar Áudio (anti Content ID de música):</label>
-          <select class="pitch-select">
-            <option value="0" selected>0 = Sem alteração</option>
-            <option value="1">+1 semitom (sobe o tom, acelera ~6%)</option>
-            <option value="-1">−1 semitom (desce o tom, desacelera ~6%)</option>
-            <option value="2">+2 semitons</option>
-            <option value="-2">−2 semitons</option>
-            <option value="3">+3 semitons</option>
-            <option value="-3">−3 semitons</option>
-          </select>
-          <p style="font-size:0.72rem;color:var(--text-muted);margin:4px 0 0;line-height:1.4;">Muda a <strong>altura real</strong> do áudio (não só volume/EQ), deslocando os picos espectrais — é o que de fato quebra o reconhecimento de música. O vídeo continua sincronizado (a velocidade muda junto com o tom).</p>
+            <label>Música de Fundo (opcional):</label>
+            <div class="file-dropzone-wrap">
+              <input type="file" class="bgm-input" accept="audio/*">
+            </div>
+
+            <div class="control-row" style="margin-top:10px;">
+              <span>Volume da Música:</span>
+              <input type="range" class="bgm-volume-range" min="0" max="1" step="0.05" value="0.35">
+              <span class="control-val bgm-volume-val">35%</span>
+            </div>
+
+            <label>🎵 Desafinar Áudio (anti Content ID de música):</label>
+            <select class="pitch-select">
+              <option value="0" selected>0 = Sem alteração</option>
+              <option value="1">+1 semitom (sobe o tom, acelera ~6%)</option>
+              <option value="-1">−1 semitom (desce o tom, desacelera ~6%)</option>
+              <option value="2">+2 semitons</option>
+              <option value="-2">−2 semitons</option>
+              <option value="3">+3 semitons</option>
+              <option value="-3">−3 semitons</option>
+            </select>
+            <p style="font-size:0.72rem;color:var(--text-muted);margin:4px 0 0;line-height:1.4;">Muda a <strong>altura real</strong> do áudio (não só volume/EQ), deslocando os picos espectrais — é o que de fato quebra o reconhecimento de música. O vídeo continua sincronizado (a velocidade muda junto com o tom).</p>
+          </div>
 
           <div class="feature-list">
+            <div class="control-title" style="margin-bottom:10px;">🛡️ Camadas de Blindagem Algorítmica</div>
             <label class="checkbox-item">
               <input type="checkbox" class="shake-chk" checked>
               <span><strong>Micro-Camera Shake:</strong> Desalinhamento do fluxo óptico por vetores senoidais.</span>
@@ -1055,36 +1746,48 @@
             </label>
           </div>
 
-          <div class="feature-list" style="border-color:#f59e0b;">
-            <div class="control-title" style="color:#facc15;">🛡️ Checklist anti-violação (recomendação)</div>
-            <p style="font-size:0.75rem;color:var(--text-muted);margin:0 0 6px;line-height:1.45;">O TikTok segura vídeos por <strong>conteúdo não original</strong> (marca d'água/logotipo), <strong>QR code</strong> e <strong>baixa qualidade</strong> (tela parada ou vídeo muito curto). Antes de postar:</p>
+          <div class="feature-list" style="border-color: rgba(251, 191, 36, 0.35); background: rgba(251, 191, 36, 0.04);">
+            <div class="control-title" style="color:var(--accent-yellow);">🛡️ Checklist anti-violação (recomendação)</div>
+            <p style="font-size:0.75rem;color:var(--text-muted);margin:4px 0 6px;line-height:1.45;">O TikTok segura vídeos por <strong>conteúdo não original</strong> (marca d'água/logotipo), <strong>QR code</strong> e <strong>baixa qualidade</strong> (tela parada ou vídeo muito curto). Antes de postar:</p>
             <ul style="font-size:0.75rem;color:var(--text-muted);margin:0;padding-left:18px;line-height:1.5;">
-              <li>Remova qualquer logotipo/marca d'água do vídeo de origem — use o <strong>crop</strong> ou a <strong>máscara de desfoque</strong> (abaixo).</li>
+              <li>Remova qualquer logotipo/marca d'água do vídeo de origem — use o <strong>crop</strong> ou a <strong>máscara de desfoque</strong>.</li>
               <li>Sem QR code visível — cubra com a <strong>máscara de desfoque</strong>.</li>
               <li>Gancho em <strong>"Nenhum"</strong> e abertura já com movimento real.</li>
             </ul>
           </div>
 
-          <button class="btn-action process-btn" disabled>Processar Fila Found Footage (MP4)</button>
+          <button class="btn-action process-btn" disabled>
+            ⚡ Processar Fila Found Footage (MP4)
+          </button>
         </div>
 
-        <!-- ABA 2: DORAMAS, DRAMAS & CINEMA -->
+        <!-- ABA 2: DORAMA, SÉRIES & CINEMA -->
         <div class="tab-content" id="tabDoramaContent">
-          <h2>Módulo Cinema Narrado & Doramas</h2>
-          <p class="desc">Formatação otimizada para resumos de novelas coreanas, séries e filmes cinematográficos.</p>
+          <div class="module-header">
+            <div class="module-badge-row">
+              <span class="module-badge rose">🎬 Módulo Cinema Pro</span>
+            </div>
+            <h2>Módulo Cinema Narrado & Doramas</h2>
+            <p class="desc">Formatação otimizada para resumos de novelas coreanas, séries e filmes cinematográficos.</p>
+          </div>
 
           <div class="approval-box">
             <div class="control-title" style="color:#10b981;">🛡️ Modo Aprovação (anti-flag)</div>
-            <p style="font-size:0.74rem;color:var(--text-muted);margin:0 0 8px;line-height:1.4;">Aplica de uma vez a configuração contra <strong>não original + baixa qualidade + QR code</strong>: gancho desligado, edição criativa, desfoque de marca/QR, desafino leve e sem marca de canal.</p>
+            <p style="font-size:0.75rem;color:var(--text-muted);margin:4px 0 10px;line-height:1.4;">Aplica de uma vez a configuração contra <strong>não original + baixa qualidade + QR code</strong>: gancho desligado, edição criativa, desfoque de marca/QR, desafino leve e sem marca de canal.</p>
             <button type="button" class="approval-btn">⚡ Aplicar Modo Aprovação</button>
-            <label class="checkbox-item" style="margin-top:8px;">
+            <label class="checkbox-item" style="margin-top:10px;">
               <input type="checkbox" class="fast-chk">
               <span><strong>⚡ Render Rápido (ffmpeg)</strong> — processa mais rápido que tempo real, mantendo a qualidade. Desligado, usa o motor normal (canvas).</span>
             </label>
           </div>
 
-          <label>Selecione os Cortes do Filme / Dorama:</label>
-          <input type="file" class="video-input" accept="video/*" multiple>
+          <div class="pro-card">
+            <div class="control-title">🎬 Cortes do Filme / Dorama</div>
+            <label>Selecione os Cortes do Filme / Dorama:</label>
+            <div class="file-dropzone-wrap">
+              <input type="file" class="video-input" accept="video/*" multiple>
+            </div>
+          </div>
 
           <div class="crop-toggle-box">
             <label>
@@ -1093,7 +1796,7 @@
             <input type="checkbox" class="enable-crop-chk" checked>
           </div>
 
-          <div class="control-box">
+          <div class="pro-card control-box">
             <div class="control-title">⏱ Corte de Tempo de Cena (Início / Fim)</div>
             <div class="control-row">
               <span>Cortar Início:</span>
@@ -1107,74 +1810,87 @@
             </div>
           </div>
 
-          <label>Nome do Dorama / Título da Série & Parte:</label>
-          <input type="text" class="hook-text-input" value="BELEZA VERDADEIRA - PARTE 1">
+          <div class="pro-card">
+            <div class="control-title">🎭 Identidade & Gancho Emocional</div>
+            <label>Nome do Dorama / Título da Série & Parte:</label>
+            <input type="text" class="hook-text-input" value="BELEZA VERDADEIRA - PARTE 1">
 
-          <label>Frase de Curiosidade / Gancho Emocional:</label>
-          <input type="text" id="doramaHookSubtitle" value="Ela escondeu seu rosto de toda a escola...">
+            <label>Frase de Curiosidade / Gancho Emocional:</label>
+            <input type="text" id="doramaHookSubtitle" value="Ela escondeu seu rosto de toda a escola...">
+          </div>
 
-          <div class="control-box">
+          <div class="pro-card control-box">
             <div class="control-title">🎙️ Narração IA (voz própria — anti "não original")</div>
-            <label style="margin-top:0;">Texto da Narração (o que a voz IA vai falar por cima do vídeo):</label>
+            <label style="margin-top:4px;">Texto da Narração (o que a voz IA vai falar por cima do vídeo):</label>
             <textarea class="narration-text-input" placeholder="Ex: Ela escondeu o rosto de toda a escola, mas um segredo estava prestes a mudar tudo..."></textarea>
-            <label class="checkbox-item" style="margin-top:8px;">
+            <label class="checkbox-item" style="margin-top:10px;">
               <input type="checkbox" class="narration-chk">
               <span><strong>Ativar narração IA</strong> — gera a voz e mistura no vídeo durante a exportação (usa a Chave de API da aba Roteirista IA).</span>
             </label>
           </div>
 
-          <label>Estilo do Gancho Inicial (~1s, vídeo já em movimento por trás):</label>
-          <select class="intro-style-select">
-            <option value="none" selected>0. Nenhum (Iniciar direto) — recomendado</option>
-            <option value="dorama_card">1. Cartão de Novela / Cinema Card</option>
-            <option value="dorama_question">2. Pergunta de Retenção ("O que você faria?")</option>
-          </select>
-          <p class="intro-retention-hint" style="font-size:0.75rem;color:var(--text-muted);margin:4px 0 0;">⚠ O card de gancho era uma tela 100% estática por 2.2s — analisamos um vídeo real da conta com essa opção e a retenção despencou (maioria dos espectadores parou em 0:01, 9% de retenção média). Corrigido: agora o vídeo já toca com leve zoom por trás do texto e o card dura só ~1s. Ainda assim, "Nenhum" é a opção mais segura — comece direto na cena mais forte.</p>
+          <div class="pro-card">
+            <div class="control-title">🎨 Layout & Color Grading Cinematográfico</div>
+            <label>Estilo do Gancho Inicial (~1s, vídeo já em movimento por trás):</label>
+            <select class="intro-style-select">
+              <option value="none" selected>0. Nenhum (Iniciar direto) — recomendado</option>
+              <option value="dorama_card">1. Cartão de Novela / Cinema Card</option>
+              <option value="dorama_question">2. Pergunta de Retenção ("O que você faria?")</option>
+            </select>
+            <p class="intro-retention-hint" style="font-size:0.73rem;color:var(--text-muted);margin:4px 0 0;line-height:1.4;">⚠ O card de gancho era uma tela 100% estática por 2.2s — analisamos um vídeo real da conta com essa opção e a retenção despencou (maioria dos espectadores parou em 0:01, 9% de retenção média). Corrigido: agora o vídeo já toca com leve zoom por trás do texto e o card dura só ~1s. Ainda assim, "Nenhum" é a opção mais segura — comece direto na cena mais forte.</p>
 
-          <label>Layout & Enquadramento Cinematográfico:</label>
-          <select class="overlay-style-select" id="doramaOverlaySelect">
-            <option value="cinema_top_split">1. Cinema Split (Vídeo no Topo)</option>
-            <option value="cinema_letterbox">2. Letterbox 21:9 com Moldura de Título</option>
-            <option value="netflix_style" selected>3. Layout Estilo Streaming / Player Minimalista</option>
-          </select>
+            <label>Layout & Enquadramento Cinematográfico:</label>
+            <select class="overlay-style-select" id="doramaOverlaySelect">
+              <option value="cinema_top_split">1. Cinema Split (Vídeo no Topo)</option>
+              <option value="cinema_letterbox">2. Letterbox 21:9 com Moldura de Título</option>
+              <option value="netflix_style" selected>3. Layout Estilo Streaming / Player Minimalista</option>
+            </select>
 
-          <label>Nome do Canal / Marca (aparece no topo, layout Streaming):</label>
-          <input type="text" class="channel-name-input" value="" placeholder="(vazio = sem marca)" maxlength="20">
+            <label>Nome do Canal / Marca (aparece no topo, layout Streaming):</label>
+            <input type="text" class="channel-name-input" value="" placeholder="(vazio = sem marca)" maxlength="20">
 
-          <label>Filtro de Gradação de Cor (Color Grading):</label>
-          <select id="doramaColorFilter">
-            <option value="warm_korea">K-Drama Warm (Cores Vivas e Pele Suave)</option>
-            <option value="cold_thriller">Cold Thriller (Tom Frio e Alto Contraste)</option>
-            <option value="vintage_film">Vintage 35mm (Filme de Cinema Clássico)</option>
-          </select>
-
-          <div class="control-row">
-            <span>Volume do Vídeo Original:</span>
-            <input type="range" class="video-volume-range" min="0" max="3" step="0.05" value="1.5">
-            <span class="control-val video-volume-val">150%</span>
+            <label>Filtro de Gradação de Cor (Color Grading):</label>
+            <select id="doramaColorFilter">
+              <option value="warm_korea">K-Drama Warm (Cores Vivas e Pele Suave)</option>
+              <option value="cold_thriller">Cold Thriller (Tom Frio e Alto Contraste)</option>
+              <option value="vintage_film">Vintage 35mm (Filme de Cinema Clássico)</option>
+            </select>
           </div>
 
-          <label>Música de Fundo (opcional):</label>
-          <input type="file" class="bgm-input" accept="audio/*">
-          <div class="control-row">
-            <span>Volume da Música:</span>
-            <input type="range" class="bgm-volume-range" min="0" max="1" step="0.05" value="0.35">
-            <span class="control-val bgm-volume-val">35%</span>
-          </div>
+          <div class="pro-card">
+            <div class="control-title">🔊 Mixagem de Áudio & Anti-Content ID</div>
+            <div class="control-row">
+              <span>Volume do Vídeo Original:</span>
+              <input type="range" class="video-volume-range" min="0" max="3" step="0.05" value="1.5">
+              <span class="control-val video-volume-val">150%</span>
+            </div>
 
-          <label>🎵 Desafinar Áudio (anti Content ID de música):</label>
-          <select class="pitch-select">
-            <option value="0" selected>0 = Sem alteração</option>
-            <option value="1">+1 semitom (sobe o tom, acelera ~6%)</option>
-            <option value="-1">−1 semitom (desce o tom, desacelera ~6%)</option>
-            <option value="2">+2 semitons</option>
-            <option value="-2">−2 semitons</option>
-            <option value="3">+3 semitons</option>
-            <option value="-3">−3 semitons</option>
-          </select>
-          <p style="font-size:0.72rem;color:var(--text-muted);margin:4px 0 0;line-height:1.4;">Muda a <strong>altura real</strong> do áudio (não só volume/EQ), deslocando os picos espectrais — é o que de fato quebra o reconhecimento de música. O vídeo continua sincronizado (a velocidade muda junto com o tom).</p>
+            <label>Música de Fundo (opcional):</label>
+            <div class="file-dropzone-wrap">
+              <input type="file" class="bgm-input" accept="audio/*">
+            </div>
+
+            <div class="control-row" style="margin-top:10px;">
+              <span>Volume da Música:</span>
+              <input type="range" class="bgm-volume-range" min="0" max="1" step="0.05" value="0.35">
+              <span class="control-val bgm-volume-val">35%</span>
+            </div>
+
+            <label>🎵 Desafinar Áudio (anti Content ID de música):</label>
+            <select class="pitch-select">
+              <option value="0" selected>0 = Sem alteração</option>
+              <option value="1">+1 semitom (sobe o tom, acelera ~6%)</option>
+              <option value="-1">−1 semitom (desce o tom, desacelera ~6%)</option>
+              <option value="2">+2 semitons</option>
+              <option value="-2">−2 semitons</option>
+              <option value="3">+3 semitons</option>
+              <option value="-3">−3 semitons</option>
+            </select>
+            <p style="font-size:0.72rem;color:var(--text-muted);margin:4px 0 0;line-height:1.4;">Muda a <strong>altura real</strong> do áudio (não só volume/EQ), deslocando os picos espectrais — é o que de fato quebra o reconhecimento de música. O vídeo continua sincronizado (a velocidade muda junto com o tom).</p>
+          </div>
 
           <div class="feature-list">
+            <div class="control-title" style="margin-bottom:10px;">🛡️ Camadas de Blindagem Algorítmica</div>
             <label class="checkbox-item">
               <input type="checkbox" class="audio-ducking-chk" checked>
               <span><strong>Audio Ducking para Narração:</strong> Reduz volume de fundo para 18%.</span>
@@ -1201,251 +1917,267 @@
             </label>
           </div>
 
-          <div class="feature-list" style="border-color:#f59e0b;">
-            <div class="control-title" style="color:#facc15;">🛡️ Checklist anti-violação (recomendação)</div>
-            <p style="font-size:0.75rem;color:var(--text-muted);margin:0 0 6px;line-height:1.45;">O TikTok segura vídeos por <strong>conteúdo não original</strong> (marca d'água/logotipo), <strong>QR code</strong> e <strong>baixa qualidade</strong> (tela parada ou vídeo muito curto). Antes de postar:</p>
+          <div class="feature-list" style="border-color: rgba(251, 191, 36, 0.35); background: rgba(251, 191, 36, 0.04);">
+            <div class="control-title" style="color:var(--accent-yellow);">🛡️ Checklist anti-violação (recomendação)</div>
+            <p style="font-size:0.75rem;color:var(--text-muted);margin:4px 0 6px;line-height:1.45;">O TikTok segura vídeos por <strong>conteúdo não original</strong> (marca d'água/logotipo), <strong>QR code</strong> e <strong>baixa qualidade</strong> (tela parada ou vídeo muito curto). Antes de postar:</p>
             <ul style="font-size:0.75rem;color:var(--text-muted);margin:0;padding-left:18px;line-height:1.5;">
-              <li>Remova qualquer logotipo/marca d'água do vídeo de origem — use o <strong>crop</strong> ou a <strong>máscara de desfoque</strong> (abaixo).</li>
+              <li>Remova qualquer logotipo/marca d'água do vídeo de origem — use o <strong>crop</strong> ou a <strong>máscara de desfoque</strong>.</li>
               <li>Sem QR code visível — cubra com a <strong>máscara de desfoque</strong>.</li>
               <li>Gancho em <strong>"Nenhum"</strong> e abertura já com movimento real.</li>
             </ul>
           </div>
 
-          <button class="btn-action process-btn" disabled>Processar Fila de Dorama / Cinema (MP4)</button>
+          <button class="btn-action process-btn" disabled>
+            🎬 Processar Fila de Dorama / Cinema (MP4)
+          </button>
         </div>
 
       </div>
 
-      <!-- ABA 3: RESUMIDOR & ROTEIRISTA IA (versão enviada pelo usuário) -->
+      <!-- ABA 3: RESUMIDOR DE VÍDEO & ROTEIRISTA IA -->
       <div class="tab-content" id="tabAiContent">
         <div class="ai30-panel">
           <div class="container">
-
-    <div>
-        <h1>Resumidor de Vídeo & Roteirista IA</h1>
-        <p class="subtitle">Envie seu vídeo e receba o corte exato com narração em 3ª pessoa, dublada por uma voz sintética humanizada</p>
-    </div>
-
-    <div class="card">
-        <div class="form-group" style="margin-bottom: 15px;">
-            <label for="aiApiKey">Chave API do Google Gemini 
-                (<a href="https://aistudio.google.com/app/apikey" target="_blank" class="apiKey-link">Obter chave gratuita aqui</a>)
-            </label>
-            <input type="password" id="aiApiKey" placeholder="Cole sua chave AIzaSy..." />
-            <label style="text-transform:none;font-weight:400;font-size:0.8rem;display:flex;align-items:center;gap:6px;margin-top:4px;">
-                <input type="checkbox" id="aiRememberApiKey" style="width:auto;">
-                Lembrar minha chave neste navegador (fica salva só localmente, no seu dispositivo)
-            </label>
-        </div>
-
-        <div class="form-group" style="margin-bottom: 15px;">
-            <label for="aiVideoFile">Selecione o(s) Arquivo(s) de Vídeo (.mp4, .webm, .mov)</label>
-            <input type="file" id="aiVideoFile" accept="video/*" multiple />
-            <p id="aiQueueInfo" style="display:none; font-size:0.8rem; color:var(--text-muted); margin:4px 0 0;"></p>
-            <video id="aiVideoPreview" controls style="display:none; width:100%; border-radius:8px; margin-top:8px; max-height:320px;"></video>
-            <p id="aiVideoPreviewInfo" style="display:none; font-size:0.8rem; color:var(--text-muted); margin:4px 0 0;"></p>
-        </div>
-
-        <div class="grid">
-            <div class="form-group">
-                <label for="aiTargetTime">Duração do Resumo (minutos)</label>
-                <input type="number" id="aiTargetTime" value="10" min="1" max="30">
+            <div class="ai-hero-header">
+              <h1>Resumidor de Vídeo & Roteirista IA</h1>
+              <p class="subtitle">Envie seu vídeo e receba o corte exato com narração em 3ª pessoa, dublada por uma voz sintética humanizada</p>
             </div>
-            <div class="form-group">
-                <label for="aiTone">Tom da Narração</label>
-                <select id="aiTone">
+
+            <div class="card">
+              <div class="form-group" style="margin-bottom: 16px;">
+                <label for="aiApiKey">Chave API do Google Gemini (<a href="https://aistudio.google.com/app/apikey" target="_blank" class="apiKey-link">Obter chave gratuita aqui</a>)</label>
+                <input type="password" id="aiApiKey" placeholder="Cole sua chave AIzaSy...">
+                <label style="text-transform:none;font-weight:400;font-size:0.8rem;display:flex;align-items:center;gap:8px;margin-top:6px;cursor:pointer;">
+                  <input type="checkbox" id="aiRememberApiKey" style="width:16px;height:16px;margin:0;">
+                  Lembrar minha chave neste navegador (fica salva só localmente, no seu dispositivo)
+                </label>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 16px;">
+                <label for="aiVideoFile">Selecione o(s) Arquivo(s) de Vídeo (.mp4, .webm, .mov)</label>
+                <div class="file-dropzone-wrap">
+                  <input type="file" id="aiVideoFile" accept="video/*" multiple>
+                </div>
+                <p id="aiQueueInfo" style="display:none; font-size:0.8rem; color:var(--text-muted); margin:6px 0 0;"></p>
+                <video id="aiVideoPreview" controls style="display:none; width:100%; border-radius:var(--radius-md); margin-top:10px; max-height:320px; background:#000; border:1px solid var(--border-color);"></video>
+                <p id="aiVideoPreviewInfo" style="display:none; font-size:0.8rem; color:var(--text-muted); margin:6px 0 0;"></p>
+              </div>
+
+              <div class="grid">
+                <div class="form-group">
+                  <label for="aiTargetTime">Duração do Resumo (minutos)</label>
+                  <input type="number" id="aiTargetTime" min="1" max="30" value="10">
+                </div>
+
+                <div class="form-group">
+                  <label for="aiTone">Tom da Narração</label>
+                  <select id="aiTone">
                     <option value="dinâmico, envolvente e direto ao ponto">Dinâmico e Envolvente</option>
                     <option value="misterioso, focado em suspense e tensão">Misterioso / Suspense</option>
                     <option value="didático, explicativo e analítico">Didático / Documental</option>
                     <option value="cinematográfico e dramático">Cinematográfico / Dramático</option>
                     <option value="acelerado, hiperenergético, cheio de ganchos e reviravoltas, com frases curtas e quase sem pausas, no estilo de resumo de dorama/novela viral do TikTok" data-turbo="true">🔥 Turbo TikTok / Dorama (acelerado, muitos cortes)</option>
+                  </select>
+                  <p id="aiToneTurboHint" style="display:none;font-size:0.75rem;color:var(--text-muted);margin:4px 0 0;line-height:1.4;">Roteiro com mais cortes curtos, ganchos e reviravoltas a cada poucos segundos, e narração falada mais rápido — pensado pra prender a atenção como um resumo de dorama que viraliza no TikTok.</p>
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-top: 16px;">
+                <label for="aiVoice">Voz do Narrador (IA)</label>
+                <select id="aiVoice">
+                  <option value="Sulafat">Sulafat — Calorosa (recomendada)</option>
+                  <option value="Achird">Achird — Amigável</option>
+                  <option value="Rasalgethi">Rasalgethi — Documental / Informativa</option>
+                  <option value="Charon">Charon — Grave / Informativo</option>
+                  <option value="Puck">Puck — Animada / Empolgante</option>
+                  <option value="Gacrux">Gacrux — Madura / Séria</option>
+                  <option value="Umbriel">Umbriel — Tranquila</option>
+                  <option value="Kore">Kore — Firme / Neutra</option>
                 </select>
-                <p id="aiToneTurboHint" style="display:none;font-size:0.75rem;color:var(--text-muted);margin:4px 0 0;">Roteiro com mais cortes curtos, ganchos e reviravoltas a cada poucos segundos, e narração falada mais rápido — pensado pra prender a atenção como um resumo de dorama que viraliza no TikTok.</p>
+                <label style="text-transform:none;font-weight:400;font-size:0.8rem;display:flex;align-items:center;gap:8px;margin-top:8px;cursor:pointer;">
+                  <input type="checkbox" id="aiSkipNarration" style="width:16px;height:16px;margin:0;">
+                  🔇 Não gerar narração — manter o áudio original do vídeo em todas as cenas
+                </label>
+                <p id="aiSkipNarrationHint" style="display:none;font-size:0.75rem;color:var(--text-muted);margin:4px 0 0;line-height:1.4;">Pula a etapa de narração sintética (economiza tempo e cota da API): o roteiro/tabela de cortes ainda é gerado normalmente, mas o corte final mantém o som original do vídeo em toda cena.</p>
+              </div>
+
+              <div class="form-group" style="margin-top: 16px;">
+                <label for="aiReadingWpm">Velocidade de Leitura p/ Calcular o Tamanho dos Cortes (palavras por minuto)</label>
+                <input type="number" id="aiReadingWpm" min="60" max="300" step="1" value="150">
+                <p style="font-size:0.74rem;color:var(--text-muted);margin:4px 0 0;line-height:1.45;">🎯 É esse número que decide o tamanho de cada corte (não o áudio do Gemini) — por isso é o ajuste mais importante pra a narração bater EXATO com o áudio que você gerar no ElevenLabs depois. Padrão (150) é uma média; toda voz/velocidade do ElevenLabs fala num ritmo levemente diferente. Pra calibrar pra sua voz: gere no ElevenLabs um texto de teste com um número redondo de palavras (ex: 100), veja quantos segundos o áudio durou, e calcule <code>palavras ÷ (segundos/60)</code> — cole o resultado aqui. Depois de calibrado uma vez, os próximos roteiros já saem no tamanho certo.</p>
+              </div>
+
+              <div class="form-group" style="margin-top: 16px;">
+                <label for="aiAspectRatio">Formato de Saída</label>
+                <select id="aiAspectRatio">
+                  <option value="original">Original (sem cortar as bordas)</option>
+                  <option value="9:16">Vertical 9:16 — Stories / Reels / TikTok</option>
+                  <option value="4:5">Retrato 4:5 — Feed do Instagram</option>
+                  <option value="1:1">Quadrado 1:1 — Feed</option>
+                </select>
+                <p style="font-size:0.74rem;color:var(--text-muted);margin:4px 0 0;line-height:1.4;">Formatos diferentes do original cortam as bordas laterais/topo-baixo (crop central) para preencher a proporção escolhida — isso reenquadra a cena, então algo nas bordas pode ficar de fora.</p>
+              </div>
+
+              <div class="form-group" style="margin-top: 16px;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;font-weight:600;">
+                  <input type="checkbox" id="aiViralMode" checked style="width:16px;height:16px;margin:0;">
+                  🧲 Modo Viciante — otimizado pra retenção (recomendado)
+                </label>
+                <p style="font-size:0.74rem;color:var(--text-muted);margin:4px 0 0;line-height:1.45;">Ativa 3 coisas de uma vez: (1) exige que a IA abra com o momento mais forte do vídeo inteiro, com uma frase-gancho em destaque nos 2-3s iniciais; (2) regra de ritmo mais rígida no roteiro (cortes mais curtos, espalhados pelo vídeo todo); (3) barra de progresso fina no rodapé. Não queima legenda na imagem — o roteiro/legenda é exportado à parte em .srt, já no mesmo tempo do vídeo final, pra você sincronizar com o áudio gerado no ElevenLabs. Deixa o processamento um pouco mais lento (o vídeo ainda precisa ser reprocessado pelo gancho e pela barra).</p>
+              </div>
+
+              <div class="form-group" style="margin-top: 16px;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;font-weight:600;">
+                  <input type="checkbox" id="aiAutoCut" style="width:16px;height:16px;margin:0;">
+                  ✂️ Cortar automaticamente assim que o roteiro terminar (sem perguntar)
+                </label>
+                <p style="font-size:0.74rem;color:var(--text-muted);margin:4px 0 0;line-height:1.45;">Pula a pergunta "quer que eu corte o vídeo?" — assim que o roteiro e a narração terminarem, o corte começa sozinho, igual já acontece automaticamente quando você processa vários vídeos de uma vez (fila).</p>
+              </div>
+
+              <p style="font-size:0.76rem; color:var(--text-muted); margin: 18px 0 0; line-height:1.5;">💳 Cada processamento consome a cota/saldo da <strong>sua</strong> chave de API do Gemini — o upload do vídeo, a geração do roteiro e a narração de cada cena são chamadas pagas (a chave tem uma cota gratuita limitada; acima dela, cobra por uso). Acompanhe o consumo em <a href="https://aistudio.google.com/app/apikey" target="_blank" class="apiKey-link">aistudio.google.com</a>.</p>
+
+              <div style="display:flex; gap:12px; margin-top: 14px;">
+                <button id="aiProcessBtn" style="flex:1;">⚡ Processar Vídeo(s), Roteiro e Narração</button>
+                <button id="aiCancelBtn" style="display:none; background:linear-gradient(135deg, #b91c1c, #991b1b); flex:0 0 auto;">✖ Cancelar</button>
+              </div>
+
+              <div id="aiStatus" role="status" aria-live="polite"></div>
+              <div id="aiBatchStatus" role="status" aria-live="polite" style="display:none; margin-top:10px; font-weight:600; text-align:center; color:#38bdf8;"></div>
             </div>
-        </div>
 
-        <div class="form-group" style="margin-top: 15px;">
-            <label for="aiVoice">Voz do Narrador (IA)</label>
-            <select id="aiVoice">
-                <option value="Sulafat">Sulafat — Calorosa (recomendada)</option>
-                <option value="Achird">Achird — Amigável</option>
-                <option value="Rasalgethi">Rasalgethi — Documental / Informativa</option>
-                <option value="Charon">Charon — Grave / Informativo</option>
-                <option value="Puck">Puck — Animada / Empolgante</option>
-                <option value="Gacrux">Gacrux — Madura / Séria</option>
-                <option value="Umbriel">Umbriel — Tranquila</option>
-                <option value="Kore">Kore — Firme / Neutra</option>
-            </select>
-            <label style="text-transform:none;font-weight:400;font-size:0.8rem;display:flex;align-items:center;gap:6px;margin-top:8px;">
-                <input type="checkbox" id="aiSkipNarration" style="width:auto;">
-                🔇 Não gerar narração — manter o áudio original do vídeo em todas as cenas
-            </label>
-            <p id="aiSkipNarrationHint" style="display:none;font-size:0.75rem;color:var(--text-muted);margin:4px 0 0;">Pula a etapa de narração sintética (economiza tempo e cota da API): o roteiro/tabela de cortes ainda é gerado normalmente, mas o corte final mantém o som original do vídeo em toda cena.</p>
-        </div>
+            <!-- Card de Saída da Tabela de Cortes -->
+            <div class="card" id="aiOutputCard" style="display: none;">
+              <h3 style="margin-top:0; font-size:1.2rem;">Resultado e Tabela de Cortes</h3>
+              <div id="aiResultOutput"></div>
 
-        <div class="form-group" style="margin-top: 15px;">
-            <label for="aiReadingWpm">Velocidade de Leitura p/ Calcular o Tamanho dos Cortes (palavras por minuto)</label>
-            <input type="number" id="aiReadingWpm" value="150" min="60" max="300" step="1">
-            <p style="font-size:0.75rem;color:var(--text-muted);margin:4px 0 0;">🎯 É esse número que decide o tamanho de cada corte (não o áudio do Gemini) — por isso é o ajuste mais importante pra a narração bater EXATO com o áudio que você gerar no ElevenLabs depois. Padrão (150) é uma média; toda voz/velocidade do ElevenLabs fala num ritmo levemente diferente. Pra calibrar pra sua voz: gere no ElevenLabs um texto de teste com um número redondo de palavras (ex: 100), veja quantos segundos o áudio durou, e calcule <code>palavras ÷ (segundos/60)</code> — cole o resultado aqui. Depois de calibrado uma vez, os próximos roteiros já saem no tamanho certo.</p>
-        </div>
-
-        <div class="form-group" style="margin-top: 15px;">
-            <label for="aiAspectRatio">Formato de Saída</label>
-            <select id="aiAspectRatio">
-                <option value="original">Original (sem cortar as bordas)</option>
-                <option value="9:16">Vertical 9:16 — Stories / Reels / TikTok</option>
-                <option value="4:5">Retrato 4:5 — Feed do Instagram</option>
-                <option value="1:1">Quadrado 1:1 — Feed</option>
-            </select>
-            <p style="font-size:0.75rem;color:var(--text-muted);margin:4px 0 0;">Formatos diferentes do original cortam as bordas laterais/topo-baixo (crop central) para preencher a proporção escolhida — isso reenquadra a cena, então algo nas bordas pode ficar de fora.</p>
-        </div>
-
-        <div class="form-group" style="margin-top: 15px;">
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                <input type="checkbox" id="aiViralMode" checked style="width:auto;">
-                🧲 Modo Viciante — otimizado pra retenção (recomendado)
-            </label>
-            <p style="font-size:0.75rem;color:var(--text-muted);margin:4px 0 0;">Ativa 3 coisas de uma vez: (1) exige que a IA abra com o momento mais forte do vídeo inteiro, com uma frase-gancho em destaque nos 2-3s iniciais; (2) regra de ritmo mais rígida no roteiro (cortes mais curtos, espalhados pelo vídeo todo); (3) barra de progresso fina no rodapé. Não queima legenda na imagem — o roteiro/legenda é exportado à parte em .srt, já no mesmo tempo do vídeo final, pra você sincronizar com o áudio gerado no ElevenLabs. Deixa o processamento um pouco mais lento (o vídeo ainda precisa ser reprocessado pelo gancho e pela barra).</p>
-        </div>
-
-        <div class="form-group" style="margin-top: 15px;">
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                <input type="checkbox" id="aiAutoCut" style="width:auto;">
-                ✂️ Cortar automaticamente assim que o roteiro terminar (sem perguntar)
-            </label>
-            <p style="font-size:0.75rem;color:var(--text-muted);margin:4px 0 0;">Pula a pergunta "quer que eu corte o vídeo?" — assim que o roteiro e a narração terminarem, o corte começa sozinho, igual já acontece automaticamente quando você processa vários vídeos de uma vez (fila).</p>
-        </div>
-
-        <p style="font-size:0.78rem; color:var(--text-muted); margin: 16px 0 0; line-height:1.5;">
-            💳 Cada processamento consome a cota/saldo da <strong>sua</strong> chave de API do Gemini — o upload do vídeo, a geração do roteiro e a narração de cada cena são chamadas pagas (a chave tem uma cota gratuita limitada; acima dela, cobra por uso). Acompanhe o consumo em
-            <a href="https://aistudio.google.com/app/apikey" target="_blank" class="apiKey-link">aistudio.google.com</a>.
-        </p>
-        <div style="display:flex; gap:10px; margin-top: 10px;">
-            <button id="aiProcessBtn" style="flex:1;">Processar Vídeo(s), Roteiro e Narração</button>
-            <button id="aiCancelBtn" style="display:none; background-color:#b91c1c; flex:0 0 auto;">✖ Cancelar</button>
-        </div>
-        <div id="aiStatus" role="status" aria-live="polite"></div>
-        <div id="aiBatchStatus" role="status" aria-live="polite" style="display:none; margin-top:8px; font-weight:600;"></div>
-    </div>
-
-    <div class="card" id="aiOutputCard" style="display: none;">
-        <h3>Resultado e Tabela de Cortes</h3>
-        <div id="aiResultOutput"></div>
-
-        <div class="confirm-box" id="aiConfirmBox" style="display: none;">
-            <p>Quer que eu corte o vídeo e aplique a narração sintética automaticamente seguindo essa tabela?</p>
-            <div class="confirm-buttons">
-                <button id="aiBtnSimCortar">✅ Sim, cortar vídeo</button>
-                <button id="aiBtnNaoCortar">❌ Não, obrigado</button>
+              <div class="confirm-box" id="aiConfirmBox" style="display: none;">
+                <p>Quer que eu corte o vídeo e aplique a narração sintética automaticamente seguindo essa tabela?</p>
+                <div class="confirm-buttons">
+                  <button id="aiBtnSimCortar">✅ Sim, cortar vídeo</button>
+                  <button id="aiBtnNaoCortar">❌ Não, obrigado</button>
+                </div>
+                <div id="aiCutProgress" role="status" aria-live="polite"></div>
+                <button id="aiCancelCutBtn" style="display:none; background:linear-gradient(135deg, #b91c1c, #991b1b); margin-top:12px;">✖ Cancelar corte</button>
+              </div>
             </div>
-            <div id="aiCutProgress" role="status" aria-live="polite"></div>
-            <button id="aiCancelCutBtn" style="display:none; background-color:#b91c1c; margin-top:10px;">✖ Cancelar corte</button>
-        </div>
-    </div>
 
-    <div class="card" id="aiVideoResultCard" style="display: none;">
-        <h3>Vídeo Cortado</h3>
-        <video id="aiFinalVideo" controls></video>
-        <div style="text-align: center;">
-            <a id="aiDownloadLink" class="download-link" download="resumo_final.mp4">⬇️ Baixar vídeo cortado</a>
-        </div>
-    </div>
-
-    <!-- Sincronizador de Narração Externa (ElevenLabs) — substitui o passo manual
-         de levar o vídeo cortado + o áudio do ElevenLabs pro CapCut só pra
-         encaixar um no tamanho do outro. Roda com o mesmo motor ffmpeg.wasm já
-         carregado pelo corte acima. -->
-    <div class="card" id="aiSyncCard">
-        <h3>🎙️ Sincronizar Narração</h3>
-        <p class="desc">Gerou a narração no ElevenLabs e o tempo não bateu exato com o corte? Suba o áudio — ou deixe a própria IA gerar uma narração energética automaticamente. De qualquer jeito, o app ajusta a velocidade de um dos dois pra ficarem do mesmo tamanho, sem precisar abrir o CapCut.</p>
-
-        <label>Vídeo a sincronizar:</label>
-        <p id="aiSyncVideoSourceHint" style="font-size:0.75rem;color:var(--text-muted);margin:2px 0 8px;">Usando automaticamente o vídeo cortado acima. Se preferir, envie outro arquivo:</p>
-        <input type="file" id="aiSyncVideoOverride" accept="video/*">
-
-        <label style="margin-top:12px;">Como gerar a narração?</label>
-        <div class="feature-list" style="margin-top:6px;">
-            <label class="checkbox-item">
-                <input type="radio" name="aiSyncSource" value="upload" id="aiSyncSourceUpload" checked>
-                <span><strong>📤 Enviar áudio pronto</strong> — arquivo MP3/WAV gerado no ElevenLabs (ou outro serviço).</span>
-            </label>
-            <label class="checkbox-item">
-                <input type="radio" name="aiSyncSource" value="auto" id="aiSyncSourceAuto">
-                <span><strong>🎤 Gerar narração automática com IA (Gemini)</strong> — voz humanizada, animada/empolgante, gerada a partir do roteiro já criado acima. Usa a cota da sua Chave de API.</span>
-            </label>
-        </div>
-
-        <div id="aiSyncUploadBlock" style="margin-top:12px;">
-            <label>Narração pronta (MP3/WAV do ElevenLabs):</label>
-            <input type="file" id="aiSyncAudioInput" accept="audio/*">
-        </div>
-
-        <div id="aiSyncAutoBlock" style="display:none; margin-top:12px; font-size:0.78rem; color:var(--text-muted); background:#0b1220; border:1px dashed var(--accent-indigo); border-radius:8px; padding:10px 12px; line-height:1.5;">
-            🎤 Voz fixa <strong>Puck (Animada / Empolgante)</strong>, com instrução extra de interpretação bem humanizada e energética. Usa o roteiro (cenas + narração) já gerado no card acima e a mesma <strong>Chave de API do Gemini</strong> preenchida ali — gere o roteiro primeiro se ainda não gerou. Sujeito ao limite de cota da sua chave (o plano gratuito libera só 3 narrações por minuto — o app espera e tenta de novo sozinho quando esbarra nisso, mas pode demorar um pouco).
-        </div>
-
-        <label style="margin-top:12px;">O que deve se ajustar?</label>
-        <div class="feature-list" style="margin-top:6px;">
-            <label class="checkbox-item">
-                <input type="radio" name="aiSyncMode" value="audio_to_video" checked>
-                <span><strong>Manter a duração do VÍDEO</strong> — a narração acelera ou desacelera levemente pra caber exata no corte. Ideal quando a diferença é pequena (poucos segundos); acima de ~15% a voz começa a soar perceptivelmente diferente.</span>
-            </label>
-            <label class="checkbox-item">
-                <input type="radio" name="aiSyncMode" value="video_to_audio">
-                <span><strong>Manter a duração da NARRAÇÃO</strong> — o vídeo acelera ou desacelera pra acompanhar o áudio inteiro, sem cortar nem repetir nenhum trecho da narração. A voz mantém o tom normal; o vídeo é que fica mais rápido/lento.</span>
-            </label>
-        </div>
-
-        <label class="checkbox-item" style="margin-top:12px;">
-            <input type="checkbox" id="aiSyncGoToDorama" checked>
-            <span><strong>Ao terminar, ir direto para a aba Dorama</strong> — já leva o vídeo sincronizado, preenche o título e a frase de curiosidade/gancho automaticamente (usando o roteiro gerado acima) e inicia o processamento da aba sozinho.</span>
-        </label>
-
-        <button id="aiSyncBtn" class="btn-action" style="width:100%; margin-top:14px;">🔗 Sincronizar e Baixar</button>
-        <div id="aiSyncStatus" role="status" aria-live="polite" style="margin-top:8px; font-size:0.85rem; color:var(--accent-cyan);"></div>
-
-        <div id="aiSyncResultBox" style="display:none; margin-top:14px;">
-            <video id="aiSyncResultVideo" controls></video>
-            <div style="text-align: center;">
-                <a id="aiSyncDownloadLink" class="download-link" download="resumo_narrado_sync.mp4">⬇️ Baixar vídeo sincronizado</a>
+            <!-- Card do Vídeo Final Cortado -->
+            <div class="card" id="aiVideoResultCard" style="display: none;">
+              <h3 style="margin-top:0; font-size:1.2rem;">Vídeo Cortado</h3>
+              <video id="aiFinalVideo" controls></video>
+              <div style="text-align: center;">
+                <a class="download-link" id="aiDownloadLink" download="resumo_final.mp4">⬇️ Baixar vídeo cortado</a>
+              </div>
             </div>
-        </div>
-    </div>
+
+            <!-- Card de Sincronização de Narração Externa -->
+            <div class="card" id="aiSyncCard">
+              <h3 style="margin-top:0; font-size:1.2rem;">🎙️ Sincronizar Narração</h3>
+              <p class="desc">Gerou a narração no ElevenLabs e o tempo não bateu exato com o corte? Suba o áudio — ou deixe a própria IA gerar uma narração energética automaticamente. De qualquer jeito, o app ajusta a velocidade de um dos dois pra ficarem do mesmo tamanho, sem precisar abrir o CapCut.</p>
+
+              <label>Vídeo a sincronizar:</label>
+              <p id="aiSyncVideoSourceHint" style="font-size:0.75rem;color:var(--text-muted);margin:2px 0 8px;">Usando automaticamente o vídeo cortado acima. Se preferir, envie outro arquivo:</p>
+              <div class="file-dropzone-wrap">
+                <input type="file" id="aiSyncVideoOverride" accept="video/*">
+              </div>
+
+              <label style="margin-top:14px;">Como gerar a narração?</label>
+              <div class="feature-list" style="margin-top:6px;">
+                <label class="checkbox-item">
+                  <input type="radio" name="aiSyncSource" id="aiSyncSourceUpload" value="upload" checked>
+                  <span><strong>📤 Enviar áudio pronto</strong> — arquivo MP3/WAV gerado no ElevenLabs (ou outro serviço).</span>
+                </label>
+                <label class="checkbox-item">
+                  <input type="radio" name="aiSyncSource" id="aiSyncSourceAuto" value="auto">
+                  <span><strong>🎤 Gerar narração automática com IA (Gemini)</strong> — voz humanizada, animada/empolgante, gerada a partir do roteiro já criado acima. Usa a cota da sua Chave de API.</span>
+                </label>
+              </div>
+
+              <div id="aiSyncUploadBlock" style="margin-top:12px;">
+                <label>Narração pronta (MP3/WAV do ElevenLabs):</label>
+                <div class="file-dropzone-wrap">
+                  <input type="file" id="aiSyncAudioInput" accept="audio/*">
+                </div>
+              </div>
+
+              <div id="aiSyncAutoBlock" style="display:none; margin-top:12px; font-size:0.78rem; color:var(--text-muted); background:rgba(15, 23, 42, 0.7); border:1px dashed var(--accent-indigo); border-radius:var(--radius-md); padding:12px 14px; line-height:1.5;">
+                🎤 Voz fixa <strong>Puck (Animada / Empolgante)</strong>, com instrução extra de interpretação bem humanizada e energética. Usa o roteiro (cenas + narração) já gerado no card acima e a mesma <strong>Chave de API do Gemini</strong> preenchida ali — gere o roteiro primeiro se ainda não gerou. Sujeito ao limite de cota da sua chave (o plano gratuito libera só 3 narrações por minuto — o app espera e tenta de novo sozinho quando esbarra nisso, mas pode demorar um pouco).
+              </div>
+
+              <label style="margin-top:14px;">O que deve se ajustar?</label>
+              <div class="feature-list" style="margin-top:6px;">
+                <label class="checkbox-item">
+                  <input type="radio" name="aiSyncMode" value="audio_to_video" checked>
+                  <span><strong>Manter a duração do VÍDEO</strong> — a narração acelera ou desacelera levemente pra caber exata no corte. Ideal quando a diferença é pequena (poucos segundos); acima de ~15% a voz começa a soar perceptivelmente diferente.</span>
+                </label>
+                <label class="checkbox-item">
+                  <input type="radio" name="aiSyncMode" value="video_to_audio">
+                  <span><strong>Manter a duração da NARRAÇÃO</strong> — o vídeo acelera ou desacelera pra acompanhar o áudio inteiro, sem cortar nem repetir nenhum trecho da narração. A voz mantém o tom normal; o vídeo é que fica mais rápido/lento.</span>
+                </label>
+              </div>
+
+              <label class="checkbox-item" style="margin-top:14px;">
+                <input type="checkbox" id="aiSyncGoToDorama" checked>
+                <span><strong>Ao terminar, ir direto para a aba Dorama</strong> — já leva o vídeo sincronizado, preenche o título e a frase de curiosidade/gancho automaticamente (usando o roteiro gerado acima) e inicia o processamento da aba sozinho.</span>
+              </label>
+
+              <button class="btn-action" id="aiSyncBtn" style="width:100%; margin-top:16px;">
+                🔗 Sincronizar e Baixar
+              </button>
+
+              <div id="aiSyncStatus" role="status" aria-live="polite" style="margin-top:10px; font-size:0.85rem; color:var(--accent-cyan); text-align:center;"></div>
+
+              <div id="aiSyncResultBox" style="display:none; margin-top:16px;">
+                <video id="aiSyncResultVideo" controls style="width:100%; border-radius:var(--radius-md); margin-bottom:12px; background:#000;"></video>
+                <div style="text-align: center;">
+                  <a class="download-link" id="aiSyncDownloadLink" download="resumo_narrado_sync.mp4">⬇️ Baixar vídeo sincronizado</a>
+                </div>
+              </div>
+
+            </div>
+
           </div>
         </div>
       </div>
 
-      <!-- ABA 4: DOWNLOADER TIKTOK EM LOTE (ESTÁVEL) -->
+      <!-- ABA 4: DOWNLOADER TIKTOK EM LOTE -->
       <div class="tab-content" id="tabDownloaderContent">
         <div class="ai-grid-container">
-          
+
           <div class="ai-left-panel">
-            <h2>Downloader TikTok em Lote</h2>
-            <p class="desc">Baixe múltiplos vídeos sem marca d'água instantaneamente colando os links (1 por linha).</p>
+            <div class="module-header">
+              <div class="module-badge-row">
+                <span class="module-badge" style="background:rgba(16, 185, 129, 0.15); border:1px solid rgba(16, 185, 129, 0.3); color:#34d399;">📥 Batch Downloader</span>
+              </div>
+              <h2>Downloader TikTok em Lote</h2>
+              <p class="desc">Baixe múltiplos vídeos sem marca d'água instantaneamente colando os links (1 por linha).</p>
+            </div>
 
             <label for="tiktokUrls">Cole os Links do TikTok:</label>
             <textarea id="tiktokUrls" placeholder="https://www.tiktok.com/@usuario/video/123456789&#10;https://www.tiktok.com/@usuario/video/987654321" style="min-height: 180px; font-size: 0.8rem;"></textarea>
 
-            <button id="downloadUrlsBtn" class="btn-action" style="width:100%; margin-top:14px;">⚡ Baixar Todos os Vídeos</button>
+            <button class="btn-action" id="downloadUrlsBtn" style="width:100%; margin-top:14px;">
+              ⚡ Baixar Todos os Vídeos
+            </button>
 
-            <!-- Downloader de Perfil Inteiro (direto, sem site externo) -->
-            <div class="control-box" style="margin-top:20px; border-color:var(--accent-emerald);">
-              <div class="control-title" style="color:var(--accent-emerald); display:flex; align-items:center; gap:8px; font-size:1rem;">🚀 Baixar Perfil Inteiro</div>
-              <p style="font-size:0.75rem; color:var(--text-muted); margin:0 0 12px 0; line-height:1.4;">
-                Informe o @usuario ou o link do perfil. O app busca todos os vídeos públicos e baixa um por um automaticamente.
-              </p>
+            <!-- Downloader de Perfil Inteiro -->
+            <div class="pro-card control-box" style="margin-top:20px; border-color:rgba(16, 185, 129, 0.35);">
+              <div class="control-title" style="color:var(--accent-emerald); display:flex; align-items:center; gap:8px; font-size:1rem;">
+                🚀 Baixar Perfil Inteiro
+              </div>
+              <p style="font-size:0.75rem; color:var(--text-muted); margin:4px 0 12px 0; line-height:1.4;">Informe o @usuario ou o link do perfil. O app busca todos os vídeos públicos e baixa um por um automaticamente.</p>
 
               <label for="tiktokProfileInput" style="font-size:0.78rem; font-weight:bold; color:var(--text-main); display:block; margin-bottom:6px;">Usuário ou Link do Perfil:</label>
-              <input type="text" id="tiktokProfileInput" placeholder="@usuario ou https://www.tiktok.com/@usuario" style="width:100%; box-sizing:border-box; padding:9px 10px; border-radius:6px; border:1px solid #334155; background:#0f172a; color:#fff; font-size:0.8rem; margin-bottom:12px;">
+              <input type="text" id="tiktokProfileInput" placeholder="@usuario ou https://www.tiktok.com/@usuario" style="width:100%; box-sizing:border-box; margin-bottom:12px;">
 
               <div style="display:flex; gap:10px; margin-bottom:14px;">
                 <div style="flex:1;">
                   <label for="tiktokProfileLimit" style="font-size:0.78rem; font-weight:bold; color:var(--text-main); display:block; margin-bottom:6px;">Limite de vídeos:</label>
-                  <input type="number" id="tiktokProfileLimit" min="0" step="1" value="0" placeholder="0 = sem limite" style="width:100%; box-sizing:border-box; padding:9px 10px; border-radius:6px; border:1px solid #334155; background:#0f172a; color:#fff; font-size:0.8rem;">
+                  <input type="number" id="tiktokProfileLimit" min="0" step="1" value="0" placeholder="0 = sem limite" style="width:100%; box-sizing:border-box;">
                 </div>
                 <div style="flex:1;">
                   <label for="tiktokProfileOrder" style="font-size:0.78rem; font-weight:bold; color:var(--text-main); display:block; margin-bottom:6px;">Ordenar por:</label>
-                  <select id="tiktokProfileOrder" style="width:100%; box-sizing:border-box; padding:9px 10px; border-radius:6px; border:1px solid #334155; background:#0f172a; color:#fff; font-size:0.8rem;">
+                  <select id="tiktokProfileOrder" style="width:100%; box-sizing:border-box;">
                     <option value="recentes">Mais recentes</option>
                     <option value="antigos">Mais antigos</option>
                     <option value="curtidos">Mais curtidos</option>
@@ -1453,25 +2185,27 @@
                 </div>
               </div>
 
-              <button id="downloadProfileBtn" class="btn-action" style="width:100%; background:var(--accent-emerald); border-color:var(--accent-emerald);">📥 Buscar e Baixar Perfil</button>
+              <button class="btn-action" id="downloadProfileBtn" style="width:100%; background:linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                📥 Buscar e Baixar Perfil
+              </button>
               <div id="profileFetchStatus" style="margin-top:8px; font-size:0.75rem; color:var(--text-muted); text-align:center; line-height:1.3;"></div>
             </div>
 
-            <!-- Guia rápido do Bookmarklet para perfis (alternativa manual) -->
-            <div class="control-box" style="margin-top:14px; border-color:#334155;">
+            <!-- Guia rápido do Bookmarklet -->
+            <div class="pro-card control-box" style="margin-top:14px; border-color:rgba(255,255,255,0.08);">
               <div class="control-title" style="color:var(--accent-yellow);">💡 Alternativa manual (bookmarklet)</div>
-              <p style="font-size:0.75rem; color:var(--text-muted); margin:0 0 8px 0; line-height:1.4;">
-                Arraste o botão abaixo para a sua barra de favoritos. Quando estiver em qualquer perfil no TikTok, clique nele para copiar todos os links automaticamente:
-              </p>
-              <a href="javascript:(async%20function(){const%20sleep=ms=>new%20Promise(r=>setTimeout(r,ms));let%20lastH=0,retries=0;while(retries<3){window.scrollTo(0,document.body.scrollHeight);await%20sleep(800);let%20newH=document.body.scrollHeight;if(newH===lastH){retries++;}else{retries=0;lastH=newH;}}const%20links=Array.from(document.querySelectorAll('div[data-e2e=%22user-post-item%22]%20a')).map(a=>a.href.split('?')[0]).filter(url=>url.includes('/video/')).filter((v,i,a)=>a.indexOf(v)===i);if(links.length===0){alert('Nenhum vídeo encontrado.');return;}await%20navigator.clipboard.writeText(links.join('\n'));alert('✅ ' + links.length + ' links copiados! Cole agora na aba de download.');})();" style="display:block; text-align:center; background:#1e293b; color:#38bdf8; padding:8px; border-radius:6px; font-size:0.78rem; text-decoration:none; font-weight:bold; border:1px dashed #38bdf8;">⭐ Copiar Links do Perfil (Arraste p/ Favoritos)</a>
+              <p style="font-size:0.75rem; color:var(--text-muted); margin:4px 0 8px 0; line-height:1.4;">Arraste o botão abaixo para a sua barra de favoritos. Quando estiver em qualquer perfil no TikTok, clique nele para copiar todos os links automaticamente:</p>
+              <a href="javascript:(async function(){const sleep=ms=>new Promise(r=>setTimeout(r,ms));let lastH=0,retries=0;while(retries<3){window.scrollTo(0,document.body.scrollHeight);await sleep(800);let newH=document.body.scrollHeight;if(newH===lastH){retries++;}else{retries=0;lastH=newH;}}const links=Array.from(document.querySelectorAll('div[data-e2e=%22user-post-item%22] a')).map(a=>a.href.split('?')[0]).filter(url=>url.includes('/video/')).filter((v,i,a)=>a.indexOf(v)===i);if(links.length===0){alert('Nenhum vídeo encontrado.');return;}await navigator.clipboard.writeText(links.join('\n'));alert('✅ ' + links.length + ' links copiados! Cole agora na aba de download.');})();" style="display:block; text-align:center; background:#1e293b; color:#38bdf8; padding:9px; border-radius:var(--radius-sm); font-size:0.78rem; text-decoration:none; font-weight:bold; border:1px dashed #38bdf8; transition:all 0.2s;">
+                ⭐ Copiar Links do Perfil (Arraste p/ Favoritos)
+              </a>
             </div>
 
-            <div id="dlStatus" style="margin-top:10px; font-weight:bold; color:var(--accent-emerald); text-align:center; font-size:0.85rem;"></div>
+            <div id="dlStatus" style="margin-top:12px; font-weight:bold; color:var(--accent-emerald); text-align:center; font-size:0.85rem;"></div>
           </div>
 
           <div class="ai-right-panel">
-            <div class="control-title" style="font-size:1rem; margin-top:0;">📦 Fila de Processamento & Downloads</div>
-            <div id="dlQueueList" style="margin-top:12px;">
+            <div class="control-title" style="font-size:1.05rem; margin-top:0; color:#fff;">📦 Fila de Processamento & Downloads</div>
+            <div id="dlQueueList" style="margin-top:14px;">
               <p style="color:var(--text-muted); font-size:0.85rem;">Os vídeos processados aparecerão aqui conforme forem baixados para o seu computador.</p>
             </div>
           </div>
@@ -1482,9 +2216,38 @@
     </div>
   </main>
 
-<video id="sourceVideo" playsinline muted></video>
+  <video id="sourceVideo" playsinline></video>
 
-<script>
+  <!-- Floating Toast Notification System -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    // Toast Notification Utility
+    window.showToast = function(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = `toast-pill toast-${type}`;
+      const icon = type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+      toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px) scale(0.95)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    };
+
+    // Attach Toast to key actions
+    document.querySelectorAll('.approval-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        window.showToast('🛡️ Modo Aprovação (Anti-Flag) aplicado com sucesso!', 'success');
+      });
+    });
+  </script>
+
+  <!-- Script 2: Pipeline das Abas 1 e 2 -->
+  <script>
   const tabBtnFound = document.getElementById('tabBtnFound');
   const tabBtnDorama = document.getElementById('tabBtnDorama');
   const tabBtnAi = document.getElementById('tabBtnAi');
@@ -1589,6 +2352,35 @@
   const TARGET_W = 720;
   const TARGET_H = 1280;
 
+  // --- Constantes de tuning (valores mágicos centralizados) ---
+  // Antes espalhados pelo código; agora num lugar só, com nome claro, pra
+  // facilitar ajuste sem caçar números soltos.
+  const TIMING = {
+    RENDER_INTERVAL_MS: 33,   // ~30fps
+    BASE_SPEED: 1.045,        // micro-aceleração base (+4.5%)
+    LEAD_IN_SECONDS: 0.9,     // duração do Ken Burns de abertura
+    LEAD_IN_STRENGTH: 0.20,   // zoom máximo da abertura (1.20x)
+  };
+  const AUDIO = {
+    DUCKING_LEVEL: 0.22,      // volume do vídeo quando há narração/ducking
+    HIGHSHELF_FREQ: 11200,    // Hz — blindagem acústica
+    HIGHSHELF_GAIN: -3.5,     // dB
+    INFRASOUND_FREQ: 18.2,    // Hz — anti acoustic fingerprint
+    INFRASOUND_GAIN: 0.038,
+    BITRATE: 9500000,         // 9.5 Mbps (anti-compressão)
+  };
+  const VISUAL = {
+    DYNAMIC_ZOOM_BASE: 1.02,
+    DYNAMIC_ZOOM_FREQ: 0.04,
+    DYNAMIC_ZOOM_AMP: 0.035,
+    SHAKE_FREQ_X: 0.28,
+    SHAKE_FREQ_Y: 0.22,
+    SHAKE_AMP_X: 1.8,
+    SHAKE_AMP_Y: 1.4,
+    INTRO_DURATION: 1.2,
+    INTRO_PARTICLES: 40,
+  };
+
   // --- Otimização: reaproveitamento de blob URLs e cache de áudio decodificado ---
   // Antes, cada troca de vídeo (preview ou produção) criava uma URL de objeto
   // nova via URL.createObjectURL() e NUNCA revogava a anterior. Numa fila
@@ -1610,22 +2402,22 @@
     return url;
   }
 
-  // Cache da música de fundo já decodificada: antes, cada vídeo da fila
+  // Cache de áudio já decodificado (música de fundo E narração IA): antes, cada vídeo da fila
   // decodificava o MESMO arquivo de MP3/WAV do zero (audioCtx.decodeAudioData
   // é um trabalho pesado de CPU), mesmo quando era exatamente o mesmo arquivo
   // repetido em todos os itens da fila. Agora só decodifica uma vez por
   // arquivo e reaproveita o AudioBuffer resultante nos itens seguintes.
-  let bgmDecodeCache = { file: null, buffer: null };
-  async function getDecodedBgmBuffer(audioCtx, file) {
-    const sameFile = bgmDecodeCache.file === file
-      || (bgmDecodeCache.file && file
-          && bgmDecodeCache.file.name === file.name
-          && bgmDecodeCache.file.size === file.size
-          && bgmDecodeCache.file.lastModified === file.lastModified);
-    if (sameFile && bgmDecodeCache.buffer) return bgmDecodeCache.buffer;
+  let audioDecodeCache = { file: null, buffer: null };
+  async function getDecodedAudioBuffer(audioCtx, file) {
+    const sameFile = audioDecodeCache.file === file
+      || (audioDecodeCache.file && file
+          && audioDecodeCache.file.name === file.name
+          && audioDecodeCache.file.size === file.size
+          && audioDecodeCache.file.lastModified === file.lastModified);
+    if (sameFile && audioDecodeCache.buffer) return audioDecodeCache.buffer;
     const arrayBuf = await file.arrayBuffer();
     const audioBuf = await audioCtx.decodeAudioData(arrayBuf);
-    bgmDecodeCache = { file, buffer: audioBuf };
+    audioDecodeCache = { file, buffer: audioBuf };
     return audioBuf;
   }
 
@@ -2232,6 +3024,51 @@
     return { zoom: clip.z, fx: clip.fx, fy: clip.fy, grade: clip.grade, flash, speed };
   }
 
+  function drawRecHud(ctx, title, blink) {
+    if (blink) {
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath();
+      ctx.arc(60, 70, 7, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 18px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('REC', 76, 76);
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.fillStyle = '#38bdf8';
+    ctx.fillText(title, TARGET_W / 2, 130);
+  }
+
+  function drawDoramaOverlay(ctx, overlay, channelName, title) {
+    if (overlay === 'cinema_top_split') {
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+      ctx.fillRect(0, 30, TARGET_W, 65);
+      ctx.fillStyle = '#f43f5e';
+      ctx.font = 'bold 24px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(title.toUpperCase(), TARGET_W / 2, 72);
+    } else if (overlay === 'netflix_style') {
+      const brand = (channelName && channelName.trim()) ? channelName.trim().toUpperCase() : '';
+      if (brand) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.72)';
+        ctx.fillRect(0, 40, TARGET_W, 60);
+        ctx.fillStyle = '#f43f5e';
+        ctx.font = '900 24px sans-serif';
+        ctx.textAlign = 'left';
+        fitText(ctx, brand, 30, 78, TARGET_W * 0.5, 24);
+      } else {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+        ctx.fillRect(TARGET_W * 0.45, 40, TARGET_W * 0.55, 60);
+      }
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 20px sans-serif';
+      ctx.textAlign = 'right';
+      fitText(ctx, title, TARGET_W - 30, 78, TARGET_W * 0.42, 20);
+    }
+  }
+
   function renderInteractivePreview() {
     if (!video.videoWidth || activeTab === 'ai' || activeTab === 'downloader') return;
     const ctrl = getActiveControls();
@@ -2328,48 +3165,13 @@
 
     if (activeTab === 'found') {
       if (overlay === 'rec_hud') {
-        ctx.fillStyle = '#ef4444';
-        ctx.beginPath();
-        ctx.arc(60, 70, 7, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 18px monospace';
-        ctx.textAlign = 'left';
-        ctx.fillText('REC', 76, 76);
-        ctx.textAlign = 'center';
-        ctx.font = 'bold 22px sans-serif';
-        ctx.fillStyle = '#38bdf8';
-        ctx.fillText(currentTitle, TARGET_W / 2, 130);
+        drawRecHud(ctx, currentTitle, true);
       }
       if (ctrl.captionStyle && ctrl.captionText) {
         renderTikTokCaptions(ctrl.captionStyle.value, ctrl.captionText.value, video.currentTime || 3, video.duration || 10, TARGET_H - 220);
       }
     } else {
-      if (overlay === 'cinema_top_split') {
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
-        ctx.fillRect(0, 30, TARGET_W, 65);
-        ctx.fillStyle = '#f43f5e';
-        ctx.font = 'bold 24px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(currentTitle.toUpperCase(), TARGET_W / 2, 72);
-      } else if (overlay === 'netflix_style') {
-        const channelName = (ctrl.channelName && ctrl.channelName.value.trim()) ? ctrl.channelName.value.trim().toUpperCase() : '';
-        if (channelName) {
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-          ctx.fillRect(0, 40, TARGET_W, 60);
-          ctx.fillStyle = '#f43f5e';
-          ctx.font = '900 24px sans-serif';
-          ctx.textAlign = 'left';
-          fitText(ctx, channelName, 30, 78, TARGET_W * 0.5, 24);
-        } else {
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
-          ctx.fillRect(TARGET_W * 0.45, 40, TARGET_W * 0.55, 60);
-        }
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 20px sans-serif';
-        ctx.textAlign = 'right';
-        fitText(ctx, currentTitle, TARGET_W - 30, 78, TARGET_W * 0.42, 20);
-      }
+      drawDoramaOverlay(ctx, overlay, ctrl.channelName ? ctrl.channelName.value : '', currentTitle);
     }
   }
 
@@ -2439,22 +3241,22 @@
     updateNormalizedCrop();
   }
 
-  let bDragging = false, bHandle = null, bStartX, bStartY, bStartLeft, bStartTop, bStartW, bStartH;
+  let blurDragging = false, blurHandle = null, blurStartX, blurStartY, blurStartLeft, blurStartTop, blurStartW, blurStartH;
 
   blurBox.addEventListener('pointerdown', (e) => {
     e.preventDefault();
-    bStartX = e.clientX; bStartY = e.clientY;
-    bStartLeft = blurBox.offsetLeft; bStartTop = blurBox.offsetTop;
-    bStartW = blurBox.offsetWidth; bStartH = blurBox.offsetHeight;
-    if (e.target.classList.contains('handle')) bHandle = e.target.dataset.handle;
-    else bDragging = true;
+    blurStartX = e.clientX; blurStartY = e.clientY;
+    blurStartLeft = blurBox.offsetLeft; blurStartTop = blurBox.offsetTop;
+    blurStartW = blurBox.offsetWidth; blurStartH = blurBox.offsetHeight;
+    if (e.target.classList.contains('handle')) blurHandle = e.target.dataset.handle;
+    else blurDragging = true;
     window.addEventListener('pointermove', onBlurPointerMove);
     window.addEventListener('pointerup', onBlurPointerUp);
   });
 
   function onBlurPointerMove(e) {
-    const dx = e.clientX - bStartX;
-    const dy = e.clientY - bStartY;
+    const dx = e.clientX - blurStartX;
+    const dy = e.clientY - blurStartY;
     const { mainX, mainY, mainW, mainH } = getVideoRenderLayout();
     const wrapW = previewWrapper.clientWidth;
     const wrapH = previewWrapper.clientHeight;
@@ -2462,20 +3264,20 @@
     const scaleY = wrapH / TARGET_H;
     const vLeft = mainX * scaleX, vTop = mainY * scaleY;
     const vRight = (mainX + mainW) * scaleX, vBottom = (mainY + mainH) * scaleY;
-    if (bDragging) {
-      blurBox.style.left = `${Math.max(vLeft, Math.min(vRight - bStartW, bStartLeft + dx))}px`;
-      blurBox.style.top = `${Math.max(vTop, Math.min(vBottom - bStartH, bStartTop + dy))}px`;
-    } else if (bHandle) {
-      if (bHandle.includes('r')) blurBox.style.width = `${Math.max(25, Math.min(vRight - bStartLeft, bStartW + dx))}px`;
-      if (bHandle.includes('b')) blurBox.style.height = `${Math.max(25, Math.min(vBottom - bStartTop, bStartH + dy))}px`;
-      if (bHandle.includes('l')) {
-        const newW = Math.max(25, bStartW - dx);
-        const newLeft = bStartLeft + dx;
+    if (blurDragging) {
+      blurBox.style.left = `${Math.max(vLeft, Math.min(vRight - blurStartW, blurStartLeft + dx))}px`;
+      blurBox.style.top = `${Math.max(vTop, Math.min(vBottom - blurStartH, blurStartTop + dy))}px`;
+    } else if (blurHandle) {
+      if (blurHandle.includes('r')) blurBox.style.width = `${Math.max(25, Math.min(vRight - blurStartLeft, blurStartW + dx))}px`;
+      if (blurHandle.includes('b')) blurBox.style.height = `${Math.max(25, Math.min(vBottom - blurStartTop, blurStartH + dy))}px`;
+      if (blurHandle.includes('l')) {
+        const newW = Math.max(25, blurStartW - dx);
+        const newLeft = blurStartLeft + dx;
         if (newLeft >= vLeft && newW >= 25) { blurBox.style.left = `${newLeft}px`; blurBox.style.width = `${newW}px`; }
       }
-      if (bHandle.includes('t')) {
-        const newH = Math.max(25, bStartH - dy);
-        const newTop = bStartTop + dy;
+      if (blurHandle.includes('t')) {
+        const newH = Math.max(25, blurStartH - dy);
+        const newTop = blurStartTop + dy;
         if (newTop >= vTop && newH >= 25) { blurBox.style.top = `${newTop}px`; blurBox.style.height = `${newH}px`; }
       }
     }
@@ -2483,7 +3285,7 @@
   }
 
   function onBlurPointerUp() {
-    bDragging = false; bHandle = null;
+    blurDragging = false; blurHandle = null;
     window.removeEventListener('pointermove', onBlurPointerMove);
     window.removeEventListener('pointerup', onBlurPointerUp);
     updateNormalizedBlur();
@@ -2598,11 +3400,11 @@
           // 1. Blindagem Acústica: High-Shelf em 11.2 kHz para descaracterizar espectrograma
           const bq = audioCtx.createBiquadFilter();
           bq.type = "highshelf";
-          bq.frequency.value = 11200;
-          bq.gain.value = -3.5;
+          bq.frequency.value = AUDIO.HIGHSHELF_FREQ;
+          bq.gain.value = AUDIO.HIGHSHELF_GAIN;
 
           duckingGain = audioCtx.createGain();
-          duckingGain.gain.value = ((activeTab === 'dorama' && config.ducking) || config.narrationFile) ? 0.22 : 1.0;
+          duckingGain.gain.value = ((activeTab === 'dorama' && config.ducking) || config.narrationFile) ? AUDIO.DUCKING_LEVEL : 1.0;
 
           const videoVolumeGain = audioCtx.createGain();
           videoVolumeGain.gain.value = Number.isFinite(config.videoVolume) ? config.videoVolume : 1.5;
@@ -2618,8 +3420,8 @@
             osc = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
             osc.type = 'sine';
-            osc.frequency.value = 18.2;
-            gainNode.gain.value = 0.038;
+            osc.frequency.value = AUDIO.INFRASOUND_FREQ;
+            gainNode.gain.value = AUDIO.INFRASOUND_GAIN;
             osc.connect(gainNode);
             gainNode.connect(audioDest);
             osc.start();
@@ -2627,7 +3429,7 @@
 
           if (config.bgmFile) {
             try {
-              const audioBuf = await getDecodedBgmBuffer(audioCtx, config.bgmFile);
+              const audioBuf = await getDecodedAudioBuffer(audioCtx, config.bgmFile);
               bgmSource = audioCtx.createBufferSource();
               bgmSource.buffer = audioBuf;
               bgmSource.loop = true;
@@ -2646,7 +3448,7 @@
           // playbackRate acompanha o desafino/pitch pra manter a sincronia.
           if (config.narrationFile) {
             try {
-              const narrBuf = await getDecodedBgmBuffer(audioCtx, config.narrationFile);
+              const narrBuf = await getDecodedAudioBuffer(audioCtx, config.narrationFile);
               narrSource = audioCtx.createBufferSource();
               narrSource.buffer = narrBuf;
               narrSource.loop = false;
@@ -2669,7 +3471,7 @@
         const mimeType = getOptimalMimeType();
         const mediaRecorder = new MediaRecorder(stream, {
           mimeType: mimeType || undefined,
-          videoBitsPerSecond: 9500000 // 9.5 Mbps (High Bitrate anti-compressão)
+          videoBitsPerSecond: AUDIO.BITRATE // 9.5 Mbps (High Bitrate anti-compressão)
         });
 
         mediaRecorder.ondataavailable = (e) => {
@@ -2789,12 +3591,12 @@
 
         mediaRecorder.start();
 
-        const introDuration = (config.introStyle === 'none') ? 0 : 1.2;
+        const introDuration = (config.introStyle === 'none') ? 0 : VISUAL.INTRO_DURATION;
         const startTime = Date.now();
         let videoStarted = false;
         let frameIndex = 0;
         let lastPlaybackRate = null;
-        const introParticles = createIntroParticles(40);
+        const introParticles = createIntroParticles(VISUAL.INTRO_PARTICLES);
 
         let renderStopped = false;
         const renderTicker = createRenderTicker();
@@ -2830,7 +3632,7 @@
           // 3. Micro-alteração temporal contínua (+4.5% speed)
           if (!videoStarted) {
             video.currentTime = config.cutStart;
-            video.playbackRate = 1.045 * pitchFactor;
+            video.playbackRate = TIMING.BASE_SPEED * pitchFactor;
             video.play();
             videoStarted = true;
           }
@@ -2847,19 +3649,19 @@
           // 4. Micro-oscilação angular e de fluxo óptico
           let shakeX = 0, shakeY = 0;
           if (config.shake) {
-            shakeX = Math.sin(frameIndex * 0.28) * 1.8;
-            shakeY = Math.cos(frameIndex * 0.22) * 1.4;
+            shakeX = Math.sin(frameIndex * VISUAL.SHAKE_FREQ_X) * VISUAL.SHAKE_AMP_X;
+            shakeY = Math.cos(frameIndex * VISUAL.SHAKE_FREQ_Y) * VISUAL.SHAKE_AMP_Y;
           }
 
           // 5. Micro-zoom senoidal perpétuo (102% a 106%) que destrói o pHash visual
-          const dynamicZoom = 1.02 + Math.sin(frameIndex * 0.04) * 0.035;
+          const dynamicZoom = VISUAL.DYNAMIC_ZOOM_BASE + Math.sin(frameIndex * VISUAL.DYNAMIC_ZOOM_FREQ) * VISUAL.DYNAMIC_ZOOM_AMP;
           const introZoom = inIntro ? (1 + 0.05 * (elapsed / introDuration)) : 1;
           // Abertura sempre em movimento (Ken Burns): nos primeiros ~0.9s o
           // zoom "puxa" de 1.20x até 1.0x. Mesmo que o frame de origem seja
           // um letreiro/logo parado, o início fica claramente se movendo —
           // nunca é lido como "imagem estática".
-          const leadInK = Math.max(0, 1 - elapsed / 0.9);
-          const leadInZoom = 1 + 0.20 * leadInK * leadInK;
+          const leadInK = Math.max(0, 1 - elapsed / TIMING.LEAD_IN_SECONDS);
+          const leadInZoom = 1 + TIMING.LEAD_IN_STRENGTH * leadInK * leadInK;
           const totalZoom = dynamicZoom * introZoom * leadInZoom;
 
           // Fundo Dinâmico Ambient Flare — com edição criativa, vira um
@@ -2881,7 +3683,7 @@
             // o playbackRate quando o valor ALVO muda (1x por corte, não 1x por
             // frame) — reescrever a toda frame fazia o vídeo renegociar a
             // sincronia e podia derrubar frames.
-            const targetRate = 1.045 * pitchFactor * edit.speed;
+            const targetRate = TIMING.BASE_SPEED * pitchFactor * edit.speed;
             if (targetRate !== lastPlaybackRate) {
               video.playbackRate = targetRate;
               lastPlaybackRate = targetRate;
@@ -3009,54 +3811,17 @@
           const overlay = config.overlayStyle;
           if (activeTab === 'found') {
             if (overlay === 'rec_hud') {
-              if (Math.floor(Date.now() / 450) % 2 === 0) {
-                ctx.fillStyle = '#ef4444';
-                ctx.beginPath();
-                ctx.arc(60, 70, 7, 0, Math.PI * 2);
-                ctx.fill();
-              }
-              ctx.fillStyle = '#ffffff';
-              ctx.font = 'bold 18px monospace';
-              ctx.textAlign = 'left';
-              ctx.fillText('REC', 76, 76);
-              ctx.textAlign = 'center';
-              ctx.font = 'bold 22px sans-serif';
-              ctx.fillStyle = '#38bdf8';
-              ctx.fillText(currentTitle, TARGET_W / 2, 130);
+              drawRecHud(ctx, currentTitle, Math.floor(Date.now() / 450) % 2 === 0);
             }
             if (config.captionStyle && config.captionText) {
               renderTikTokCaptions(config.captionStyle, config.captionText, video.currentTime, video.duration, TARGET_H - 220);
             }
           } else {
-            if (overlay === 'cinema_top_split') {
-              ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
-              ctx.fillRect(0, 30, TARGET_W, 65);
-              ctx.fillStyle = '#f43f5e';
-              ctx.font = 'bold 24px sans-serif';
-              ctx.textAlign = 'center';
-              ctx.fillText(currentTitle.toUpperCase(), TARGET_W / 2, 72);
-            } else if (overlay === 'netflix_style') {
-              const channelName = (config.channelName && config.channelName.trim()) ? config.channelName.trim().toUpperCase() : '';
-              if (channelName) {
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
-                ctx.fillRect(0, 40, TARGET_W, 60);
-                ctx.fillStyle = '#f43f5e';
-                ctx.font = '900 24px sans-serif';
-                ctx.textAlign = 'left';
-                fitText(ctx, channelName, 30, 78, TARGET_W * 0.5, 24);
-              } else {
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
-                ctx.fillRect(TARGET_W * 0.45, 40, TARGET_W * 0.55, 60);
-              }
-              ctx.fillStyle = '#fff';
-              ctx.font = 'bold 20px sans-serif';
-              ctx.textAlign = 'right';
-              fitText(ctx, currentTitle, TARGET_W - 30, 78, TARGET_W * 0.42, 20);
-            }
+            drawDoramaOverlay(ctx, overlay, config.channelName, currentTitle);
           }
         }
 
-        renderTicker.postMessage({ cmd: 'start', interval: 33 });
+        renderTicker.postMessage({ cmd: 'start', interval: TIMING.RENDER_INTERVAL_MS });
       };
     });
   }
@@ -3228,7 +3993,9 @@
         // Pede UM wake lock que cobre a fila inteira (mesmo padrão usado nas abas
         // 3 e 4 — ver acquireWakeLock/releaseWakeLock), pra tela não apagar/dormir
         // no meio de uma exportação longa.
-        await acquireWakeLock();
+        // Fallback no-op: se o módulo da Aba 3 não carregou (CDN bloqueada),
+        // acquireWakeLock não existe em window — nunca deixar o botão quebrar.
+        await (window.acquireWakeLock || (async () => {}))();
 
         // Narração IA: gera a voz UMA vez (reaproveitando o texto do campo) e
         // guarda o arquivo no config, pra ser misturado no áudio de cada vídeo.
@@ -3273,15 +4040,15 @@
         if (config.blur && currentPreviewMode === 'overlay' && video.videoWidth) setupBlurBox();
         btn.disabled = false;
         isExportingVideo = false;
-        releaseWakeLock();
+        (window.releaseWakeLock || (() => {}))();
         document.querySelectorAll('.nav-btn').forEach(navBtn => navBtn.classList.remove('nav-locked'));
       }
     });
   });
 </script>
 
-<!-- Script da Aba 3: Resumidor & Roteirista IA (versão enviada pelo usuário) -->
-<script type="module">
+  <!-- Script 3: Roteirista & Resumo IA -->
+  <script type="module">
 
     import { GoogleGenAI, createUserContent, createPartFromUri, Type } from '@google/genai';
     import { FFmpeg } from '@ffmpeg/ffmpeg';
@@ -5922,8 +6689,8 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
 
 </script>
 
-<!-- Script do Motor da Aba 4 (Downloader TikTok em Lote) -->
-<script>
+  <!-- Script 4: Downloader TikTok em Lote -->
+  <script>
   function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
   // --- Pipeline da Aba 4: Downloader TikTok em Lote ---
@@ -6149,5 +6916,5 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
   window.wireDownloadLinkToSaveFolder(document.getElementById('aiSyncDownloadLink'));
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2e25167db1bbc64',t:'MTc4NzIzODU1NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
