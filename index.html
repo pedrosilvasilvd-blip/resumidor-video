@@ -1347,6 +1347,38 @@ input[type="file"]:hover {
   gap: 10px;
 }
 .social-options-grid label { margin-top: 10px; }
+.social-transfer-card {
+  margin-top: 14px;
+  padding: 13px 14px;
+  border: 1px solid rgba(16,185,129,.28);
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg,rgba(16,185,129,.08),rgba(99,102,241,.06));
+}
+.social-transfer-card small {
+  display: inline-block;
+  margin-top: 3px;
+  color: var(--text-muted);
+  font-size: .7rem;
+  line-height: 1.4;
+}
+#socialEditorTargetWrap {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+.social-save-original-option {
+  margin: 10px 0 0;
+  padding: 9px 10px;
+  border-radius: 8px;
+  background: rgba(0,0,0,.18);
+  border: 1px solid rgba(255,255,255,.07);
+}
+#socialEditorTargetWrap p {
+  margin: 7px 0 0;
+  color: var(--text-muted);
+  font-size: .7rem;
+  line-height: 1.45;
+}
 #socialSearchStatus, #socialBatchStatus, #cobaltTestStatus {
   min-height: 18px;
   margin-top: 10px;
@@ -2377,6 +2409,25 @@ video#sourceVideo { display: none; }
                   <option value="480">480p</option>
                   <option value="max">Máxima</option>
                 </select>
+              </div>
+            </div>
+
+            <div class="social-transfer-card">
+              <label class="checkbox-item" style="margin:0;">
+                <input type="checkbox" id="socialSendToEditorChk">
+                <span><strong>⚡ Enviar automaticamente para edição</strong><br><small>Depois do download, envia os vídeos para a aba escolhida, aplica o Modo Aprovação, ativa o Render Rápido e inicia o processamento.</small></span>
+              </label>
+              <div id="socialEditorTargetWrap" style="display:none;">
+                <label for="socialEditorTarget">Enviar para:</label>
+                <select id="socialEditorTarget">
+                  <option value="found">Aba 1 — Found Footage & Terror</option>
+                  <option value="dorama">Aba 2 — Dorama, Séries & Cinema</option>
+                </select>
+                <label class="checkbox-item social-save-original-option">
+                  <input type="checkbox" id="socialSaveOriginalChk">
+                  <span><strong>Salvar também o vídeo original</strong><br><small>Desligado: o original fica apenas na memória temporária e somente o vídeo final processado será baixado.</small></span>
+                </label>
+                <p>Para vários vídeos: marque todos na lista e clique em <strong>Enviar selecionados para edição</strong>. Eles serão enviados juntos e permanecerão na mesma fila de processamento.</p>
               </div>
             </div>
 
@@ -4171,7 +4222,9 @@ video#sourceVideo { display: none; }
 
   // Efeitos que o motor rápido ainda NÃO reproduz fielmente → cai no canvas.
   function needsCanvasFallback(config) {
-    if (config.shake) return true;                                   // shake senoidal
+    // No Modo Aprovação, creativeEdit já cria micro-movimento no ffmpeg rápido;
+    // por isso o shake marcado não precisa forçar o motor canvas nesse caso.
+    if (config.shake && !config.creativeEdit) return true;
     if (config.introStyle && config.introStyle !== 'none') return true; // gancho animado
     if (config.captionStyle && config.captionStyle !== 'none' && config.captionText) return true; // legendas palavra-a-palavra
     const o = config.overlayStyle;
@@ -7015,6 +7068,10 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
   const socialSelectAllBtn = document.getElementById('socialSelectAllBtn');
   const socialClearBtn = document.getElementById('socialClearBtn');
   const socialDownloadSelectedBtn = document.getElementById('socialDownloadSelectedBtn');
+  const socialSendToEditorChk = document.getElementById('socialSendToEditorChk');
+  const socialEditorTargetWrap = document.getElementById('socialEditorTargetWrap');
+  const socialEditorTarget = document.getElementById('socialEditorTarget');
+  const socialSaveOriginalChk = document.getElementById('socialSaveOriginalChk');
   const cobaltApiUrl = document.getElementById('cobaltApiUrl');
   const testCobaltBtn = document.getElementById('testCobaltBtn');
   const cobaltTestStatus = document.getElementById('cobaltTestStatus');
@@ -7220,6 +7277,9 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
       ? `${socialItems.length} item(ns) • ${readyCount} pronto(s) • ${selectedCount} selecionado(s)`
       : 'Nenhum item carregado.';
     socialDownloadSelectedBtn.disabled = selectedCount === 0;
+    socialDownloadSelectedBtn.textContent = socialSendToEditorChk.checked
+      ? '⚡ Enviar selecionados para edição'
+      : '⬇️ Baixar selecionados';
   }
 
   function buildSocialCard(item) {
@@ -7281,10 +7341,13 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
     mainButton.type = 'button';
     mainButton.className = `social-card-main-btn${item.readyUrl ? '' : ' prepare'}`;
     mainButton.disabled = item.status === 'loading' || item.status === 'picker';
+    const autoEditor = socialSendToEditorChk.checked;
     mainButton.textContent = item.status === 'loading'
       ? 'Aguarde...'
       : item.readyUrl
-        ? (item.status === 'done' ? '⬇️ Baixar novamente' : '⬇️ Baixar')
+        ? (autoEditor
+            ? (item.status === 'done' ? '⚡ Editar novamente' : '⚡ Enviar para edição')
+            : (item.status === 'done' ? '⬇️ Baixar novamente' : '⬇️ Baixar'))
         : '🔎 Preparar';
     mainButton.addEventListener('click', async () => {
       if (item.readyUrl) await downloadSocialItem(item);
@@ -7618,6 +7681,9 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
         youtubeVideoCodec: 'h264',
         youtubeVideoContainer: 'mp4',
         filenameStyle: 'basic',
+        // Para edição automática, força túnel pelo backend para que o GitHub
+        // Pages consiga ler o arquivo como Blob mesmo quando o CDN bloqueia CORS.
+        alwaysProxy: socialSendToEditorChk.checked,
         localProcessing: 'disabled',
         allowH265: false,
       }),
@@ -7663,16 +7729,25 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
 
     try {
       let outputs;
-      if (item.platform === 'tiktok') {
+      let backendFirstError = null;
+
+      // Quando o envio ao editor está ligado, prioriza o backend próprio: o
+      // túnel dele permite ler o arquivo como Blob e colocá-lo na fila.
+      if (socialSendToEditorChk.checked && cobaltApiUrl.value.trim()) {
+        try { outputs = await resolveWithCobalt(item.sourceUrl); }
+        catch (error) { backendFirstError = error; }
+      }
+
+      if (!outputs && item.platform === 'tiktok') {
         try {
           outputs = await resolveTikTokMedia(item.sourceUrl);
         } catch (tikTokError) {
-          // Se o TikWM estiver indisponível e o usuário configurou Cobalt,
+          // Se o TikWM estiver indisponível e o usuário configurou o backend,
           // tenta o motor universal antes de informar falha.
           if (cobaltApiUrl.value.trim()) outputs = await resolveWithCobalt(item.sourceUrl);
-          else throw tikTokError;
+          else throw (backendFirstError || tikTokError);
         }
-      } else {
+      } else if (!outputs) {
         outputs = await resolveWithCobalt(item.sourceUrl);
       }
 
@@ -7721,17 +7796,25 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
     }
   }
 
-  async function saveRemoteMedia(mediaUrl, filename) {
+  async function saveRemoteMedia(mediaUrl, filename, options = {}) {
     try {
       const response = await fetchWithTimeout(mediaUrl, { cache: 'no-store' }, 120000);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const blob = await response.blob();
       if (!blob.size) throw new Error('arquivo vazio');
-      await window.saveProcessedBlob(blob, filename);
-      return 'saved';
+      if (options.saveToDisk !== false) {
+        await window.saveProcessedBlob(blob, filename);
+        return { mode: 'saved', blob };
+      }
+      // Fluxo direto para edição: mantém o original somente na memória.
+      return { mode: 'memory', blob };
     } catch (error) {
+      if (options.openFallback === false) {
+        return { mode: 'failed', blob: null, error };
+      }
       // Muitos CDNs não liberam CORS, mas aceitam navegação direta. Nesse caso,
-      // o link é aberto com download/Content-Disposition em vez de falhar.
+      // o download comum ainda abre, porém não existe Blob local para enviar
+      // automaticamente ao editor.
       const anchor = document.createElement('a');
       anchor.href = mediaUrl;
       anchor.target = '_blank';
@@ -7740,14 +7823,68 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
-      return 'opened';
+      return { mode: 'opened', blob: null, error };
     }
   }
 
-  async function downloadSocialItem(item) {
+  function makeEditorVideoFile(blob, filename) {
+    if (!blob) return null;
+    const finalName = /\.[a-z0-9]{2,5}$/i.test(filename) ? filename : `${filename}.mp4`;
+    return new File([blob], finalName, {
+      type: blob.type && blob.type.startsWith('video/') ? blob.type : 'video/mp4',
+      lastModified: Date.now()
+    });
+  }
+
+  function sendFilesToEditorQueue(files, target) {
+    const videos = (files || []).filter(Boolean);
+    if (!videos.length) return false;
+    if (target !== 'found' && target !== 'dorama') target = 'found';
+
+    // Acrescenta, nunca substitui: novos downloads entram no fim da fila que
+    // já existir na aba escolhida.
+    fileQueues[target] = [...(fileQueues[target] || []), ...videos];
+
+    let switched = false;
+    if (target === 'dorama') {
+      switched = goToDoramaTab();
+    } else {
+      tabBtnFound.click();
+      switched = activeTab === 'found';
+    }
+    if (!switched) {
+      setSocialMessage(socialBatchStatus, 'Os vídeos entraram na fila, mas não foi possível trocar de aba agora.', true);
+      return false;
+    }
+
+    const container = target === 'found' ? tabFoundContent : tabDoramaContent;
+    applyApprovalMode(container);
+
+    // O fast render é ligado explicitamente. Na Aba 1, desativamos a legenda
+    // dinâmica automática somente neste fluxo para não obrigar o motor canvas.
+    const fast = container.querySelector('.fast-chk');
+    if (fast) fast.checked = true;
+    const caption = container.querySelector('.caption-style-select');
+    if (caption) caption.value = 'none';
+
+    const processBtn = container.querySelector('.process-btn');
+    if (processBtn) processBtn.disabled = false;
+    status.innerText = `⚡ ${videos.length} vídeo(s) enviado(s) para a fila. Modo Aprovação aplicado e Render Rápido ativado. Iniciando...`;
+    window.showToast(`${videos.length} vídeo(s) enviado(s) para ${target === 'found' ? 'Aba 1' : 'Aba 2'}.`, 'success');
+
+    // Dá tempo para o primeiro Blob montar os metadados/preview antes do clique.
+    setTimeout(() => {
+      if (activeTab !== target || isExportingVideo || !processBtn) return;
+      processBtn.disabled = false;
+      processBtn.click();
+    }, 1100);
+    return true;
+  }
+
+  async function downloadSocialItem(item, options = {}) {
     if (!item.readyUrl) {
       await prepareSocialItem(item);
-      if (!item.readyUrl) return false;
+      if (!item.readyUrl) return { ok: false, editorFile: null };
     }
     item.status = 'loading';
     renderSocialItems();
@@ -7755,22 +7892,72 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
     try {
       const extension = item.mediaType === 'photo' ? 'jpg' : item.mediaType === 'audio' ? 'mp3' : 'mp4';
       const filename = item.filename || `${safeFilename(item.title)}.${extension}`;
-      const mode = await saveRemoteMedia(item.readyUrl, filename);
+      const wantsEditor = socialSendToEditorChk.checked && item.mediaType !== 'photo' && item.mediaType !== 'audio';
+      const shouldSaveOriginal = !wantsEditor || socialSaveOriginalChk.checked;
+      let saved = await saveRemoteMedia(item.readyUrl, filename, {
+        openFallback: !wantsEditor,
+        saveToDisk: shouldSaveOriginal
+      });
+
+      // Se o CDN direto não permite leitura por CORS, pede ao backend um túnel
+      // próprio e tenta de novo. Assim obtemos o Blob necessário para a edição.
+      if (wantsEditor && !saved.blob && cobaltApiUrl.value.trim()) {
+        try {
+          const outputs = await resolveWithCobalt(item.sourceUrl);
+          const videoOutput = outputs.find(output => (output.type || 'video') === 'video') || outputs[0];
+          if (videoOutput?.url) {
+            item.readyUrl = videoOutput.url;
+            item.filename = videoOutput.filename || filename;
+            saved = await saveRemoteMedia(item.readyUrl, item.filename, {
+              openFallback: shouldSaveOriginal,
+              saveToDisk: shouldSaveOriginal
+            });
+          }
+        } catch (tunnelError) {
+          console.warn('Não foi possível criar túnel para o editor:', tunnelError);
+        }
+      }
+      if (wantsEditor && !saved.blob && saved.mode === 'failed' && shouldSaveOriginal) {
+        saved = await saveRemoteMedia(item.readyUrl, item.filename || filename, {
+          openFallback: true,
+          saveToDisk: true
+        });
+      }
+
+      const editorFile = wantsEditor && saved.blob
+        ? makeEditorVideoFile(saved.blob, item.filename || filename)
+        : null;
       item.status = 'done';
       renderSocialItems();
-      setSocialMessage(
-        socialBatchStatus,
-        mode === 'saved'
-          ? `✅ Download iniciado: ${filename}`
-          : `✅ O arquivo foi aberto para download em uma nova guia: ${filename}`
-      );
-      return true;
+
+      if (wantsEditor && !editorFile) {
+        item.status = 'error';
+        item.error = 'Arquivo não liberado para edição';
+        renderSocialItems();
+        setSocialMessage(socialBatchStatus, `Não foi possível receber o arquivo como Blob para edição. Confira se o backend está conectado e tente novamente.`, true);
+        return { ok: false, editorFile: null };
+      } else {
+        let successMessage;
+        if (saved.mode === 'memory') {
+          successMessage = `✅ Original recebido apenas na memória temporária; enviando para edição.`;
+        } else if (saved.mode === 'saved') {
+          successMessage = `✅ Download do original iniciado: ${item.filename || filename}`;
+        } else {
+          successMessage = `✅ O arquivo original foi aberto para download em uma nova guia: ${item.filename || filename}`;
+        }
+        setSocialMessage(socialBatchStatus, successMessage);
+      }
+
+      if (editorFile && !options.deferEditorStart) {
+        sendFilesToEditorQueue([editorFile], socialEditorTarget.value);
+      }
+      return { ok: true, editorFile };
     } catch (error) {
       item.status = 'error';
       item.error = error.message || String(error);
       renderSocialItems();
       setSocialMessage(socialBatchStatus, `Falha no download: ${item.error}`, true);
-      return false;
+      return { ok: false, editorFile: null };
     }
   }
 
@@ -7881,6 +8068,7 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
     socialDownloadSelectedBtn.disabled = true;
     let downloaded = 0;
     let needsChoice = 0;
+    const editorFiles = [];
 
     for (let index = 0; index < selected.length; index++) {
       const item = selected[index];
@@ -7892,17 +8080,53 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
           continue;
         }
       }
-      if (await downloadSocialItem(item)) downloaded++;
+      const result = await downloadSocialItem(item, { deferEditorStart: true });
+      if (result.ok) downloaded++;
+      if (result.editorFile) editorFiles.push(result.editorFile);
       await sleep(550);
     }
 
+    const batchAction = socialSendToEditorChk.checked
+      ? `${downloaded} vídeo(s) recebido(s) para edição`
+      : `${downloaded} download(s) iniciado(s)`;
     setSocialMessage(
       socialBatchStatus,
-      `Fila concluída: ${downloaded} download(s) iniciado(s)` +
+      `Fila concluída: ${batchAction}` +
         (needsChoice ? `; ${needsChoice} item(ns) geraram opções para você escolher na lista.` : '.')
     );
+
+    // Só troca de aba depois que TODOS os selecionados terminaram de baixar;
+    // assim um lote inteiro entra junto e é processado como uma única fila.
+    if (socialSendToEditorChk.checked && editorFiles.length) {
+      sendFilesToEditorQueue(editorFiles, socialEditorTarget.value);
+    }
     socialDownloadSelectedBtn.disabled = socialItems.every(item => !item.selected);
   });
+
+  function refreshSocialEditorTransferUI() {
+    socialEditorTargetWrap.style.display = socialSendToEditorChk.checked ? 'block' : 'none';
+  }
+  try {
+    socialSendToEditorChk.checked = localStorage.getItem('blind_social_send_editor') === '1';
+    socialEditorTarget.value = localStorage.getItem('blind_social_editor_target') || 'found';
+    // Padrão desligado: não salva o original, apenas o resultado processado.
+    socialSaveOriginalChk.checked = localStorage.getItem('blind_social_save_original') === '1';
+  } catch (_) {}
+  socialSendToEditorChk.addEventListener('change', () => {
+    refreshSocialEditorTransferUI();
+    renderSocialItems();
+    try { localStorage.setItem('blind_social_send_editor', socialSendToEditorChk.checked ? '1' : '0'); }
+    catch (_) {}
+  });
+  socialEditorTarget.addEventListener('change', () => {
+    try { localStorage.setItem('blind_social_editor_target', socialEditorTarget.value); }
+    catch (_) {}
+  });
+  socialSaveOriginalChk.addEventListener('change', () => {
+    try { localStorage.setItem('blind_social_save_original', socialSaveOriginalChk.checked ? '1' : '0'); }
+    catch (_) {}
+  });
+  refreshSocialEditorTransferUI();
 
   // A URL do backend próprio pode persistir; não existe chave de API.
   try {

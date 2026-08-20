@@ -37,7 +37,23 @@ O backend inclui a rota `/profile`, que lista canais do YouTube e perfis públic
 
 Se você já tinha publicado uma versão anterior, envie novamente os arquivos atualizados da pasta `backend` e o `render.yaml` ao GitHub. Depois, no Render, aguarde o novo deploy ou use **Manual Deploy > Deploy latest commit**.
 
+> Se apareceu `Deploy failed` logo após adicionar a listagem de perfis, substitua o `backend/Dockerfile` pela versão atual. A imagem do Cobalt usa Alpine Linux; a correção usa `apk` e o binário `yt-dlp_musllinux` compatível.
+
 Perfis do Instagram podem exigir login ou aplicar bloqueio temporário; nesses casos, use links individuais de Reels/publicações.
+
+## Envio automático para as Abas 1 e 2
+
+Na Aba 4 existe a opção **Enviar automaticamente para edição**. Escolha a Aba 1 ou 2. Quando ligada:
+
+1. o vídeo é baixado;
+2. o arquivo entra na fila da aba escolhida;
+3. o Modo Aprovação é aplicado;
+4. o Render Rápido é ativado;
+5. o processamento começa automaticamente.
+
+Por padrão, o original é recebido somente como arquivo temporário na memória e **não** é salvo na pasta Downloads; apenas o vídeo final processado é baixado. Se quiser guardar as duas versões, marque **Salvar também o vídeo original**.
+
+Para vários vídeos, marque os itens e use **Enviar selecionados para edição**. Todos os arquivos disponíveis entram juntos na mesma fila; novos arquivos são acrescentados ao fim, sem substituir os anteriores.
 
 ## Observações
 
