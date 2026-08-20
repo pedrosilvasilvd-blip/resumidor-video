@@ -2905,6 +2905,8 @@ video#sourceVideo { display: none; }
     check('.mirror-chk');                 // espelhamento anti duplicidade
     check('.shake-chk');                  // micro-oscilação
     check('.stego-chk');                  // ruído sub-visual
+    check('.audio-chk');                  // blindagem acústica
+    check('.audio-ducking-chk');          // Dorama: ducking da narração
     // No módulo Dorama o tom é sempre original (0). O módulo Found mantém o
     // comportamento anterior do Modo Aprovação.
     set('.pitch-select', container.id === 'tabDoramaContent' ? '0' : '1');
@@ -4246,6 +4248,9 @@ video#sourceVideo { display: none; }
       isCropActive: config.isCropActive,
       cropNorm: cropNorm,
       mirror: config.mirror,
+      shake: config.shake,
+      audioShield: config.audio,
+      autoApprovalPreset: config.autoApprovalPreset,
       pitchSemitones: config.pitchSemitones,
       creativeEdit: config.creativeEdit,
       stego: config.stego,
@@ -4285,33 +4290,39 @@ video#sourceVideo { display: none; }
       document.querySelectorAll('.nav-btn').forEach(navBtn => navBtn.classList.add('nav-locked'));
 
       const ctrl = getActiveControls();
+      const processingContainer = btn.closest('.tab-content');
+      const autoApprovalPreset = processingContainer?.dataset.autoApprovalPreset === '1';
+      if (processingContainer) delete processingContainer.dataset.autoApprovalPreset;
       const baseTitle = ctrl.hookText.value.trim();
       const config = {
         cutStart: parseFloat(ctrl.trimStart.value) || 0,
         cutEnd: parseFloat(ctrl.trimEnd.value) || 0,
-        isCropActive: ctrl.enableCrop.checked,
-        blur: ctrl.blur ? ctrl.blur.checked : false,
-        creativeEdit: ctrl.creative ? ctrl.creative.checked : false,
-        fastRender: ctrl.fast ? ctrl.fast.checked : false,
-        captionStyle: ctrl.captionStyle ? ctrl.captionStyle.value : 'none',
+        isCropActive: autoApprovalPreset ? true : ctrl.enableCrop.checked,
+        blur: autoApprovalPreset ? false : (ctrl.blur ? ctrl.blur.checked : false),
+        creativeEdit: autoApprovalPreset ? true : (ctrl.creative ? ctrl.creative.checked : false),
+        fastRender: autoApprovalPreset ? true : (ctrl.fast ? ctrl.fast.checked : false),
+        captionStyle: autoApprovalPreset ? 'none' : (ctrl.captionStyle ? ctrl.captionStyle.value : 'none'),
         captionText: ctrl.captionText ? ctrl.captionText.value : '',
         narrationText: ctrl.narrationText ? ctrl.narrationText.value : '',
         narration: ctrl.narration ? ctrl.narration.checked : false,
-        introStyle: ctrl.introStyle.value,
+        introStyle: autoApprovalPreset ? 'none' : ctrl.introStyle.value,
         overlayStyle: ctrl.overlayStyle.value,
         colorFilter: activeTab === 'dorama' ? doramaColorFilter.value : '',
-        channelName: ctrl.channelName ? ctrl.channelName.value : '',
-        shake: ctrl.shake.checked,
-        mirror: ctrl.mirror ? ctrl.mirror.checked : false,
-        stego: ctrl.stego.checked,
-        audio: ctrl.audio.checked,
-        ducking: ctrl.ducking ? ctrl.ducking.checked : false,
+        channelName: autoApprovalPreset ? '' : (ctrl.channelName ? ctrl.channelName.value : ''),
+        shake: autoApprovalPreset ? true : ctrl.shake.checked,
+        mirror: autoApprovalPreset ? true : (ctrl.mirror ? ctrl.mirror.checked : false),
+        stego: autoApprovalPreset ? true : ctrl.stego.checked,
+        audio: autoApprovalPreset ? true : ctrl.audio.checked,
+        ducking: autoApprovalPreset && activeTab === 'dorama' ? true : (ctrl.ducking ? ctrl.ducking.checked : false),
         bgmFile: (ctrl.bgmInput && ctrl.bgmInput.files && ctrl.bgmInput.files[0]) ? ctrl.bgmInput.files[0] : null,
         bgmVolume: ctrl.bgmVolume ? parseFloat(ctrl.bgmVolume.value) : 0.35,
         videoVolume: ctrl.videoVolume ? parseFloat(ctrl.videoVolume.value) : 1.5,
         // Defesa dupla: mesmo que o HTML seja alterado pelo navegador, Dorama
         // nunca sai com pitch diferente de zero.
-        pitchSemitones: activeTab === 'dorama' ? 0 : (ctrl.pitch ? parseFloat(ctrl.pitch.value) : 0)
+        pitchSemitones: activeTab === 'dorama'
+          ? 0
+          : (autoApprovalPreset ? 1 : (ctrl.pitch ? parseFloat(ctrl.pitch.value) : 0)),
+        autoApprovalPreset
       };
 
       // Checklist de pré-export: se houver avisos, pergunta antes de gastar
@@ -4816,17 +4827,25 @@ video#sourceVideo { display: none; }
         } else if (opts.creativeEdit) {
             vf.push('eq=saturation=1.35:contrast=1.12');
         }
-        if (opts.stego) vf.push('noise=alls=6:allf=t');
-        if (opts.creativeEdit) {
-            const zw = Math.max(2, Math.round(mainW * 1.16 / 2) * 2);
-            const zh = Math.max(2, Math.round(mainH * 1.16 / 2) * 2);
+        if (opts.creativeEdit || opts.shake) {
+            const zoomFactor = opts.creativeEdit ? 1.20 : 1.06;
+            const zw = Math.max(2, Math.round(mainW * zoomFactor / 2) * 2);
+            const zh = Math.max(2, Math.round(mainH * zoomFactor / 2) * 2);
+            const ampX = opts.creativeEdit ? 10 : 4;
+            const ampY = opts.creativeEdit ? 8 : 3;
+            const cutShift = opts.creativeEdit ? 12 : 0;
             vf.push(`scale=${zw}:${zh}`);
-            vf.push(`crop=${mainW}:${mainH}:x='(iw-ow)/2+sin(n*0.045)*10':y='(ih-oh)/2+cos(n*0.038)*8'`);
+            // Movimento contínuo + mudança seca de foco em intervalos: reproduz
+            // shake e re-enquadramentos da Edição Criativa no motor rápido.
+            vf.push(`crop=${mainW}:${mainH}:x='(iw-ow)/2+sin(n*0.055)*${ampX}+sgn(sin(n*0.021))*${cutShift}':y='(ih-oh)/2+cos(n*0.047)*${ampY}'`);
+            if (opts.creativeEdit) vf.push('unsharp=5:5:0.35:5:5:0.0');
         } else {
             vf.push(`scale=${mainW}:${mainH}`);
         }
         if (F !== 1) vf.unshift(`setpts=PTS/${F.toFixed(5)}`);
         vf.push(`pad=${TARGET_W}:${TARGET_H}:${mainX}:${mainY}:black`);
+        // Ruído depois do scale/pad para não ser suavizado pelo redimensionamento.
+        if (opts.stego) vf.push('noise=alls=8:allf=t+u');
         if (opts.blur && opts.blurNorm) {
             const b = opts.blurNorm;
             const bw = Math.max(2, Math.round(mainW * b.w / 2) * 2);
@@ -4873,6 +4892,9 @@ video#sourceVideo { display: none; }
         const mixInputs = [];
         let a0 = 'volume=' + (Number.isFinite(opts.videoVolume) ? opts.videoVolume : 1.5)
             + (opts.ducking || opts.narrationFile ? '*0.22' : '');
+        if (opts.audioShield) {
+            a0 += ',highshelf=f=11200:g=-3.5,equalizer=f=18.2:width_type=h:width=4:g=2';
+        }
         if (F !== 1) a0 += `,asetrate=${Math.round(48000 * F)},aresample=48000`;
         audioParts.push(`[0:a]${a0}[a0]`);
         mixInputs.push('[a0]');
@@ -7910,6 +7932,10 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
 
     const processBtn = container.querySelector('.process-btn');
     if (processBtn) processBtn.disabled = false;
+    // Sinal interno consumido pelo botão de processamento. O preset automático
+    // força as camadas no objeto de configuração, sem depender apenas do estado
+    // visual dos checkboxes.
+    container.dataset.autoApprovalPreset = '1';
     status.innerText = `⚡ ${videos.length} vídeo(s) enviado(s) para a fila. Modo Aprovação aplicado, desfoque manual mantido desligado e Render Rápido ativado. Iniciando...`;
     window.showToast(`${videos.length} vídeo(s) enviado(s) para ${target === 'found' ? 'Aba 1' : 'Aba 2'}.`, 'success');
 

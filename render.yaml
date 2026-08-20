@@ -9,6 +9,8 @@ services:
     healthCheckPath: /profile-health
     maxShutdownDelaySeconds: 30
     envVars:
+      - key: YTDLP_COOKIES_FILE
+        value: "/etc/secrets/youtube-cookies.txt"
       - key: CORS_WILDCARD
         value: "1"
       - key: RATELIMIT_WINDOW

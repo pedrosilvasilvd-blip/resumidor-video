@@ -47,9 +47,11 @@ Na Aba 4 existe a opção **Enviar automaticamente para edição**. Escolha a Ab
 
 1. o vídeo é baixado;
 2. o arquivo entra na fila da aba escolhida;
-3. o Modo Aprovação é aplicado;
-4. o Render Rápido é ativado;
+3. o preset interno força edição criativa, espelhamento, micro-oscilação, ruído esteganográfico e blindagem acústica; **Desfocar Região permanece desligado** no envio automático;
+4. o Render Rápido é ativado; se algum filtro rápido não for suportado pelo navegador, o app cai automaticamente para o motor canvas mantendo as camadas;
 5. o processamento começa automaticamente.
+
+O desfoque de região não é ativado automaticamente porque a máscara manual poderia cair sobre uma parte aleatória da cena. Ative-o apenas quando puder posicionar o quadrado amarelo sobre um logotipo ou QR code. Uma detecção automática exata de logotipos, legendas e QR codes exigiria rastreamento visual dedicado e não é simulada por uma posição fixa.
 
 Por padrão, o original é recebido somente como arquivo temporário na memória e **não** é salvo na pasta Downloads; apenas o vídeo final processado é baixado. Se quiser guardar as duas versões, marque **Salvar também o vídeo original**.
 
@@ -59,6 +61,7 @@ Para vários vídeos, marque os itens e use **Enviar selecionados para edição*
 
 - No plano gratuito, o serviço pode adormecer. O primeiro teste depois de um período sem uso pode levar até cerca de um minuto.
 - Use links públicos. Conteúdo privado, removido, com login obrigatório ou bloqueado por região não poderá ser processado.
-- Serviços como YouTube e Instagram podem limitar endereços de datacenter. Se isso ocorrer, tente novamente mais tarde.
+- Serviços como YouTube e Instagram podem limitar endereços de datacenter. Se o YouTube mostrar `error.api.youtube.login` ou `Sign in to confirm you’re not a bot`, siga o arquivo **YOUTUBE-COOKIES.md** e adicione `youtube-cookies.txt` em **Render > Environment > Secret Files**.
+- Nunca envie cookies para o GitHub; use apenas Secret Files e, de preferência, uma conta secundária.
 - O backend usa o projeto de código aberto Cobalt e não armazena os vídeos permanentemente.
 - Use somente conteúdo próprio ou que você tenha autorização para salvar e reutilizar.

@@ -1,6 +1,6 @@
 import http from 'node:http';
 import { spawn } from 'node:child_process';
-import { createReadStream } from 'node:fs';
+import { createReadStream, existsSync } from 'node:fs';
 import { readdir, rm, stat } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
@@ -9,6 +9,16 @@ const FRONT_PORT = Number(process.env.PORT || 9000);
 const COBALT_PORT = Number(process.env.COBALT_INTERNAL_PORT || 9001);
 const MAX_PROFILE_ITEMS = 500;
 const ALLOWED_HOSTS = ['youtube.com', 'youtu.be', 'tiktok.com', 'instagram.com'];
+const YTDLP_COOKIES_FILE = process.env.YTDLP_COOKIES_FILE || '/etc/secrets/youtube-cookies.txt';
+
+function ytDlpCookieArgs(rawUrl) {
+  try {
+    if (detectPlatform(rawUrl) === 'youtube' && existsSync(YTDLP_COOKIES_FILE)) {
+      return ['--cookies', YTDLP_COOKIES_FILE];
+    }
+  } catch (_) {}
+  return [];
+}
 
 function corsHeaders(extra = {}) {
   return {
@@ -93,6 +103,7 @@ function runYtDlpProfile(profileUrl, limit) {
       '--socket-timeout', '25',
       '--extractor-retries', '2',
       '--playlist-end', String(limit),
+      ...ytDlpCookieArgs(profileUrl),
       profileUrl,
     ];
     const child = spawn('yt-dlp', args, { stdio: ['ignore', 'pipe', 'pipe'] });
@@ -167,6 +178,7 @@ function runYtDlpDownload(mediaUrl, quality) {
       '--merge-output-format', 'mp4',
       '--remux-video', 'mp4',
       '--output', outputTemplate,
+      ...ytDlpCookieArgs(mediaUrl),
       mediaUrl,
     ];
     const child = spawn('yt-dlp', args, { stdio: ['ignore', 'ignore', 'pipe'] });
@@ -339,7 +351,11 @@ const server = http.createServer(async (req, res) => {
     return;
   }
   if (requestUrl.pathname === '/profile-health') {
-    sendJson(res, 200, { ok: true, service: 'blind-engine-profile-backend' });
+    sendJson(res, 200, {
+      ok: true,
+      service: 'blind-engine-profile-backend',
+      youtubeCookies: existsSync(YTDLP_COOKIES_FILE)
+    });
     return;
   }
   proxyToCobalt(req, res);
