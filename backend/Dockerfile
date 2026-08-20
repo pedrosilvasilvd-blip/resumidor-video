@@ -2,16 +2,16 @@ FROM ghcr.io/imputnet/cobalt:11
 
 USER root
 
-# yt-dlp lista vídeos de perfis/canais (YouTube e TikTok) sem baixar os
-# arquivos. O binário standalone é atualizado sempre que o Render recompila.
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates curl \
+# A imagem oficial do Cobalt usa Alpine Linux. Por isso usamos apk e o binário
+# musllinux do yt-dlp (o binário linux comum exige glibc e não inicia aqui).
+RUN apk add --no-cache ca-certificates \
+    && apk add --no-cache --virtual .fetch-deps curl \
     && curl -L --fail --retry 3 \
-       https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux \
+       https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_musllinux \
        -o /usr/local/bin/yt-dlp \
     && chmod 755 /usr/local/bin/yt-dlp \
-    && apt-get purge -y --auto-remove curl \
-    && rm -rf /var/lib/apt/lists/*
+    && /usr/local/bin/yt-dlp --version \
+    && apk del .fetch-deps
 
 COPY start-render.sh /usr/local/bin/start-render.sh
 COPY profile-server.mjs /opt/blind-engine/profile-server.mjs
