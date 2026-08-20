@@ -2365,6 +2365,8 @@ video#sourceVideo { display: none; }
                   <option value="24" selected>24 vídeos</option>
                   <option value="48">48 vídeos</option>
                   <option value="96">96 vídeos</option>
+                  <option value="200">200 vídeos</option>
+                  <option value="0">Perfil inteiro (até 500)</option>
                 </select>
               </div>
               <div>
@@ -7350,6 +7352,42 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
     });
   }
 
+  function formatBackendProfileDate(raw) {
+    const value = String(raw || '');
+    if (/^\d{8}$/.test(value)) {
+      return `${value.slice(6, 8)}/${value.slice(4, 6)}/${value.slice(0, 4)}`;
+    }
+    return value;
+  }
+
+  // O backend atualizado possui uma rota própria para listar perfis/canais
+  // com yt-dlp. Isso evita depender dos proxies CORS instáveis do navegador e
+  // permite buscar muito mais do que os 10-15 itens do feed RSS do YouTube.
+  async function fetchBackendProfileItems(profileUrl, platform, limit) {
+    const { endpoint } = getCobaltSettings();
+    const requestLimit = limit === 0 ? 0 : Math.max(1, Math.min(limit, 500));
+    const url = `${endpoint}/profile?url=${encodeURIComponent(profileUrl)}&limit=${requestLimit}`;
+    const response = await fetchWithTimeout(url, {
+      headers: { 'Accept': 'application/json' },
+      cache: 'no-store'
+    }, 135000);
+    let data;
+    try { data = await response.json(); }
+    catch (_) { throw new Error(`O backend de perfis respondeu sem JSON (HTTP ${response.status}).`); }
+    if (!response.ok || !data.ok) throw new Error(data.error || `Backend de perfis: HTTP ${response.status}`);
+    if (!Array.isArray(data.items) || !data.items.length) throw new Error('O backend não encontrou vídeos públicos nesse perfil.');
+
+    return data.items.map((entry, index) => ({
+      platform,
+      sourceUrl: entry.sourceUrl,
+      title: entry.title || `${platformInfo[platform]?.label || platform} #${index + 1}`,
+      author: entry.author || data.profileTitle || '',
+      thumb: entry.thumb || '',
+      date: formatBackendProfileDate(entry.date),
+      filename: `${safeFilename(entry.title || `${platform}_${entry.id || index + 1}`)}.mp4`,
+    }));
+  }
+
   async function resolveYouTubeChannelId(channelUrl) {
     const url = new URL(channelUrl);
     const direct = url.pathname.match(/\/channel\/(UC[A-Za-z0-9_-]{20,30})/);
@@ -7743,7 +7781,8 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
       return;
     }
 
-    const limit = Math.max(1, parseInt(socialProfileLimit.value, 10) || 24);
+    const parsedLimit = parseInt(socialProfileLimit.value, 10);
+    const limit = parsedLimit === 0 ? 0 : Math.max(1, parsedLimit || 24);
     socialAnalyzeBtn.disabled = true;
     setSocialMessage(socialSearchStatus, `Analisando ${links.length} link(s)...`);
     let successes = 0;
@@ -7765,14 +7804,40 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
         try {
           let items;
           if (kind === 'profile') {
-            if (platform === 'tiktok') {
-              items = await fetchTikTokProfileItems(link, limit, count => {
-                setSocialMessage(socialSearchStatus, `TikTok: ${count} vídeo(s) encontrado(s)...`);
-              });
-            } else if (platform === 'youtube') {
-              items = await fetchYouTubeChannelItems(link, limit);
-            } else {
-              items = await fetchInstagramProfileItems(link, limit);
+            const fallbackLimit = limit === 0 ? 500 : limit;
+            let backendError = null;
+
+            // Caminho principal: backend próprio atualizado, capaz de listar
+            // canais/perfis grandes sem a limitação do navegador/GitHub Pages.
+            if (cobaltApiUrl.value.trim()) {
+              try {
+                setSocialMessage(socialSearchStatus, `${platformInfo[platform].label}: backend listando o perfil...`);
+                items = await fetchBackendProfileItems(link, platform, limit);
+              } catch (error) {
+                backendError = error;
+                console.warn('Backend de perfil falhou; tentando método público:', error);
+              }
+            }
+
+            // Fallback mantém a listagem possível mesmo enquanto o Render está
+            // acordando ou antes de o backend novo terminar o deploy.
+            if (!items) {
+              try {
+                if (platform === 'tiktok') {
+                  items = await fetchTikTokProfileItems(link, fallbackLimit, count => {
+                    setSocialMessage(socialSearchStatus, `TikTok: ${count} vídeo(s) encontrado(s)...`);
+                  });
+                } else if (platform === 'youtube') {
+                  items = await fetchYouTubeChannelItems(link, fallbackLimit);
+                } else {
+                  items = await fetchInstagramProfileItems(link, fallbackLimit);
+                }
+              } catch (fallbackError) {
+                if (backendError) {
+                  throw new Error(`Backend: ${backendError.message || backendError}. Alternativa pública: ${fallbackError.message || fallbackError}`);
+                }
+                throw fallbackError;
+              }
             }
           } else {
             items = [await buildDirectSocialItem(link, platform)];

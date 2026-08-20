@@ -6,7 +6,8 @@ services:
     region: oregon
     dockerContext: ./backend
     dockerfilePath: ./backend/Dockerfile
-    healthCheckPath: /
+    healthCheckPath: /profile-health
+    maxShutdownDelaySeconds: 30
     envVars:
       - key: CORS_WILDCARD
         value: "1"

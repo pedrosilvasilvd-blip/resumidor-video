@@ -2,7 +2,7 @@
 set -eu
 
 # O Render informa automaticamente o domínio público e a porta do serviço.
-# O Cobalt precisa dessas duas variáveis para criar links de túnel corretos.
+# A porta pública fica com o proxy/listador; o Cobalt roda internamente em 9001.
 if [ -z "${API_URL:-}" ]; then
   if [ -n "${RENDER_EXTERNAL_HOSTNAME:-}" ]; then
     export API_URL="https://${RENDER_EXTERNAL_HOSTNAME}/"
@@ -11,7 +11,12 @@ if [ -z "${API_URL:-}" ]; then
   fi
 fi
 
-export API_PORT="${PORT:-9000}"
-export API_LISTEN_ADDRESS="0.0.0.0"
+export COBALT_INTERNAL_PORT="${COBALT_INTERNAL_PORT:-9001}"
+export API_PORT="$COBALT_INTERNAL_PORT"
+export API_LISTEN_ADDRESS="127.0.0.1"
 
-exec docker-entrypoint.sh node src/cobalt
+# Inicia o motor de download interno. O processo principal abaixo mantém o
+# container vivo e também encaminha todas as rotas normais para o Cobalt.
+docker-entrypoint.sh node src/cobalt &
+
+exec node /opt/blind-engine/profile-server.mjs

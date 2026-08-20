@@ -31,6 +31,14 @@ https://blind-engine-social-backend.onrender.com
 
 Pronto. A URL fica salva no navegador; não existe chave de API.
 
+## Listagem de perfis inteiros
+
+O backend inclui a rota `/profile`, que lista canais do YouTube e perfis públicos do TikTok diretamente no servidor. Na Aba 4 você pode escolher entre 12, 24, 48, 96, 200 ou **Perfil inteiro (até 500)** antes de buscar.
+
+Se você já tinha publicado uma versão anterior, envie novamente os arquivos atualizados da pasta `backend` e o `render.yaml` ao GitHub. Depois, no Render, aguarde o novo deploy ou use **Manual Deploy > Deploy latest commit**.
+
+Perfis do Instagram podem exigir login ou aplicar bloqueio temporário; nesses casos, use links individuais de Reels/publicações.
+
 ## Observações
 
 - No plano gratuito, o serviço pode adormecer. O primeiro teste depois de um período sem uso pode levar até cerca de um minuto.
