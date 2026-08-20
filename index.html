@@ -2518,14 +2518,41 @@
           window.saveProcessedBlob(blob, filename).then(resolve).catch(resolve);
         };
 
-        mediaRecorder.start();
+        // Warm-up anti "tela preta inicial": posiciona o vídeo no ponto de
+        // início (cutStart) e espera o primeiro frame ficar decodificado ANTES
+        // de começar a gravar. Sem isso, o drawImage(video) desenhava vazio
+        // durante os ~200-400ms em que o navegador busca/decodifica o frame,
+        // fazendo o começo do MP4 sair preto.
+        await new Promise((resolve) => {
+          let settled = false;
+          let to = null;
+          const cleanup = () => {
+            clearTimeout(to);
+            video.removeEventListener('seeked', onSeeked);
+            video.removeEventListener('canplay', onReady);
+          };
+          const finish = () => {
+            if (settled) return;
+            settled = true;
+            cleanup();
+            resolve();
+          };
+          const onSeeked = () => finish();
+          const onReady = () => { if (video.readyState >= 2) finish(); };
+          to = setTimeout(finish, 2000); // fallback de segurança
+          video.addEventListener('seeked', onSeeked);
+          video.addEventListener('canplay', onReady);
+          video.currentTime = config.cutStart;
+          video.pause();
+          // Se o frame já está decodificado (ex.: cutStart = 0 e o vídeo já
+          // carregou), resolve na hora em vez de esperar o fallback de 2s.
+          if (video.readyState >= 2) finish();
+        });
 
-        const introDuration = (config.introStyle === 'none') ? 0 : 1.2;
-        const startTime = Date.now();
-        let videoStarted = false;
-        let frameIndex = 0;
-        const introParticles = createIntroParticles(40);
-
+        // Prepara as coordenadas de corte/layout ANTES de gravar e já pinta o
+        // canvas com o primeiro frame REAL. Como o vídeo foi "aquecido" no
+        // ponto de início acima, o drawImage já tem imagem — então nem o
+        // primeiro frame do MP4 sai preto.
         const effectiveCrop = config.isCropActive ? cropNorm : { x: 0, y: 0, w: 1, h: 1 };
         const sx = video.videoWidth * effectiveCrop.x;
         const sy = video.videoHeight * effectiveCrop.y;
@@ -2533,6 +2560,20 @@
         const sh = video.videoHeight * effectiveCrop.h;
 
         const { mainX: destX, mainY: destY, mainW: destW, mainH: destH } = getVideoRenderLayout();
+
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, TARGET_W, TARGET_H);
+        try {
+          ctx.drawImage(video, sx, sy, sw, sh, destX, destY, destW, destH);
+        } catch (e) { /* frame ainda não disponível — o loop corrige no tick */ }
+
+        mediaRecorder.start();
+
+        const introDuration = (config.introStyle === 'none') ? 0 : 1.2;
+        const startTime = Date.now();
+        let videoStarted = false;
+        let frameIndex = 0;
+        const introParticles = createIntroParticles(40);
 
         let renderStopped = false;
         const renderTicker = createRenderTicker();
@@ -5525,5 +5566,5 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
   window.wireDownloadLinkToSaveFolder(document.getElementById('aiSyncDownloadLink'));
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2de70c63f71d973',t:'MTc4NzE5Nzg5Ng=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2de839489b5cf1d',t:'MTc4NzE5ODY2Ng=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
