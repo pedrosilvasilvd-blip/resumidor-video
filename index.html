@@ -2415,7 +2415,7 @@ video#sourceVideo { display: none; }
             <div class="social-transfer-card">
               <label class="checkbox-item" style="margin:0;">
                 <input type="checkbox" id="socialSendToEditorChk">
-                <span><strong>⚡ Enviar automaticamente para edição</strong><br><small>Envia os vídeos para a aba escolhida, aplica o Modo Aprovação sem ligar o desfoque manual, ativa o Render Rápido e inicia o processamento.</small></span>
+                <span><strong>⚡ Enviar automaticamente para edição</strong><br><small>Envia para a aba escolhida e força Edição Criativa, espelhamento, micro-oscilação, ruído e proteção de áudio. O desfoque manual fica desligado. Depois ativa o Render Rápido e inicia.</small></span>
               </label>
               <div id="socialEditorTargetWrap" style="display:none;">
                 <label for="socialEditorTarget">Enviar para:</label>
@@ -4837,7 +4837,7 @@ video#sourceVideo { display: none; }
             vf.push(`scale=${zw}:${zh}`);
             // Movimento contínuo + mudança seca de foco em intervalos: reproduz
             // shake e re-enquadramentos da Edição Criativa no motor rápido.
-            vf.push(`crop=${mainW}:${mainH}:x='(iw-ow)/2+sin(n*0.055)*${ampX}+sgn(sin(n*0.021))*${cutShift}':y='(ih-oh)/2+cos(n*0.047)*${ampY}'`);
+            vf.push(`crop=${mainW}:${mainH}:x='(iw-ow)/2+sin(n*0.055)*${ampX}+sgn(sin(n*0.042))*${cutShift}':y='(ih-oh)/2+cos(n*0.047)*${ampY}'`);
             if (opts.creativeEdit) vf.push('unsharp=5:5:0.35:5:5:0.0');
         } else {
             vf.push(`scale=${mainW}:${mainH}`);
@@ -4846,6 +4846,11 @@ video#sourceVideo { display: none; }
         vf.push(`pad=${TARGET_W}:${TARGET_H}:${mainX}:${mainY}:black`);
         // Ruído depois do scale/pad para não ser suavizado pelo redimensionamento.
         if (opts.stego) vf.push('noise=alls=8:allf=t+u');
+        if (opts.creativeEdit) {
+            // Flash curto a cada troca seca de foco (~2,5s), equivalente à
+            // transição da Edição Criativa do motor Canvas.
+            vf.push("drawbox=x=0:y=0:w=iw:h=ih:color=white@0.50:t=fill:enable='lt(mod(t\\,2.5)\\,0.10)'");
+        }
         if (opts.blur && opts.blurNorm) {
             const b = opts.blurNorm;
             const bw = Math.max(2, Math.round(mainW * b.w / 2) * 2);
