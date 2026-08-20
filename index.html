@@ -278,6 +278,17 @@
     .handle.tc { top: -7px; left: calc(50% - 7px); cursor: ns-resize; }
     .handle.bc { bottom: -7px; left: calc(50% - 7px); cursor: ns-resize; }
 
+    #blurBox {
+      position: absolute;
+      border: 2px dashed var(--accent-yellow);
+      cursor: move;
+      box-sizing: border-box;
+      touch-action: none;
+      display: none;
+      z-index: 5;
+    }
+    #blurBox .handle { background: var(--accent-yellow); }
+
     #status {
       text-align: center;
       font-size: 0.75rem;
@@ -878,6 +889,14 @@
             <div class="handle tc" data-handle="tc"></div>
             <div class="handle bc" data-handle="bc"></div>
           </div>
+          <div id="blurBox">
+            <div class="handle tl" data-handle="tl"></div>
+            <div class="handle tr" data-handle="tr"></div>
+            <div class="handle bl" data-handle="bl"></div>
+            <div class="handle br" data-handle="br"></div>
+            <div class="handle tc" data-handle="tc"></div>
+            <div class="handle bc" data-handle="bc"></div>
+          </div>
         </div>
         <div id="status">Aguardando seleção de arquivos...</div>
       </div>
@@ -978,6 +997,20 @@
               <input type="checkbox" class="audio-chk" checked>
               <span><strong>Infrassom & Anti-Acoustic Fingerprint:</strong> Injeção senoidal em 18.2Hz.</span>
             </label>
+            <label class="checkbox-item">
+              <input type="checkbox" class="blur-chk">
+              <span><strong>Desfocar Região (QR Code / Logotipo):</strong> Arraste o quadrado amarelo sobre marcas d'água, logotipos ou QR codes para escondê-los com desfoque.</span>
+            </label>
+          </div>
+
+          <div class="feature-list" style="border-color:#f59e0b;">
+            <div class="control-title" style="color:#facc15;">🛡️ Checklist anti-violação (recomendação)</div>
+            <p style="font-size:0.75rem;color:var(--text-muted);margin:0 0 6px;line-height:1.45;">O TikTok segura vídeos por <strong>conteúdo não original</strong> (marca d'água/logotipo), <strong>QR code</strong> e <strong>baixa qualidade</strong> (tela parada ou vídeo muito curto). Antes de postar:</p>
+            <ul style="font-size:0.75rem;color:var(--text-muted);margin:0;padding-left:18px;line-height:1.5;">
+              <li>Remova qualquer logotipo/marca d'água do vídeo de origem — use o <strong>crop</strong> ou a <strong>máscara de desfoque</strong> (abaixo).</li>
+              <li>Sem QR code visível — cubra com a <strong>máscara de desfoque</strong>.</li>
+              <li>Gancho em <strong>"Nenhum"</strong> e abertura já com movimento real.</li>
+            </ul>
           </div>
 
           <button class="btn-action process-btn" disabled>Processar Fila Found Footage (MP4)</button>
@@ -1034,7 +1067,7 @@
           </select>
 
           <label>Nome do Canal / Marca (aparece no topo, layout Streaming):</label>
-          <input type="text" class="channel-name-input" value="TOP CORTES" maxlength="20">
+          <input type="text" class="channel-name-input" value="" placeholder="(vazio = sem marca)" maxlength="20">
 
           <label>Filtro de Gradação de Cor (Color Grading):</label>
           <select id="doramaColorFilter">
@@ -1074,6 +1107,20 @@
               <input type="checkbox" class="audio-chk" checked>
               <span><strong>Infrassom Anti-Copyright (18.2Hz):</strong> Invalidação da assinatura acústica.</span>
             </label>
+            <label class="checkbox-item">
+              <input type="checkbox" class="blur-chk">
+              <span><strong>Desfocar Região (QR Code / Logotipo):</strong> Arraste o quadrado amarelo sobre marcas d'água, logotipos ou QR codes para escondê-los com desfoque.</span>
+            </label>
+          </div>
+
+          <div class="feature-list" style="border-color:#f59e0b;">
+            <div class="control-title" style="color:#facc15;">🛡️ Checklist anti-violação (recomendação)</div>
+            <p style="font-size:0.75rem;color:var(--text-muted);margin:0 0 6px;line-height:1.45;">O TikTok segura vídeos por <strong>conteúdo não original</strong> (marca d'água/logotipo), <strong>QR code</strong> e <strong>baixa qualidade</strong> (tela parada ou vídeo muito curto). Antes de postar:</p>
+            <ul style="font-size:0.75rem;color:var(--text-muted);margin:0;padding-left:18px;line-height:1.5;">
+              <li>Remova qualquer logotipo/marca d'água do vídeo de origem — use o <strong>crop</strong> ou a <strong>máscara de desfoque</strong> (abaixo).</li>
+              <li>Sem QR code visível — cubra com a <strong>máscara de desfoque</strong>.</li>
+              <li>Gancho em <strong>"Nenhum"</strong> e abertura já com movimento real.</li>
+            </ul>
           </div>
 
           <button class="btn-action process-btn" disabled>Processar Fila de Dorama / Cinema (MP4)</button>
@@ -1441,6 +1488,7 @@
   // --- Pipeline das Abas 1 e 2 (Blindagem) ---
   const previewWrapper = document.getElementById('previewWrapper');
   const cropBox = document.getElementById('cropBox');
+  const blurBox = document.getElementById('blurBox');
   const canvas = document.getElementById('previewCanvas');
   const ctx = canvas.getContext('2d', { alpha: false });
   const video = document.getElementById('sourceVideo');
@@ -1498,6 +1546,7 @@
   function getCurrentQueue() { return fileQueues[activeTab] || []; }
 
   let cropNorm = { x: 0, y: 0, w: 1, h: 1 };
+  let blurNorm = { x: 0.1, y: 0.1, w: 0.25, h: 0.25 };
   let currentPreviewMode = 'overlay';
 
   // Carrega no preview compartilhado (video/canvas) o vídeo pertencente à aba informada.
@@ -1520,6 +1569,7 @@
       video.load();
       if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
       cropBox.style.display = 'none';
+      blurBox.style.display = 'none';
       if (ctrl.processBtn) ctrl.processBtn.disabled = true;
       status.innerText = 'Nenhum vídeo selecionado nesta aba.';
       return;
@@ -1540,6 +1590,7 @@
       if (ctrl.trimEnd) ctrl.trimEnd.max = (video.duration / 2).toFixed(1);
       setTimeout(() => {
         setupCropBox();
+        setupBlurBox();
         renderInteractivePreview();
       }, 200);
     };
@@ -1554,6 +1605,7 @@
     return {
       videoInput: container.querySelector('.video-input'),
       enableCrop: container.querySelector('.enable-crop-chk'),
+      blur: container.querySelector('.blur-chk'),
       trimStart: container.querySelector('.trim-start-range'),
       trimEnd: container.querySelector('.trim-end-range'),
       trimStartVal: container.querySelector('.trim-start-val'),
@@ -1586,6 +1638,11 @@
       cropBox.style.display = 'none';
       cropNorm = { x: 0, y: 0, w: 1, h: 1 };
     }
+    if (ctrl.blur && ctrl.blur.checked && currentPreviewMode === 'overlay') {
+      setupBlurBox();
+    } else {
+      blurBox.style.display = 'none';
+    }
   }
 
   btnPreviewOverlay.addEventListener('click', () => {
@@ -1594,6 +1651,7 @@
     btnPreviewIntro.classList.remove('active');
     const ctrl = getActiveControls();
     if (ctrl.enableCrop.checked && video.videoWidth) cropBox.style.display = 'block';
+    if (ctrl.blur && ctrl.blur.checked && video.videoWidth) setupBlurBox();
     renderInteractivePreview();
   });
 
@@ -1602,6 +1660,7 @@
     btnPreviewIntro.classList.add('active');
     btnPreviewOverlay.classList.remove('active');
     cropBox.style.display = 'none';
+    blurBox.style.display = 'none';
     renderInteractivePreview();
   });
 
@@ -1618,6 +1677,18 @@
       } else {
         cropBox.style.display = 'none';
         cropNorm = { x: 0, y: 0, w: 1, h: 1 };
+      }
+      renderInteractivePreview();
+    });
+  });
+
+  document.querySelectorAll('.blur-chk').forEach(chk => {
+    chk.addEventListener('change', () => {
+      if (!video.videoWidth) return;
+      if (chk.checked && currentPreviewMode === 'overlay') {
+        setupBlurBox();
+      } else {
+        blurBox.style.display = 'none';
       }
       renderInteractivePreview();
     });
@@ -1720,6 +1791,60 @@
     cropBox.style.height = `${mainH * scaleY}px`;
 
     cropNorm = { x: 0, y: 0, w: 1, h: 1 };
+  }
+
+  function setupBlurBox() {
+    const ctrl = getActiveControls();
+    if (!ctrl.blur || !ctrl.blur.checked || !video.videoWidth || currentPreviewMode !== 'overlay') {
+      blurBox.style.display = 'none';
+      return;
+    }
+    const { mainX, mainY, mainW, mainH } = getVideoRenderLayout();
+    const wrapW = previewWrapper.clientWidth;
+    const wrapH = previewWrapper.clientHeight;
+    const scaleX = wrapW / TARGET_W;
+    const scaleY = wrapH / TARGET_H;
+    blurBox.style.display = 'block';
+    blurBox.style.left = `${(mainX + blurNorm.x * mainW) * scaleX}px`;
+    blurBox.style.top = `${(mainY + blurNorm.y * mainH) * scaleY}px`;
+    blurBox.style.width = `${(blurNorm.w * mainW) * scaleX}px`;
+    blurBox.style.height = `${(blurNorm.h * mainH) * scaleY}px`;
+  }
+
+  function updateNormalizedBlur() {
+    const ctrl = getActiveControls();
+    if (!ctrl.blur || !ctrl.blur.checked || !video.videoWidth) return;
+    const { mainX, mainY, mainW, mainH } = getVideoRenderLayout();
+    const wrapW = previewWrapper.clientWidth;
+    const wrapH = previewWrapper.clientHeight;
+    const scaleX = wrapW / TARGET_W;
+    const scaleY = wrapH / TARGET_H;
+    const vLeft = mainX * scaleX, vTop = mainY * scaleY, vW = mainW * scaleX, vH = mainH * scaleY;
+    const boxLeft = blurBox.offsetLeft, boxTop = blurBox.offsetTop, boxW = blurBox.offsetWidth, boxH = blurBox.offsetHeight;
+    const nx = Math.max(0, Math.min(1, (boxLeft - vLeft) / vW));
+    const ny = Math.max(0, Math.min(1, (boxTop - vTop) / vH));
+    const nw = Math.max(0.05, Math.min(1 - nx, boxW / vW));
+    const nh = Math.max(0.05, Math.min(1 - ny, boxH / vH));
+    blurNorm = { x: nx, y: ny, w: nw, h: nh };
+  }
+
+  // Desenha um "retalho" desfocado (a região do QR/logo) por cima do vídeo.
+  // Usado tanto na prévia quanto na exportação. As coordenadas são a área de
+  // destino do vídeo principal (destX/destY/destW/destH) + blurNorm (0..1).
+  function drawBlurMask(enabled, sx, sy, sw, sh, destX, destY, destW, destH) {
+    if (!enabled) return;
+    const bx = destX + blurNorm.x * destW;
+    const by = destY + blurNorm.y * destH;
+    const bw = blurNorm.w * destW;
+    const bh = blurNorm.h * destH;
+    if (bw < 4 || bh < 4) return;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(bx, by, bw, bh);
+    ctx.clip();
+    ctx.filter = 'blur(22px)';
+    ctx.drawImage(video, sx, sy, sw, sh, destX, destY, destW, destH);
+    ctx.restore();
   }
 
   function updateNormalizedCrop() {
@@ -2002,6 +2127,8 @@
     ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, mainX, mainY, mainW, mainH);
     ctx.restore();
 
+    drawBlurMask(ctrl.blur && ctrl.blur.checked, 0, 0, video.videoWidth, video.videoHeight, mainX, mainY, mainW, mainH);
+
     ctx.strokeStyle = activeTab === 'found' ? 'rgba(56, 189, 248, 0.4)' : 'rgba(244, 63, 94, 0.4)';
     ctx.lineWidth = 2;
     ctx.strokeRect(mainX, mainY, mainW, mainH);
@@ -2035,13 +2162,18 @@
         ctx.textAlign = 'center';
         ctx.fillText(currentTitle.toUpperCase(), TARGET_W / 2, 72);
       } else if (overlay === 'netflix_style') {
-        const channelName = (ctrl.channelName && ctrl.channelName.value.trim()) ? ctrl.channelName.value.trim().toUpperCase() : 'TOP CORTES';
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(0, 40, TARGET_W, 60);
-        ctx.fillStyle = '#f43f5e';
-        ctx.font = '900 24px sans-serif';
-        ctx.textAlign = 'left';
-        fitText(ctx, channelName, 30, 78, TARGET_W * 0.5, 24);
+        const channelName = (ctrl.channelName && ctrl.channelName.value.trim()) ? ctrl.channelName.value.trim().toUpperCase() : '';
+        if (channelName) {
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+          ctx.fillRect(0, 40, TARGET_W, 60);
+          ctx.fillStyle = '#f43f5e';
+          ctx.font = '900 24px sans-serif';
+          ctx.textAlign = 'left';
+          fitText(ctx, channelName, 30, 78, TARGET_W * 0.5, 24);
+        } else {
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+          ctx.fillRect(TARGET_W * 0.45, 40, TARGET_W * 0.55, 60);
+        }
         ctx.fillStyle = '#fff';
         ctx.font = 'bold 20px sans-serif';
         ctx.textAlign = 'right';
@@ -2114,6 +2246,56 @@
     window.removeEventListener('pointermove', onPointerMove);
     window.removeEventListener('pointerup', onPointerUp);
     updateNormalizedCrop();
+  }
+
+  let bDragging = false, bHandle = null, bStartX, bStartY, bStartLeft, bStartTop, bStartW, bStartH;
+
+  blurBox.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    bStartX = e.clientX; bStartY = e.clientY;
+    bStartLeft = blurBox.offsetLeft; bStartTop = blurBox.offsetTop;
+    bStartW = blurBox.offsetWidth; bStartH = blurBox.offsetHeight;
+    if (e.target.classList.contains('handle')) bHandle = e.target.dataset.handle;
+    else bDragging = true;
+    window.addEventListener('pointermove', onBlurPointerMove);
+    window.addEventListener('pointerup', onBlurPointerUp);
+  });
+
+  function onBlurPointerMove(e) {
+    const dx = e.clientX - bStartX;
+    const dy = e.clientY - bStartY;
+    const { mainX, mainY, mainW, mainH } = getVideoRenderLayout();
+    const wrapW = previewWrapper.clientWidth;
+    const wrapH = previewWrapper.clientHeight;
+    const scaleX = wrapW / TARGET_W;
+    const scaleY = wrapH / TARGET_H;
+    const vLeft = mainX * scaleX, vTop = mainY * scaleY;
+    const vRight = (mainX + mainW) * scaleX, vBottom = (mainY + mainH) * scaleY;
+    if (bDragging) {
+      blurBox.style.left = `${Math.max(vLeft, Math.min(vRight - bStartW, bStartLeft + dx))}px`;
+      blurBox.style.top = `${Math.max(vTop, Math.min(vBottom - bStartH, bStartTop + dy))}px`;
+    } else if (bHandle) {
+      if (bHandle.includes('r')) blurBox.style.width = `${Math.max(25, Math.min(vRight - bStartLeft, bStartW + dx))}px`;
+      if (bHandle.includes('b')) blurBox.style.height = `${Math.max(25, Math.min(vBottom - bStartTop, bStartH + dy))}px`;
+      if (bHandle.includes('l')) {
+        const newW = Math.max(25, bStartW - dx);
+        const newLeft = bStartLeft + dx;
+        if (newLeft >= vLeft && newW >= 25) { blurBox.style.left = `${newLeft}px`; blurBox.style.width = `${newW}px`; }
+      }
+      if (bHandle.includes('t')) {
+        const newH = Math.max(25, bStartH - dy);
+        const newTop = bStartTop + dy;
+        if (newTop >= vTop && newH >= 25) { blurBox.style.top = `${newTop}px`; blurBox.style.height = `${newH}px`; }
+      }
+    }
+    updateNormalizedBlur();
+  }
+
+  function onBlurPointerUp() {
+    bDragging = false; bHandle = null;
+    window.removeEventListener('pointermove', onBlurPointerMove);
+    window.removeEventListener('pointerup', onBlurPointerUp);
+    updateNormalizedBlur();
   }
 
   function incrementText(baseText, step) {
@@ -2394,6 +2576,8 @@
           }
           ctx.restore();
 
+          drawBlurMask(config.blur, sx, sy, sw, sh, destX, destY, destW, destH);
+
           ctx.strokeStyle = activeTab === 'found' ? 'rgba(56, 189, 248, 0.45)' : 'rgba(244, 63, 94, 0.45)';
           ctx.lineWidth = 2;
           ctx.strokeRect(destX + shakeX, destY + shakeY, destW, destH);
@@ -2502,13 +2686,18 @@
               ctx.textAlign = 'center';
               ctx.fillText(currentTitle.toUpperCase(), TARGET_W / 2, 72);
             } else if (overlay === 'netflix_style') {
-              const channelName = (config.channelName && config.channelName.trim()) ? config.channelName.trim().toUpperCase() : 'TOP CORTES';
-              ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
-              ctx.fillRect(0, 40, TARGET_W, 60);
-              ctx.fillStyle = '#f43f5e';
-              ctx.font = '900 24px sans-serif';
-              ctx.textAlign = 'left';
-              fitText(ctx, channelName, 30, 78, TARGET_W * 0.5, 24);
+              const channelName = (config.channelName && config.channelName.trim()) ? config.channelName.trim().toUpperCase() : '';
+              if (channelName) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+                ctx.fillRect(0, 40, TARGET_W, 60);
+                ctx.fillStyle = '#f43f5e';
+                ctx.font = '900 24px sans-serif';
+                ctx.textAlign = 'left';
+                fitText(ctx, channelName, 30, 78, TARGET_W * 0.5, 24);
+              } else {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+                ctx.fillRect(TARGET_W * 0.45, 40, TARGET_W * 0.55, 60);
+              }
               ctx.fillStyle = '#fff';
               ctx.font = 'bold 20px sans-serif';
               ctx.textAlign = 'right';
@@ -2528,6 +2717,7 @@
       if (queue.length === 0) return;
       btn.disabled = true;
       cropBox.style.display = 'none';
+      blurBox.style.display = 'none';
       isExportingVideo = true;
       document.querySelectorAll('.nav-btn').forEach(navBtn => navBtn.classList.add('nav-locked'));
 
@@ -2537,6 +2727,7 @@
         cutStart: parseFloat(ctrl.trimStart.value) || 0,
         cutEnd: parseFloat(ctrl.trimEnd.value) || 0,
         isCropActive: ctrl.enableCrop.checked,
+        blur: ctrl.blur ? ctrl.blur.checked : false,
         captionStyle: ctrl.captionStyle ? ctrl.captionStyle.value : 'none',
         captionText: ctrl.captionText ? ctrl.captionText.value : '',
         introStyle: ctrl.introStyle.value,
@@ -2570,6 +2761,7 @@
         // Sempre reabilita o botão, mesmo se algo falhar no meio do processamento,
         // para nunca mais precisar recarregar a página para tentar de novo.
         if (config.isCropActive && currentPreviewMode === 'overlay') cropBox.style.display = 'block';
+        if (config.blur && currentPreviewMode === 'overlay' && video.videoWidth) setupBlurBox();
         btn.disabled = false;
         isExportingVideo = false;
         releaseWakeLock();
@@ -5263,5 +5455,5 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
   window.wireDownloadLinkToSaveFolder(document.getElementById('aiSyncDownloadLink'));
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2de41006a77d457',t:'MTc4NzE5NTkzOQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2de5ee56cfc9506',t:'MTc4NzE5NzE2NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
