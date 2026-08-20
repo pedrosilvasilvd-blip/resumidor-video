@@ -102,6 +102,55 @@
     }
     .nav-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
 
+    /* Pasta de Destino (onde salvar os arquivos processados) */
+    .save-location-box {
+      margin-top: 18px;
+      padding: 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      background: #0b1120;
+    }
+    .save-location-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-bottom: 6px;
+    }
+    .save-location-current {
+      font-size: 0.78rem;
+      color: var(--text-main);
+      word-break: break-word;
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+    .save-location-btn {
+      width: 100%;
+      padding: 7px 8px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      border-radius: 7px;
+      border: 1px solid var(--accent-cyan);
+      background: rgba(56, 189, 248, 0.1);
+      color: var(--accent-cyan);
+      cursor: pointer;
+      margin-bottom: 6px;
+    }
+    .save-location-btn:hover { background: rgba(56, 189, 248, 0.2); }
+    .save-location-btn.save-location-clear {
+      border-color: #475569;
+      background: transparent;
+      color: var(--text-muted);
+    }
+    .save-location-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .save-location-hint {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      line-height: 1.3;
+      margin-top: 2px;
+    }
+
     /* Área Principal */
     .main-content {
       flex: 1;
@@ -695,7 +744,116 @@
         Baixar Vídeos TikTok
       </button>
     </nav>
+
+    <div class="save-location-box" id="saveLocationBox">
+      <div class="save-location-label">📁 Salvar arquivos em</div>
+      <div class="save-location-current" id="saveLocationCurrent">Padrão do navegador (Downloads)</div>
+      <button class="save-location-btn" id="chooseSaveFolderBtn" type="button">Escolher pasta...</button>
+      <button class="save-location-btn save-location-clear" id="clearSaveFolderBtn" type="button" style="display:none;">Usar padrão</button>
+      <div class="save-location-hint" id="saveLocationHint"></div>
+    </div>
   </aside>
+
+  <!-- Pasta de destino: onde salvar os arquivos processados -->
+  <script>
+    (function () {
+      let saveDirectoryHandle = null;
+      const supportsFSAccess = typeof window.showDirectoryPicker === 'function';
+
+      const saveLocationCurrent = document.getElementById('saveLocationCurrent');
+      const chooseSaveFolderBtn = document.getElementById('chooseSaveFolderBtn');
+      const clearSaveFolderBtn = document.getElementById('clearSaveFolderBtn');
+      const saveLocationHint = document.getElementById('saveLocationHint');
+
+      if (!supportsFSAccess) {
+        chooseSaveFolderBtn.disabled = true;
+        saveLocationHint.innerText = 'Seu navegador não permite escolher pasta automaticamente (funciona no Chrome/Edge). Os arquivos vão para a pasta padrão de Downloads — dá pra configurar o navegador pra perguntar onde salvar a cada download.';
+      }
+
+      chooseSaveFolderBtn.addEventListener('click', async () => {
+        try {
+          const handle = await window.showDirectoryPicker();
+          const perm = await handle.requestPermission({ mode: 'readwrite' });
+          if (perm !== 'granted') throw new Error('Permissão de escrita para a pasta não foi concedida.');
+          saveDirectoryHandle = handle;
+          saveLocationCurrent.innerText = `📂 ${handle.name}`;
+          saveLocationHint.innerText = '';
+          clearSaveFolderBtn.style.display = 'block';
+        } catch (err) {
+          if (err && err.name !== 'AbortError') {
+            console.warn('Erro ao escolher pasta de destino:', err);
+            saveLocationHint.innerText = 'Não foi possível usar essa pasta: ' + (err.message || err);
+          }
+        }
+      });
+
+      clearSaveFolderBtn.addEventListener('click', () => {
+        saveDirectoryHandle = null;
+        saveLocationCurrent.innerText = 'Padrão do navegador (Downloads)';
+        clearSaveFolderBtn.style.display = 'none';
+      });
+
+      // Download tradicional via <a download> (usado como fallback e quando
+      // nenhuma pasta foi escolhida).
+      function triggerBrowserDownload(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
+      }
+
+      // Helper único usado por todo o app pra salvar um arquivo processado:
+      // se o usuário escolheu uma pasta, grava direto nela; senão cai no
+      // download padrão do navegador.
+      window.saveProcessedBlob = async function saveProcessedBlob(blob, filename) {
+        if (saveDirectoryHandle) {
+          try {
+            const perm = await saveDirectoryHandle.queryPermission({ mode: 'readwrite' });
+            if (perm !== 'granted') {
+              const req = await saveDirectoryHandle.requestPermission({ mode: 'readwrite' });
+              if (req !== 'granted') throw new Error('Permissão de escrita da pasta expirou.');
+            }
+            const fileHandle = await saveDirectoryHandle.getFileHandle(filename, { create: true });
+            const writable = await fileHandle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+            return;
+          } catch (err) {
+            console.warn('Falha ao salvar na pasta escolhida, usando download padrão do navegador:', err);
+          }
+        }
+        triggerBrowserDownload(blob, filename);
+      };
+
+      // Faz um link de download (<a href download>) respeitar a pasta
+      // escolhida: intercepta o clique, busca o blob a partir da própria
+      // blob URL do link e grava na pasta em vez de abrir o download padrão.
+      window.wireDownloadLinkToSaveFolder = function wireDownloadLinkToSaveFolder(link) {
+        if (!link) return;
+        link.addEventListener('click', async (e) => {
+          if (!saveDirectoryHandle || !link.href) return;
+          e.preventDefault();
+          try {
+            const resp = await fetch(link.href);
+            const blob = await resp.blob();
+            await window.saveProcessedBlob(blob, link.download || 'arquivo.mp4');
+          } catch (err) {
+            console.warn('Falha ao salvar na pasta escolhida, abrindo download padrão:', err);
+            const a = document.createElement('a');
+            a.href = link.href;
+            a.download = link.download;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+          }
+        });
+      };
+    })();
+  </script>
 
   <!-- Painel Principal -->
   <main class="main-content">
@@ -1295,6 +1453,46 @@
   const TARGET_W = 720;
   const TARGET_H = 1280;
 
+  // --- Otimização: reaproveitamento de blob URLs e cache de áudio decodificado ---
+  // Antes, cada troca de vídeo (preview ou produção) criava uma URL de objeto
+  // nova via URL.createObjectURL() e NUNCA revogava a anterior. Numa fila
+  // longa isso ia acumulando referências penduradas no navegador a cada item
+  // processado, aumentando a pressão de memória e o número de pausas de
+  // Garbage Collector — exatamente o padrão de "vai ficando mais lento e
+  // trava um pouquinho" ao longo de uma fila. Agora centralizamos a troca de
+  // fonte do <video> nesta função, que sempre revoga a URL anterior antes de
+  // criar a próxima.
+  let currentVideoObjectURL = null;
+  function setSharedVideoSource(fileOrBlob) {
+    if (currentVideoObjectURL) {
+      URL.revokeObjectURL(currentVideoObjectURL);
+      currentVideoObjectURL = null;
+    }
+    const url = URL.createObjectURL(fileOrBlob);
+    currentVideoObjectURL = url;
+    video.src = url;
+    return url;
+  }
+
+  // Cache da música de fundo já decodificada: antes, cada vídeo da fila
+  // decodificava o MESMO arquivo de MP3/WAV do zero (audioCtx.decodeAudioData
+  // é um trabalho pesado de CPU), mesmo quando era exatamente o mesmo arquivo
+  // repetido em todos os itens da fila. Agora só decodifica uma vez por
+  // arquivo e reaproveita o AudioBuffer resultante nos itens seguintes.
+  let bgmDecodeCache = { file: null, buffer: null };
+  async function getDecodedBgmBuffer(audioCtx, file) {
+    const sameFile = bgmDecodeCache.file === file
+      || (bgmDecodeCache.file && file
+          && bgmDecodeCache.file.name === file.name
+          && bgmDecodeCache.file.size === file.size
+          && bgmDecodeCache.file.lastModified === file.lastModified);
+    if (sameFile && bgmDecodeCache.buffer) return bgmDecodeCache.buffer;
+    const arrayBuf = await file.arrayBuffer();
+    const audioBuf = await audioCtx.decodeAudioData(arrayBuf);
+    bgmDecodeCache = { file, buffer: audioBuf };
+    return audioBuf;
+  }
+
   // Cada aba (found/dorama) tem sua própria fila de vídeos, independente da outra.
   let fileQueues = { found: [], dorama: [] };
   function getCurrentQueue() { return fileQueues[activeTab] || []; }
@@ -1314,6 +1512,10 @@
     };
 
     if (queue.length === 0) {
+      if (currentVideoObjectURL) {
+        URL.revokeObjectURL(currentVideoObjectURL);
+        currentVideoObjectURL = null;
+      }
       video.removeAttribute('src');
       video.load();
       if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1328,7 +1530,7 @@
     if (ctrl.processBtn) ctrl.processBtn.disabled = false;
     status.innerText = `${queue.length} vídeo(s) na fila.`;
 
-    video.src = URL.createObjectURL(queue[0]);
+    setSharedVideoSource(queue[0]);
     video.load();
     video.onloadedmetadata = () => {
       if (ctrl.trimStart) {
@@ -1642,6 +1844,77 @@
     ctx.fillText(text, x, y);
   }
 
+  // --- Intro Dinâmica em Movimento Real (Anti-Static Filter) ---------------
+  // Objetivo: garantir que os primeiros segundos (tela de gancho) nunca sejam
+  // lidos como "imagem estática" por classificadores de conteúdo — sempre há
+  // partículas se movendo, ruído variando e um leve pulso nos textos, quadro
+  // a quadro, sem depender de nenhum frame ficar parado.
+
+  // Cria o conjunto de partículas usado durante o gancho de um vídeo. Cada
+  // partícula tem posição, velocidade, tamanho e fase de "piscar" próprios,
+  // pra nunca se repetir de forma idêntica entre um quadro e outro.
+  function createIntroParticles(count) {
+    const particles = [];
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        x: Math.random() * TARGET_W,
+        y: Math.random() * TARGET_H,
+        vx: (Math.random() - 0.5) * 22,   // px/s
+        vy: (Math.random() - 0.5) * 22,
+        r: 1 + Math.random() * 2.4,
+        baseAlpha: 0.12 + Math.random() * 0.28,
+        blinkSpeed: 1.5 + Math.random() * 3,
+        phase: Math.random() * Math.PI * 2
+      });
+    }
+    return particles;
+  }
+
+  // Atualiza (movimento contínuo) e desenha as partículas por cima do painel
+  // do gancho. "elapsed" é o tempo (s) desde o início do processamento do
+  // vídeo — usado como fonte de movimento determinística por quadro.
+  function drawIntroParticles(ctx, particles, elapsed, panelY, panelH) {
+    ctx.save();
+    for (const p of particles) {
+      // Posição atual = posição inicial + deslocamento contínuo no tempo,
+      // com "wrap" pra partícula nunca sumir da tela.
+      let x = (p.x + p.vx * elapsed) % TARGET_W;
+      let y = (p.y + p.vy * elapsed) % (panelH + 40);
+      if (x < 0) x += TARGET_W;
+      if (y < 0) y += (panelH + 40);
+      y += panelY - 20;
+
+      const blink = 0.5 + 0.5 * Math.sin(elapsed * p.blinkSpeed + p.phase);
+      const alpha = p.baseAlpha * (0.4 + 0.6 * blink);
+
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(255,255,255,${alpha.toFixed(3)})`;
+      ctx.arc(x, y, p.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // Ruído analógico sub-visual: em vez de uma camada plana alternando duas
+  // cores a cada 2 quadros (fácil de "ver" como padrão fixo pelo algoritmo),
+  // desenha dezenas de pontos minúsculos com posição e opacidade aleatórias
+  // A CADA quadro. Isso maximiza a taxa de variação de pixel por quadro sem
+  // ficar visível a olho nu, quebrando a leitura de hash perceptual (pHash) e
+  // zerando o índice de duplicidade entre reuploads.
+  function drawSubvisualNoise(ctx, intensity) {
+    const density = Math.round(90 * intensity);
+    ctx.save();
+    for (let i = 0; i < density; i++) {
+      const x = Math.random() * TARGET_W;
+      const y = Math.random() * TARGET_H;
+      const shade = Math.random() < 0.5 ? 255 : 0;
+      const alpha = 0.01 + Math.random() * 0.025;
+      ctx.fillStyle = `rgba(${shade},${shade},${shade},${alpha.toFixed(3)})`;
+      ctx.fillRect(x, y, 1, 1);
+    }
+    ctx.restore();
+  }
+
   function renderInteractivePreview() {
     if (!video.videoWidth || activeTab === 'ai' || activeTab === 'downloader') return;
     const ctrl = getActiveControls();
@@ -1918,7 +2191,7 @@
   function processVideoItem(file, currentTitle, index, total, config) {
     return new Promise((resolve) => {
       status.innerText = `Renderizando (${index + 1}/${total}): "${currentTitle}"...`;
-      video.src = URL.createObjectURL(file);
+      setSharedVideoSource(file);
       video.muted = false;
       video.load();
 
@@ -1983,8 +2256,7 @@
           // acima).
           if (config.bgmFile) {
             try {
-              const arrayBuf = await config.bgmFile.arrayBuffer();
-              const audioBuf = await audioCtx.decodeAudioData(arrayBuf);
+              const audioBuf = await getDecodedBgmBuffer(audioCtx, config.bgmFile);
               bgmSource = audioCtx.createBufferSource();
               bgmSource.buffer = audioBuf;
               bgmSource.loop = true;
@@ -2029,13 +2301,9 @@
           if (bgmSource) { try { bgmSource.stop(); } catch (_) {} }
 
           const blob = new Blob(recordedChunks, { type: 'video/mp4' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
           const safeName = currentTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-          a.download = `${activeTab}_${safeName}_${Date.now()}.mp4`;
-          a.click();
-          resolve();
+          const filename = `${activeTab}_${safeName}_${Date.now()}.mp4`;
+          window.saveProcessedBlob(blob, filename).then(resolve).catch(resolve);
         };
 
         mediaRecorder.start();
@@ -2056,6 +2324,9 @@
         const startTime = Date.now();
         let videoStarted = false;
         let frameIndex = 0;
+        // Conjunto de partículas do "Anti-Static Filter" — gerado uma vez por
+        // vídeo processado, com posições/velocidades aleatórias próprias.
+        const introParticles = createIntroParticles(26);
 
         const effectiveCrop = config.isCropActive ? cropNorm : { x: 0, y: 0, w: 1, h: 1 };
         const sx = video.videoWidth * effectiveCrop.x;
@@ -2172,6 +2443,12 @@
             ctx.fillStyle = grad;
             ctx.fillRect(0, panelY, TARGET_W, panelH);
 
+            // Partículas dinâmicas + ruído analógico próprios da tela de
+            // abertura — nunca deixam o quadro "parado" nos primeiros
+            // segundos (Anti-Static Filter).
+            drawIntroParticles(ctx, introParticles, elapsed, panelY, panelH);
+            drawSubvisualNoise(ctx, 1.6);
+
             const headlineByStyle = {
               classified: '⚠ ATENÇÃO: ARQUIVO RARO',
               breaking: '🔴 URGENTE / AO VIVO',
@@ -2180,28 +2457,52 @@
               dorama_question: 'O QUE VOCÊ FARIA?'
             };
             const accent = activeTab === 'found' ? '#ef4444' : '#f43f5e';
+
+            // Micro-pulsação contínua e sutil nos textos (nunca 100%
+            // estático): cada linha respira numa frequência levemente
+            // diferente, com o texto sempre centralizado no seu próprio eixo.
+            const pulse = (freq, amp) => 1 + amp * Math.sin(elapsed * freq);
+
             ctx.textAlign = 'center';
             ctx.fillStyle = accent;
             ctx.font = 'bold 20px sans-serif';
+            ctx.save();
+            const headlineY = panelY + panelH * 0.32;
+            ctx.translate(TARGET_W / 2, headlineY);
+            ctx.scale(pulse(6, 0.02), pulse(6, 0.02));
             ctx.fillText(
               headlineByStyle[config.introStyle] || (activeTab === 'found' ? '⚠ ATENÇÃO: ARQUIVO RARO' : '🎬 RESUMO CINEMA & DORAMA'),
-              TARGET_W / 2, panelY + panelH * 0.32
+              0, 0
             );
+            ctx.restore();
+
             ctx.fillStyle = '#ffffff';
             ctx.font = 'bold 28px sans-serif';
-            ctx.fillText(currentTitle.toUpperCase(), TARGET_W / 2, panelY + panelH * 0.58);
+            ctx.save();
+            const titleY = panelY + panelH * 0.58;
+            ctx.translate(TARGET_W / 2, titleY);
+            ctx.scale(pulse(4.5, 0.018), pulse(4.5, 0.018));
+            ctx.fillText(currentTitle.toUpperCase(), 0, 0);
+            ctx.restore();
+
             if (activeTab === 'dorama' && doramaHookSubtitle.value) {
               ctx.fillStyle = '#fbcfe8';
               ctx.font = 'italic 18px sans-serif';
-              ctx.fillText(`"${doramaHookSubtitle.value}"`, TARGET_W / 2, panelY + panelH * 0.82);
+              ctx.save();
+              const subtitleY = panelY + panelH * 0.82;
+              ctx.translate(TARGET_W / 2, subtitleY);
+              ctx.scale(pulse(5.2, 0.015), pulse(5.2, 0.015));
+              ctx.fillText(`"${doramaHookSubtitle.value}"`, 0, 0);
+              ctx.restore();
             }
           }
 
           if (config.stego) {
-            ctx.save();
-            ctx.fillStyle = (frameIndex % 2 === 0) ? 'rgba(255,255,255,0.015)' : 'rgba(0,0,0,0.015)';
-            ctx.fillRect(0, 0, TARGET_W, TARGET_H);
-            ctx.restore();
+            // Ruído sub-visual em todo quadro (não só no intro), com posição
+            // e opacidade recalculadas do zero a cada frame — maximiza a
+            // taxa de variação de pixel/quadro pra quebrar a leitura de hash
+            // perceptual (pHash) e zerar o índice de duplicidade.
+            drawSubvisualNoise(ctx, inIntro ? 1 : 0.7);
           }
 
           const overlay = config.overlayStyle;
@@ -4788,16 +5089,7 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
     try {
       const response = await fetch(videoUrl);
       const blob = await response.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+      await window.saveProcessedBlob(blob, filename);
       return true;
     } catch (err) {
       const a = document.createElement('a');
@@ -5003,6 +5295,11 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
       downloadUrlsBtn.disabled = false;
     }
   });
+
+  // Liga os links de download das abas de Resumo IA e Sincronização à pasta
+  // de destino escolhida na barra lateral, se houver uma selecionada.
+  window.wireDownloadLinkToSaveFolder(document.getElementById('aiDownloadLink'));
+  window.wireDownloadLinkToSaveFolder(document.getElementById('aiSyncDownloadLink'));
 </script>
 
 </body>
