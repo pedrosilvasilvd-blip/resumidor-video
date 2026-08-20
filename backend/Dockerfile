@@ -4,7 +4,7 @@ USER root
 
 # A imagem oficial do Cobalt usa Alpine Linux. Por isso usamos apk e o binário
 # musllinux do yt-dlp (o binário linux comum exige glibc e não inicia aqui).
-RUN apk add --no-cache ca-certificates \
+RUN apk add --no-cache ca-certificates ffmpeg \
     && apk add --no-cache --virtual .fetch-deps curl \
     && curl -L --fail --retry 3 \
        https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_musllinux \

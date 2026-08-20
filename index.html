@@ -7350,8 +7350,16 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
             : (item.status === 'done' ? '⬇️ Baixar novamente' : '⬇️ Baixar'))
         : '🔎 Preparar';
     mainButton.addEventListener('click', async () => {
-      if (item.readyUrl) await downloadSocialItem(item);
-      else await prepareSocialItem(item);
+      if (item.readyUrl) {
+        await downloadSocialItem(item);
+      } else {
+        await prepareSocialItem(item);
+        // Com o envio automático ligado, um único clique prepara, recebe o
+        // Blob e já despacha para a aba escolhida.
+        if (socialSendToEditorChk.checked && item.readyUrl) {
+          await downloadSocialItem(item);
+        }
+      }
     });
 
     const open = document.createElement('a');
@@ -7670,31 +7678,46 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
 
   async function resolveWithCobalt(sourceUrl) {
     const { endpoint } = getCobaltSettings();
+    const ytDlpFallback = () => [{
+      url: `${endpoint}/media?url=${encodeURIComponent(sourceUrl)}&quality=${encodeURIComponent(socialQuality.value)}`,
+      type: 'video',
+      filename: `${safeFilename(platformFallbackTitle(detectSocialPlatform(sourceUrl) || 'video'))}.mp4`
+    }];
     const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json' };
-    const response = await fetchWithTimeout(endpoint + '/', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        url: sourceUrl,
-        downloadMode: 'auto',
-        videoQuality: socialQuality.value,
-        youtubeVideoCodec: 'h264',
-        youtubeVideoContainer: 'mp4',
-        filenameStyle: 'basic',
-        // Para edição automática, força túnel pelo backend para que o GitHub
-        // Pages consiga ler o arquivo como Blob mesmo quando o CDN bloqueia CORS.
-        alwaysProxy: socialSendToEditorChk.checked,
-        localProcessing: 'disabled',
-        allowH265: false,
-      }),
-    }, 90000);
+    let response;
+    try {
+      response = await fetchWithTimeout(endpoint + '/', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          url: sourceUrl,
+          downloadMode: 'auto',
+          videoQuality: socialQuality.value,
+          youtubeVideoCodec: 'h264',
+          youtubeVideoContainer: 'mp4',
+          filenameStyle: 'basic',
+          // Para edição automática, força túnel pelo backend para que o GitHub
+          // Pages consiga ler o arquivo como Blob mesmo quando o CDN bloqueia CORS.
+          alwaysProxy: socialSendToEditorChk.checked,
+          localProcessing: 'disabled',
+          allowH265: false,
+        }),
+      }, 90000);
+    } catch (networkError) {
+      console.warn('Motor Cobalt indisponível; usando yt-dlp do próprio backend:', networkError);
+      return ytDlpFallback();
+    }
 
     let data;
     try { data = await response.json(); }
-    catch (_) { throw new Error(`O backend respondeu sem JSON (HTTP ${response.status}).`); }
+    catch (_) {
+      console.warn(`Backend sem JSON (HTTP ${response.status}); usando yt-dlp.`);
+      return ytDlpFallback();
+    }
     if (!response.ok || data.status === 'error') {
       const code = data?.error?.code || data?.error || `HTTP ${response.status}`;
-      throw new Error(`Backend: ${code}`);
+      console.warn(`Cobalt recusou (${code}); usando yt-dlp do próprio backend.`);
+      return ytDlpFallback();
     }
 
     if ((data.status === 'tunnel' || data.status === 'redirect') && data.url) {
@@ -7717,7 +7740,8 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
         filename: data.output?.filename || `arquivo_${index + 1}.mp4`,
       }));
     }
-    throw new Error(`O backend retornou um estado não reconhecido: ${data.status || 'vazio'}.`);
+    console.warn(`Estado Cobalt não reconhecido (${data.status || 'vazio'}); usando yt-dlp.`);
+    return ytDlpFallback();
   }
 
   async function prepareSocialItem(item, options = {}) {
@@ -7798,7 +7822,9 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
 
   async function saveRemoteMedia(mediaUrl, filename, options = {}) {
     try {
-      const response = await fetchWithTimeout(mediaUrl, { cache: 'no-store' }, 120000);
+      // O fallback yt-dlp pode precisar baixar e unir vídeo+áudio no Render
+      // antes de responder, então permitimos até 8 minutos para arquivos longos.
+      const response = await fetchWithTimeout(mediaUrl, { cache: 'no-store' }, 8 * 60 * 1000);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const blob = await response.blob();
       if (!blob.size) throw new Error('arquivo vazio');
@@ -7901,7 +7927,7 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
 
       // Se o CDN direto não permite leitura por CORS, pede ao backend um túnel
       // próprio e tenta de novo. Assim obtemos o Blob necessário para a edição.
-      if (wantsEditor && !saved.blob && cobaltApiUrl.value.trim()) {
+      if (wantsEditor && !saved.blob && cobaltApiUrl.value.trim() && !item.readyUrl.includes('/media?')) {
         try {
           const outputs = await resolveWithCobalt(item.sourceUrl);
           const videoOutput = outputs.find(output => (output.type || 'video') === 'video') || outputs[0];

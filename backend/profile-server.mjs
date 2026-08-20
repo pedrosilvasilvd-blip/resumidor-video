@@ -1,5 +1,9 @@
 import http from 'node:http';
 import { spawn } from 'node:child_process';
+import { createReadStream } from 'node:fs';
+import { readdir, rm, stat } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
+import path from 'node:path';
 
 const FRONT_PORT = Number(process.env.PORT || 9000);
 const COBALT_PORT = Number(process.env.COBALT_INTERNAL_PORT || 9001);
@@ -132,6 +136,116 @@ function runYtDlpProfile(profileUrl, limit) {
   });
 }
 
+function qualityHeight(raw) {
+  if (raw === 'max') return 4320;
+  const n = Number.parseInt(raw || '1080', 10);
+  return Math.max(144, Math.min(Number.isFinite(n) ? n : 1080, 4320));
+}
+
+async function cleanupPrefix(prefix) {
+  try {
+    const files = await readdir('/tmp');
+    await Promise.all(files
+      .filter(name => name.startsWith(prefix))
+      .map(name => rm(path.join('/tmp', name), { force: true }).catch(() => {})));
+  } catch (_) {}
+}
+
+function runYtDlpDownload(mediaUrl, quality) {
+  return new Promise((resolve, reject) => {
+    const token = `blind-${randomUUID()}`;
+    const outputTemplate = `/tmp/${token}.%(ext)s`;
+    const height = qualityHeight(quality);
+    const format = `bv*[height<=${height}][ext=mp4]+ba[ext=m4a]/bv*[height<=${height}]+ba/b[height<=${height}]/b`;
+    const args = [
+      '--no-warnings',
+      '--no-playlist',
+      '--socket-timeout', '30',
+      '--extractor-retries', '3',
+      '--fragment-retries', '3',
+      '--format', format,
+      '--merge-output-format', 'mp4',
+      '--remux-video', 'mp4',
+      '--output', outputTemplate,
+      mediaUrl,
+    ];
+    const child = spawn('yt-dlp', args, { stdio: ['ignore', 'ignore', 'pipe'] });
+    let stderr = '';
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      child.kill('SIGKILL');
+      cleanupPrefix(token);
+      reject(new Error('O download passou de 8 minutos e foi cancelado. Tente uma qualidade menor.'));
+    }, 8 * 60 * 1000);
+
+    child.stderr.on('data', chunk => { stderr += chunk.toString(); });
+    child.on('error', error => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      cleanupPrefix(token);
+      reject(error);
+    });
+    child.on('close', async code => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      try {
+        const names = (await readdir('/tmp')).filter(name => name.startsWith(token) && !name.endsWith('.part'));
+        const candidates = [];
+        for (const name of names) {
+          const fullPath = path.join('/tmp', name);
+          const info = await stat(fullPath);
+          if (info.isFile() && info.size > 0) candidates.push({ name, fullPath, size: info.size });
+        }
+        candidates.sort((a, b) => b.size - a.size);
+        const file = candidates[0];
+        if (!file || code !== 0) {
+          await cleanupPrefix(token);
+          throw new Error(stderr.trim().split('\n').slice(-3).join(' ') || `yt-dlp terminou com código ${code}`);
+        }
+        resolve({ ...file, token });
+      } catch (error) {
+        await cleanupPrefix(token);
+        reject(error);
+      }
+    });
+  });
+}
+
+async function handleMedia(req, res, requestUrl) {
+  let result = null;
+  try {
+    const mediaUrl = validateProfileUrl(requestUrl.searchParams.get('url') || '');
+    const quality = requestUrl.searchParams.get('quality') || '1080';
+    result = await runYtDlpDownload(mediaUrl, quality);
+    const ext = path.extname(result.name).slice(1).toLowerCase() || 'mp4';
+    const type = ext === 'webm' ? 'video/webm' : ext === 'mkv' ? 'video/x-matroska' : 'video/mp4';
+    const filename = `video_${Date.now()}.${ext}`;
+    res.writeHead(200, corsHeaders({
+      'Content-Type': type,
+      'Content-Length': String(result.size),
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Cache-Control': 'no-store',
+    }));
+    const stream = createReadStream(result.fullPath);
+    const cleanup = () => cleanupPrefix(result.token);
+    stream.on('close', cleanup);
+    stream.on('error', error => {
+      cleanup();
+      if (!res.headersSent) sendJson(res, 500, { ok: false, error: error.message });
+      else res.destroy(error);
+    });
+    stream.pipe(res);
+  } catch (error) {
+    if (result?.token) await cleanupPrefix(result.token);
+    if (!res.headersSent) sendJson(res, 422, { ok: false, error: error.message || String(error) });
+    else res.destroy(error);
+  }
+}
+
 async function handleProfile(req, res, requestUrl) {
   try {
     const rawUrl = requestUrl.searchParams.get('url') || '';
@@ -218,6 +332,10 @@ const server = http.createServer(async (req, res) => {
   const requestUrl = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
   if (requestUrl.pathname === '/profile' && req.method === 'GET') {
     await handleProfile(req, res, requestUrl);
+    return;
+  }
+  if (requestUrl.pathname === '/media' && req.method === 'GET') {
+    await handleMedia(req, res, requestUrl);
     return;
   }
   if (requestUrl.pathname === '/profile-health') {

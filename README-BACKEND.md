@@ -33,7 +33,7 @@ Pronto. A URL fica salva no navegador; não existe chave de API.
 
 ## Listagem de perfis inteiros
 
-O backend inclui a rota `/profile`, que lista canais do YouTube e perfis públicos do TikTok diretamente no servidor. Na Aba 4 você pode escolher entre 12, 24, 48, 96, 200 ou **Perfil inteiro (até 500)** antes de buscar.
+O backend inclui a rota `/profile`, que lista canais do YouTube e perfis públicos do TikTok diretamente no servidor. Ele também possui a rota `/media`: se o Cobalt responder `error.api.youtube.login`, o app usa automaticamente o yt-dlp próprio do backend para receber e unir vídeo+áudio. Na Aba 4 você pode escolher entre 12, 24, 48, 96, 200 ou **Perfil inteiro (até 500)** antes de buscar.
 
 Se você já tinha publicado uma versão anterior, envie novamente os arquivos atualizados da pasta `backend` e o `render.yaml` ao GitHub. Depois, no Render, aguarde o novo deploy ou use **Manual Deploy > Deploy latest commit**.
 
