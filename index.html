@@ -2384,31 +2384,16 @@ video#sourceVideo { display: none; }
 
             <div id="socialSearchStatus" role="status" aria-live="polite"></div>
 
-            <details class="social-advanced-card" id="socialApiSettings">
-              <summary>⚙️ Motor universal para YouTube e Instagram</summary>
+            <details class="social-advanced-card" id="socialApiSettings" open>
+              <summary>☁️ Conectar backend gratuito (sem chave de API)</summary>
               <div class="social-advanced-body">
-                <p>O TikTok possui resolução automática. Para preparar downloads do YouTube e Instagram em um HTML estático, informe a URL de uma instância própria do <strong>Cobalt API</strong> com CORS habilitado.</p>
-                <label for="cobaltApiUrl">URL da sua API Cobalt:</label>
-                <input type="url" id="cobaltApiUrl" placeholder="https://seu-cobalt.exemplo.com">
-
-                <div class="social-options-grid">
-                  <div>
-                    <label for="cobaltAuthType">Autenticação:</label>
-                    <select id="cobaltAuthType">
-                      <option value="none">Sem chave</option>
-                      <option value="Api-Key">Api-Key</option>
-                      <option value="Bearer">Bearer</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label for="cobaltApiKey">Chave (opcional):</label>
-                    <input type="password" id="cobaltApiKey" placeholder="Sua chave">
-                  </div>
-                </div>
-
-                <button type="button" class="social-secondary-btn" id="testCobaltBtn">Testar e salvar API</button>
+                <p>Como o app está no GitHub Pages, o processamento de YouTube e Instagram precisa de um pequeno servidor externo. O pacote entregue junto com este HTML inclui um backend gratuito pronto para publicar no Render — <strong>sem comprar API e sem inserir chave</strong>.</p>
+                <label for="cobaltApiUrl">URL do seu backend no Render:</label>
+                <input type="url" id="cobaltApiUrl" placeholder="https://seu-backend.onrender.com">
+                <button type="button" class="social-secondary-btn" id="testCobaltBtn">Testar e salvar backend</button>
                 <div id="cobaltTestStatus" role="status" aria-live="polite"></div>
-                <p class="social-api-note">Use somente vídeos públicos que você possui ou tem autorização para salvar. <a href="https://github.com/imputnet/cobalt/blob/main/docs/run-an-instance.md" target="_blank" rel="noopener">Documentação para instalar o Cobalt</a>.</p>
+                <p class="social-api-note">Depois de publicar, cole aqui apenas a URL mostrada pelo Render. Ela fica salva neste navegador. <a href="backend-setup.html" target="_blank">Abrir guia de instalação</a>.</p>
+                <p class="social-api-note">Use somente vídeos públicos que você possui ou tem autorização para salvar.</p>
               </div>
             </details>
           </div>
@@ -7029,8 +7014,6 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
   const socialClearBtn = document.getElementById('socialClearBtn');
   const socialDownloadSelectedBtn = document.getElementById('socialDownloadSelectedBtn');
   const cobaltApiUrl = document.getElementById('cobaltApiUrl');
-  const cobaltAuthType = document.getElementById('cobaltAuthType');
-  const cobaltApiKey = document.getElementById('cobaltApiKey');
   const testCobaltBtn = document.getElementById('testCobaltBtn');
   const cobaltTestStatus = document.getElementById('cobaltTestStatus');
 
@@ -7575,21 +7558,18 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
 
   function getCobaltSettings() {
     const endpoint = cobaltApiUrl.value.trim().replace(/\/+$/, '');
-    const authType = cobaltAuthType.value;
-    const key = cobaltApiKey.value.trim();
     if (!endpoint) {
-      const error = new Error('Configure a URL da sua API Cobalt em “Motor universal para YouTube e Instagram”.');
+      const error = new Error('Publique o backend gratuito no Render e cole a URL em “Conectar backend gratuito”.');
       error.code = 'COBALT_NOT_CONFIGURED';
       throw error;
     }
-    try { new URL(endpoint); } catch (_) { throw new Error('A URL da API Cobalt é inválida.'); }
-    return { endpoint, authType, key };
+    try { new URL(endpoint); } catch (_) { throw new Error('A URL do backend é inválida.'); }
+    return { endpoint };
   }
 
   async function resolveWithCobalt(sourceUrl) {
-    const { endpoint, authType, key } = getCobaltSettings();
+    const { endpoint } = getCobaltSettings();
     const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json' };
-    if (authType !== 'none' && key) headers.Authorization = `${authType} ${key}`;
     const response = await fetchWithTimeout(endpoint + '/', {
       method: 'POST',
       headers,
@@ -7607,10 +7587,10 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
 
     let data;
     try { data = await response.json(); }
-    catch (_) { throw new Error(`A API Cobalt respondeu sem JSON (HTTP ${response.status}).`); }
+    catch (_) { throw new Error(`O backend respondeu sem JSON (HTTP ${response.status}).`); }
     if (!response.ok || data.status === 'error') {
       const code = data?.error?.code || data?.error || `HTTP ${response.status}`;
-      throw new Error(`Cobalt: ${code}`);
+      throw new Error(`Backend: ${code}`);
     }
 
     if ((data.status === 'tunnel' || data.status === 'redirect') && data.url) {
@@ -7633,7 +7613,7 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
         filename: data.output?.filename || `arquivo_${index + 1}.mp4`,
       }));
     }
-    throw new Error(`A API Cobalt retornou um estado não reconhecido: ${data.status || 'vazio'}.`);
+    throw new Error(`O backend retornou um estado não reconhecido: ${data.status || 'vazio'}.`);
   }
 
   async function prepareSocialItem(item, options = {}) {
@@ -7859,38 +7839,35 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
     socialDownloadSelectedBtn.disabled = socialItems.every(item => !item.selected);
   });
 
-  // Configuração do Cobalt: endpoint e tipo de autenticação podem persistir;
-  // a chave fica somente na sessão atual e nunca é salva no localStorage.
+  // A URL do backend próprio pode persistir; não existe chave de API.
   try {
-    cobaltApiUrl.value = localStorage.getItem('blind_cobalt_url') || '';
-    cobaltAuthType.value = localStorage.getItem('blind_cobalt_auth') || 'none';
+    cobaltApiUrl.value = localStorage.getItem('blind_social_backend_url')
+      || localStorage.getItem('blind_cobalt_url')
+      || '';
   } catch (_) {}
 
-  [cobaltApiUrl, cobaltAuthType].forEach(input => input.addEventListener('change', () => {
-    try {
-      localStorage.setItem('blind_cobalt_url', cobaltApiUrl.value.trim());
-      localStorage.setItem('blind_cobalt_auth', cobaltAuthType.value);
-    } catch (_) {}
-  }));
+  cobaltApiUrl.addEventListener('change', () => {
+    try { localStorage.setItem('blind_social_backend_url', cobaltApiUrl.value.trim()); }
+    catch (_) {}
+  });
 
   testCobaltBtn.addEventListener('click', async () => {
     testCobaltBtn.disabled = true;
-    setSocialMessage(cobaltTestStatus, 'Testando conexão...');
+    setSocialMessage(cobaltTestStatus, 'Acordando e testando o backend... No plano gratuito isso pode levar até 1 minuto.');
     try {
-      const { endpoint, authType, key } = getCobaltSettings();
-      const headers = { 'Accept': 'application/json' };
-      if (authType !== 'none' && key) headers.Authorization = `${authType} ${key}`;
-      const response = await fetchWithTimeout(endpoint + '/', { headers, cache: 'no-store' }, 20000);
+      const { endpoint } = getCobaltSettings();
+      const response = await fetchWithTimeout(endpoint + '/', {
+        headers: { 'Accept': 'application/json' },
+        cache: 'no-store'
+      }, 90000);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const info = await response.json();
-      try {
-        localStorage.setItem('blind_cobalt_url', endpoint);
-        localStorage.setItem('blind_cobalt_auth', authType);
-      } catch (_) {}
+      try { localStorage.setItem('blind_social_backend_url', endpoint); }
+      catch (_) {}
       const version = info?.cobalt?.version || info?.version || 'ativa';
-      setSocialMessage(cobaltTestStatus, `✅ API conectada e salva (${version}).`);
+      setSocialMessage(cobaltTestStatus, `✅ Backend conectado e salvo (${version}).`);
     } catch (error) {
-      setSocialMessage(cobaltTestStatus, `Não conectou: ${error.message || error}. Confira CORS, URL e autenticação.`, true);
+      setSocialMessage(cobaltTestStatus, `Não conectou: ${error.message || error}. Confira a URL e aguarde o serviço terminar de iniciar.`, true);
     } finally {
       testCobaltBtn.disabled = false;
     }
@@ -7904,5 +7881,5 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
   window.wireDownloadLinkToSaveFolder(document.getElementById('aiSyncDownloadLink'));
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2e316192a57b92f',t:'MTc4NzI0NjYxMQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
