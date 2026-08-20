@@ -190,7 +190,14 @@ function proxyToCobalt(req, res) {
     method: req.method,
     headers,
   }, upstreamRes => {
-    const responseHeaders = corsHeaders({ ...upstreamRes.headers });
+    // O Cobalt já pode devolver seus próprios cabeçalhos CORS. Removemos-os
+    // antes de aplicar os nossos; dois Access-Control-Allow-Origin viram
+    // "*, *" no navegador e causam exatamente o erro genérico "Failed to fetch".
+    const responseHeaders = { ...upstreamRes.headers };
+    for (const name of Object.keys(responseHeaders)) {
+      if (name.toLowerCase().startsWith('access-control-')) delete responseHeaders[name];
+    }
+    Object.assign(responseHeaders, corsHeaders());
     res.writeHead(upstreamRes.statusCode || 502, responseHeaders);
     upstreamRes.pipe(res);
   });

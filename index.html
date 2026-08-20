@@ -8068,6 +8068,7 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
     socialDownloadSelectedBtn.disabled = true;
     let downloaded = 0;
     let needsChoice = 0;
+    let failedItems = 0;
     const editorFiles = [];
 
     for (let index = 0; index < selected.length; index++) {
@@ -8076,12 +8077,14 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
       if (!item.readyUrl) {
         const prepared = await prepareSocialItem(item, { batch: true });
         if (!item.readyUrl) {
-          if (item.status === 'picker' || prepared.length === 0) needsChoice++;
+          if (item.status === 'picker') needsChoice++;
+          else failedItems++;
           continue;
         }
       }
       const result = await downloadSocialItem(item, { deferEditorStart: true });
       if (result.ok) downloaded++;
+      else failedItems++;
       if (result.editorFile) editorFiles.push(result.editorFile);
       await sleep(550);
     }
@@ -8092,7 +8095,9 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
     setSocialMessage(
       socialBatchStatus,
       `Fila concluída: ${batchAction}` +
-        (needsChoice ? `; ${needsChoice} item(ns) geraram opções para você escolher na lista.` : '.')
+        (needsChoice ? `; ${needsChoice} item(ns) geraram opções para você escolher na lista` : '') +
+        (failedItems ? `; ${failedItems} item(ns) falharam — veja a mensagem vermelha no cartão.` : '.'),
+      downloaded === 0 && failedItems > 0
     );
 
     // Só troca de aba depois que TODOS os selecionados terminaram de baixar;
