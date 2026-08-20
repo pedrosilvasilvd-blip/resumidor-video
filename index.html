@@ -460,6 +460,11 @@
     }
 
     /* ===== Estilos da Aba 3 (Resumidor & Roteirista IA) — escopados em .ai30-panel ===== */
+
+    /* Mesmo tratamento visual (fundo, borda, sombra) e o mesmo scroll interno
+       independente que as outras abas já usam (.controls-column, .ai-left-panel,
+       .ai-right-panel) — sem isso, o conteúdo da aba 3 ficava mais alto que a
+       tela e não dava pra rolar até o fim. */
     #tabAiContent {
       background: var(--panel-bg);
       border-radius: 16px;
@@ -612,6 +617,10 @@
 
     .ai30-panel table.cuts-table tr:nth-child(even) { background-color: #182338; }
 
+    /* Em telas estreitas, a tabela vira uma pilha de "cartões": cada linha
+       some das colunas e passa a exibir os campos empilhados, com o nome da
+       coluna como rótulo (via data-label). Sem isso, a tabela de 5 colunas
+       ficava cortada/ilegível no celular. */
     @media (max-width: 700px) {
       .ai30-panel table.cuts-table, .ai30-panel table.cuts-table thead, .ai30-panel table.cuts-table tbody,
       .ai30-panel table.cuts-table th, .ai30-panel table.cuts-table td, .ai30-panel table.cuts-table tr {
@@ -697,6 +706,7 @@
     }
 
     .ai30-panel .download-link:hover { background-color: #15803d; }
+
   </style>
 
   <script type="importmap">
@@ -744,6 +754,7 @@
     </div>
   </aside>
 
+  <!-- Pasta de destino: onde salvar os arquivos processados -->
   <script>
     (function () {
       let saveDirectoryHandle = null;
@@ -756,21 +767,22 @@
 
       if (!supportsFSAccess) {
         chooseSaveFolderBtn.disabled = true;
-        saveLocationHint.innerText = 'Seu navegador não permite escolher pasta automaticamente (funciona no Chrome/Edge). Os arquivos vão para a pasta padrão de Downloads.';
+        saveLocationHint.innerText = 'Seu navegador não permite escolher pasta automaticamente (funciona no Chrome/Edge). Os arquivos vão para a pasta padrão de Downloads — dá pra configurar o navegador pra perguntar onde salvar a cada download.';
       }
 
       chooseSaveFolderBtn.addEventListener('click', async () => {
         try {
           const handle = await window.showDirectoryPicker();
           const perm = await handle.requestPermission({ mode: 'readwrite' });
-          if (perm !== 'granted') throw new Error('Permissão negada.');
+          if (perm !== 'granted') throw new Error('Permissão de escrita para a pasta não foi concedida.');
           saveDirectoryHandle = handle;
           saveLocationCurrent.innerText = `📂 ${handle.name}`;
           saveLocationHint.innerText = '';
           clearSaveFolderBtn.style.display = 'block';
         } catch (err) {
           if (err && err.name !== 'AbortError') {
-            saveLocationHint.innerText = 'Erro ao usar pasta: ' + (err.message || err);
+            console.warn('Erro ao escolher pasta de destino:', err);
+            saveLocationHint.innerText = 'Não foi possível usar essa pasta: ' + (err.message || err);
           }
         }
       });
@@ -781,6 +793,8 @@
         clearSaveFolderBtn.style.display = 'none';
       });
 
+      // Download tradicional via <a download> (usado como fallback e quando
+      // nenhuma pasta foi escolhida).
       function triggerBrowserDownload(blob, filename) {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -792,13 +806,16 @@
         setTimeout(() => URL.revokeObjectURL(url), 2000);
       }
 
+      // Helper único usado por todo o app pra salvar um arquivo processado:
+      // se o usuário escolheu uma pasta, grava direto nela; senão cai no
+      // download padrão do navegador.
       window.saveProcessedBlob = async function saveProcessedBlob(blob, filename) {
         if (saveDirectoryHandle) {
           try {
             const perm = await saveDirectoryHandle.queryPermission({ mode: 'readwrite' });
             if (perm !== 'granted') {
               const req = await saveDirectoryHandle.requestPermission({ mode: 'readwrite' });
-              if (req !== 'granted') throw new Error('Permissão expirada.');
+              if (req !== 'granted') throw new Error('Permissão de escrita da pasta expirou.');
             }
             const fileHandle = await saveDirectoryHandle.getFileHandle(filename, { create: true });
             const writable = await fileHandle.createWritable();
@@ -806,12 +823,15 @@
             await writable.close();
             return;
           } catch (err) {
-            console.warn('Falha ao salvar na pasta, usando padrão:', err);
+            console.warn('Falha ao salvar na pasta escolhida, usando download padrão do navegador:', err);
           }
         }
         triggerBrowserDownload(blob, filename);
       };
 
+      // Faz um link de download (<a href download>) respeitar a pasta
+      // escolhida: intercepta o clique, busca o blob a partir da própria
+      // blob URL do link e grava na pasta em vez de abrir o download padrão.
       window.wireDownloadLinkToSaveFolder = function wireDownloadLinkToSaveFolder(link) {
         if (!link) return;
         link.addEventListener('click', async (e) => {
@@ -822,6 +842,7 @@
             const blob = await resp.blob();
             await window.saveProcessedBlob(blob, link.download || 'arquivo.mp4');
           } catch (err) {
+            console.warn('Falha ao salvar na pasta escolhida, abrindo download padrão:', err);
             const a = document.createElement('a');
             a.href = link.href;
             a.download = link.download;
@@ -867,7 +888,7 @@
         <!-- ABA 1: FOUND FOOTAGE & TERROR -->
         <div class="tab-content active" id="tabFoundContent">
           <h2>Módulo Found Footage & Anomalias</h2>
-          <p class="desc">Layout analógico blindado contra sinalizações de conteúdo duplicado.</p>
+          <p class="desc">Layout analógico com HUD de segurança, interferência VHS, esteganografia e legendas virais sincronizadas.</p>
 
           <label>Selecione os Vídeos:</label>
           <input type="file" class="video-input" accept="video/*" multiple>
@@ -888,8 +909,8 @@
               <option value="green_glow">💚 Green Glow (Verde Néon + Caixa Escura)</option>
               <option value="tiktok_clean">✨ TikTok Clean (Branco 3D + Sombra)</option>
             </select>
-            <label>Texto da Narração / Legenda:</label>
-            <textarea class="caption-text-input" placeholder="Ex: OLHE O QUE APARECEU NO TOPO DO MASTRO.">OLHE O QUE APARECEU NO TOPO DO MASTRO. NINGUÉM CONSEGUIU EXPLICAR ESTA CRIATURA.</textarea>
+            <label>Texto da Narração / Legenda (Dividido em frases):</label>
+            <textarea class="caption-text-input" placeholder="Ex: OLHE O QUE APARECEU NO TOPO DO MASTRO. NINGUÉM CONSEGUIU EXPLICAR ESTA CRIATURA.">OLHE O QUE APARECEU NO TOPO DO MASTRO. NINGUÉM CONSEGUIU EXPLICAR ESTA CRIATURA.</textarea>
           </div>
 
           <div class="control-box">
@@ -906,23 +927,30 @@
             </div>
           </div>
 
-          <label>Texto Base do Gancho:</label>
+          <label>Texto Base do Gancho (com numeração):</label>
           <input type="text" class="hook-text-input" value="REGISTRO DESCLASSIFICADO #1">
 
           <label>Estilo do Gancho Inicial:</label>
           <select class="intro-style-select">
             <option value="none" selected>0. Nenhum (Começar Direto) — recomendado</option>
-            <option value="classified">1. Arquivo Secreto / Alerta Vermelho</option>
+            <option value="classified">1. Arquivo Secreto / Alerta Vermelho (Dinâmico)</option>
             <option value="breaking">2. Plantão Urgente / Breaking News</option>
-            <option value="radar">3. Radar Militar / Scanning</option>
+            <option value="radar">3. Radar Militar / Scanning de Criatura</option>
           </select>
 
-          <label>Estilo do Overlay:</label>
+          <label>Animação do Texto do Gancho:</label>
+          <select class="hook-anim-select">
+            <option value="pop" selected>1. Pop + Respiração (zoom de entrada + pulso contínuo)</option>
+            <option value="typewriter">2. Máquina de Escrever (letras aparecendo uma a uma)</option>
+          </select>
+          <p class="intro-retention-hint" style="font-size:0.75rem;color:var(--text-muted);margin:4px 0 0;">⚠ Cartões de gancho agora tocam o vídeo (com zoom leve) por trás do texto e duram só ~1s — mas "Nenhum" continua sendo o mais seguro pra retenção: qualquer tela sem movimento real nos primeiros instantes é o principal motivo de o espectador abandonar o vídeo em 0:01.</p>
+
+          <label>Estilo do Overlay (Durante o Vídeo):</label>
           <select class="overlay-style-select">
-            <option value="none">0. Nenhum</option>
+            <option value="none">0. Nenhum (Sem Elementos na Tela)</option>
             <option value="rec_hud" selected>1. Câmera de Segurança / REC Analógico</option>
-            <option value="cyber_grid">2. Mira Tática / Grid</option>
-            <option value="podcast_banner">3. Banner Noticiário Dark</option>
+            <option value="cyber_grid">2. Mira Tática / Grid Cibernético</option>
+            <option value="podcast_banner">3. Banner Jornalístico / Noticiário Dark</option>
           </select>
 
           <div class="control-row">
@@ -942,7 +970,7 @@
           <div class="feature-list">
             <label class="checkbox-item">
               <input type="checkbox" class="shake-chk" checked>
-              <span><strong>Micro-Camera Shake:</strong> Desalinhamento óptico.</span>
+              <span><strong>Micro-Camera Shake:</strong> Desalinhamento do fluxo óptico por vetores senoidais.</span>
             </label>
             <label class="checkbox-item">
               <input type="checkbox" class="mirror-chk" checked>
@@ -950,11 +978,11 @@
             </label>
             <label class="checkbox-item">
               <input type="checkbox" class="stego-chk" checked>
-              <span><strong>Ruído Sub-visual:</strong> Quebra hash perceptual (pHash).</span>
+              <span><strong>Ruído Sub-visual:</strong> Quebra perceptual de hash (pHash).</span>
             </label>
             <label class="checkbox-item">
               <input type="checkbox" class="audio-chk" checked>
-              <span><strong>Infrassom Anti-Copyright:</strong> Injeção em 18.2Hz.</span>
+              <span><strong>Infrassom & Anti-Acoustic Fingerprint:</strong> Injeção senoidal em 18.2Hz.</span>
             </label>
           </div>
 
@@ -964,9 +992,9 @@
         <!-- ABA 2: DORAMAS, DRAMAS & CINEMA -->
         <div class="tab-content" id="tabDoramaContent">
           <h2>Módulo Cinema Narrado & Doramas</h2>
-          <p class="desc">Formatação otimizada com proteções ativas contra plágio e duplicidade.</p>
+          <p class="desc">Formatação otimizada para resumos de novelas coreanas, séries e filmes cinematográficos.</p>
 
-          <label>Selecione os Cortes:</label>
+          <label>Selecione os Cortes do Filme / Dorama:</label>
           <input type="file" class="video-input" accept="video/*" multiple>
 
           <div class="crop-toggle-box">
@@ -977,7 +1005,7 @@
           </div>
 
           <div class="control-box">
-            <div class="control-title">⏱ Corte de Tempo de Cena</div>
+            <div class="control-title">⏱ Corte de Tempo de Cena (Início / Fim)</div>
             <div class="control-row">
               <span>Cortar Início:</span>
               <input type="range" class="trim-start-range" min="0" max="10" step="0.1" value="0.2">
@@ -990,34 +1018,41 @@
             </div>
           </div>
 
-          <label>Título da Série & Parte:</label>
+          <label>Nome do Dorama / Título da Série & Parte:</label>
           <input type="text" class="hook-text-input" value="BELEZA VERDADEIRA - PARTE 1">
 
-          <label>Frase de Curiosidade:</label>
+          <label>Frase de Curiosidade / Gancho Emocional:</label>
           <input type="text" id="doramaHookSubtitle" value="Ela escondeu seu rosto de toda a escola...">
 
-          <label>Estilo do Gancho Inicial:</label>
+          <label>Estilo do Gancho Inicial (~1s, vídeo já em movimento por trás):</label>
           <select class="intro-style-select">
             <option value="none" selected>0. Nenhum (Iniciar direto) — recomendado</option>
             <option value="dorama_card">1. Cartão de Novela / Cinema Card</option>
-            <option value="dorama_question">2. Pergunta de Retenção</option>
+            <option value="dorama_question">2. Pergunta de Retenção ("O que você faria?")</option>
           </select>
 
-          <label>Layout Cinematográfico:</label>
+          <label>Animação do Texto do Gancho:</label>
+          <select class="hook-anim-select">
+            <option value="pop" selected>1. Pop + Respiração (zoom de entrada + pulso contínuo)</option>
+            <option value="typewriter">2. Máquina de Escrever (letras aparecendo uma a uma)</option>
+          </select>
+          <p class="intro-retention-hint" style="font-size:0.75rem;color:var(--text-muted);margin:4px 0 0;">⚠ O card de gancho era uma tela 100% estática por 2.2s — analisamos um vídeo real da conta com essa opção e a retenção despencou (maioria dos espectadores parou em 0:01, 9% de retenção média). Corrigido: agora o vídeo já toca com leve zoom por trás do texto e o card dura só ~1s. Ainda assim, "Nenhum" é a opção mais segura — comece direto na cena mais forte.</p>
+
+          <label>Layout & Enquadramento Cinematográfico:</label>
           <select class="overlay-style-select" id="doramaOverlaySelect">
-            <option value="cinema_top_split">1. Cinema Split</option>
-            <option value="cinema_letterbox">2. Letterbox 21:9</option>
-            <option value="netflix_style" selected>3. Layout Estilo Streaming</option>
+            <option value="cinema_top_split">1. Cinema Split (Vídeo no Topo)</option>
+            <option value="cinema_letterbox">2. Letterbox 21:9 com Moldura de Título</option>
+            <option value="netflix_style" selected>3. Layout Estilo Streaming / Player Minimalista</option>
           </select>
 
-          <label>Nome do Canal / Marca:</label>
+          <label>Nome do Canal / Marca (aparece no topo, layout Streaming):</label>
           <input type="text" class="channel-name-input" value="TOP CORTES" maxlength="20">
 
-          <label>Filtro de Gradação de Cor:</label>
+          <label>Filtro de Gradação de Cor (Color Grading):</label>
           <select id="doramaColorFilter">
-            <option value="warm_korea">K-Drama Warm (Cores Vivas)</option>
-            <option value="cold_thriller">Cold Thriller (Tom Frio)</option>
-            <option value="vintage_film">Vintage 35mm</option>
+            <option value="warm_korea">K-Drama Warm (Cores Vivas e Pele Suave)</option>
+            <option value="cold_thriller">Cold Thriller (Tom Frio e Alto Contraste)</option>
+            <option value="vintage_film">Vintage 35mm (Filme de Cinema Clássico)</option>
           </select>
 
           <div class="control-row">
@@ -1037,19 +1072,19 @@
           <div class="feature-list">
             <label class="checkbox-item">
               <input type="checkbox" class="audio-ducking-chk" checked>
-              <span><strong>Audio Ducking:</strong> Reduz fundo para 18%.</span>
+              <span><strong>Audio Ducking para Narração:</strong> Reduz volume de fundo para 18%.</span>
             </label>
             <label class="checkbox-item">
               <input type="checkbox" class="shake-chk" checked>
-              <span><strong>Micro-Oscilação:</strong> Quebra reconhecimento de cena.</span>
+              <span><strong>Micro-Oscilação de Enquadramento:</strong> Quebra reconhecimento de cena por IA.</span>
             </label>
             <label class="checkbox-item">
               <input type="checkbox" class="stego-chk" checked>
-              <span><strong>Ruído Esteganográfico:</strong> Destrói o hash perceptual.</span>
+              <span><strong>Ruído Esteganográfico de Película:</strong> Destrói o hash perceptual.</span>
             </label>
             <label class="checkbox-item">
               <input type="checkbox" class="audio-chk" checked>
-              <span><strong>Infrassom (18.2Hz):</strong> Invalidação acústica.</span>
+              <span><strong>Infrassom Anti-Copyright (18.2Hz):</strong> Invalidação da assinatura acústica.</span>
             </label>
           </div>
 
@@ -1342,6 +1377,12 @@
   const mainControlsColumn = document.getElementById('mainControlsColumn');
 
   let activeTab = 'found';
+  // Trava usada pra impedir troca de aba durante a gravação (abas 1 e 2
+  // reaproveitam o mesmo elemento <video> pra preview E pra exportação —
+  // trocar de aba no meio disparava loadPreviewForTab(), que sobrescrevia
+  // video.src/video.load() do vídeo que ainda estava sendo gravado, fazendo
+  // o loop de renderFrame() enxergar video.paused=true e encerrar o
+  // MediaRecorder cedo demais — resultado: MP4 baixado incompleto).
   let isExportingVideo = false;
 
   function resetNavTabs() {
@@ -1350,28 +1391,35 @@
   }
 
   tabBtnFound.addEventListener('click', () => {
-    if (isExportingVideo) { alert('⏳ Aguarde o término do processamento atual.'); return; }
+    if (isExportingVideo) { alert('⏳ Aguarde o processamento do vídeo atual terminar antes de trocar de aba — trocar agora gera um MP4 incompleto.'); return; }
     activeTab = 'found';
     resetNavTabs();
     tabBtnFound.classList.add('active');
     tabFoundContent.classList.add('active');
+    
     appDashboard.className = 'dashboard found-theme';
     blindPreviewColumn.style.display = 'flex';
     mainControlsColumn.style.display = 'block';
     loadPreviewForTab('found');
+    syncActiveTabElements();
     renderInteractivePreview();
   });
 
+  // Extraído em função própria para poder ser chamado tanto pelo clique no
+  // menu quanto programaticamente (ex: redirecionamento automático após o
+  // Sincronizador de Narração Externa terminar).
   function goToDoramaTab() {
-    if (isExportingVideo) { alert('⏳ Aguarde o término do processamento atual.'); return false; }
+    if (isExportingVideo) { alert('⏳ Aguarde o processamento do vídeo atual terminar antes de trocar de aba — trocar agora gera um MP4 incompleto.'); return false; }
     activeTab = 'dorama';
     resetNavTabs();
     tabBtnDorama.classList.add('active');
     tabDoramaContent.classList.add('active');
+
     appDashboard.className = 'dashboard dorama-theme';
     blindPreviewColumn.style.display = 'flex';
     mainControlsColumn.style.display = 'block';
     loadPreviewForTab('dorama');
+    syncActiveTabElements();
     renderInteractivePreview();
     return true;
   }
@@ -1379,27 +1427,30 @@
   tabBtnDorama.addEventListener('click', goToDoramaTab);
 
   tabBtnAi.addEventListener('click', () => {
-    if (isExportingVideo) { alert('⏳ Aguarde o término do processamento atual.'); return; }
+    if (isExportingVideo) { alert('⏳ Aguarde o processamento do vídeo atual terminar antes de trocar de aba — trocar agora gera um MP4 incompleto.'); return; }
     activeTab = 'ai';
     resetNavTabs();
     tabBtnAi.classList.add('active');
     tabAiContent.classList.add('active');
+    
     appDashboard.className = 'dashboard ai-theme full-mode';
     blindPreviewColumn.style.display = 'none';
     mainControlsColumn.style.display = 'none';
   });
 
   tabBtnDownloader.addEventListener('click', () => {
-    if (isExportingVideo) { alert('⏳ Aguarde o término do processamento atual.'); return; }
+    if (isExportingVideo) { alert('⏳ Aguarde o processamento do vídeo atual terminar antes de trocar de aba — trocar agora gera um MP4 incompleto.'); return; }
     activeTab = 'downloader';
     resetNavTabs();
     tabBtnDownloader.classList.add('active');
     tabDownloaderContent.classList.add('active');
+    
     appDashboard.className = 'dashboard downloader-theme full-mode';
     blindPreviewColumn.style.display = 'none';
     mainControlsColumn.style.display = 'none';
   });
 
+  // --- Pipeline das Abas 1 e 2 (Blindagem) ---
   const previewWrapper = document.getElementById('previewWrapper');
   const cropBox = document.getElementById('cropBox');
   const canvas = document.getElementById('previewCanvas');
@@ -1414,6 +1465,15 @@
   const TARGET_W = 720;
   const TARGET_H = 1280;
 
+  // --- Otimização: reaproveitamento de blob URLs e cache de áudio decodificado ---
+  // Antes, cada troca de vídeo (preview ou produção) criava uma URL de objeto
+  // nova via URL.createObjectURL() e NUNCA revogava a anterior. Numa fila
+  // longa isso ia acumulando referências penduradas no navegador a cada item
+  // processado, aumentando a pressão de memória e o número de pausas de
+  // Garbage Collector — exatamente o padrão de "vai ficando mais lento e
+  // trava um pouquinho" ao longo de uma fila. Agora centralizamos a troca de
+  // fonte do <video> nesta função, que sempre revoga a URL anterior antes de
+  // criar a próxima.
   let currentVideoObjectURL = null;
   function setSharedVideoSource(fileOrBlob) {
     if (currentVideoObjectURL) {
@@ -1426,6 +1486,11 @@
     return url;
   }
 
+  // Cache da música de fundo já decodificada: antes, cada vídeo da fila
+  // decodificava o MESMO arquivo de MP3/WAV do zero (audioCtx.decodeAudioData
+  // é um trabalho pesado de CPU), mesmo quando era exatamente o mesmo arquivo
+  // repetido em todos os itens da fila. Agora só decodifica uma vez por
+  // arquivo e reaproveita o AudioBuffer resultante nos itens seguintes.
   let bgmDecodeCache = { file: null, buffer: null };
   async function getDecodedBgmBuffer(audioCtx, file) {
     const sameFile = bgmDecodeCache.file === file
@@ -1440,12 +1505,15 @@
     return audioBuf;
   }
 
+  // Cada aba (found/dorama) tem sua própria fila de vídeos, independente da outra.
   let fileQueues = { found: [], dorama: [] };
   function getCurrentQueue() { return fileQueues[activeTab] || []; }
 
   let cropNorm = { x: 0, y: 0, w: 1, h: 1 };
   let currentPreviewMode = 'overlay';
 
+  // Carrega no preview compartilhado (video/canvas) o vídeo pertencente à aba informada.
+  // Isso garante que trocar de aba mostre APENAS o vídeo daquela aba (ou nada, se vazio).
   function loadPreviewForTab(tab) {
     const queue = fileQueues[tab] || [];
     const container = tab === 'found' ? tabFoundContent : tabDoramaContent;
@@ -1506,6 +1574,7 @@
       captionStyle: container.querySelector('.caption-style-select'),
       captionText: container.querySelector('.caption-text-input'),
       introStyle: container.querySelector('.intro-style-select'),
+      hookAnim: container.querySelector('.hook-anim-select'),
       overlayStyle: container.querySelector('.overlay-style-select'),
       channelName: container.querySelector('.channel-name-input'),
       shake: container.querySelector('.shake-chk'),
@@ -1518,6 +1587,18 @@
       videoVolume: container.querySelector('.video-volume-range'),
       processBtn: container.querySelector('.process-btn')
     };
+  }
+
+  function syncActiveTabElements() {
+    if (activeTab === 'ai' || activeTab === 'downloader') return;
+    const ctrl = getActiveControls();
+    if (!video.videoWidth) return;
+    if (ctrl.enableCrop.checked && currentPreviewMode === 'overlay') {
+      setupCropBox();
+    } else {
+      cropBox.style.display = 'none';
+      cropNorm = { x: 0, y: 0, w: 1, h: 1 };
+    }
   }
 
   btnPreviewOverlay.addEventListener('click', () => {
@@ -1537,7 +1618,7 @@
     renderInteractivePreview();
   });
 
-  document.querySelectorAll('.hook-text-input, .caption-style-select, .caption-text-input, .intro-style-select, .overlay-style-select, .channel-name-input, #doramaHookSubtitle, #doramaColorFilter').forEach(el => {
+  document.querySelectorAll('.hook-text-input, .caption-style-select, .caption-text-input, .intro-style-select, .hook-anim-select, .overlay-style-select, .channel-name-input, #doramaHookSubtitle, #doramaColorFilter').forEach(el => {
     el.addEventListener('input', renderInteractivePreview);
     el.addEventListener('change', renderInteractivePreview);
   });
@@ -1592,6 +1673,8 @@
       const tab = e.target.closest('#tabFoundContent') ? 'found' : 'dorama';
       fileQueues[tab] = Array.from(e.target.files);
       if (fileQueues[tab].length === 0) return;
+
+      // Só atualiza o preview compartilhado se a aba que recebeu o arquivo for a aba ativa.
       if (tab === activeTab) {
         loadPreviewForTab(tab);
       } else {
@@ -1636,6 +1719,7 @@
       cropNorm = { x: 0, y: 0, w: 1, h: 1 };
       return;
     }
+
     const { mainX, mainY, mainW, mainH } = getVideoRenderLayout();
     const wrapW = previewWrapper.clientWidth;
     const wrapH = previewWrapper.clientHeight;
@@ -1647,6 +1731,7 @@
     cropBox.style.top = `${mainY * scaleY}px`;
     cropBox.style.width = `${mainW * scaleX}px`;
     cropBox.style.height = `${mainH * scaleY}px`;
+
     cropNorm = { x: 0, y: 0, w: 1, h: 1 };
   }
 
@@ -1659,6 +1744,7 @@
     const { mainX, mainY, mainW, mainH } = getVideoRenderLayout();
     const wrapW = previewWrapper.clientWidth;
     const wrapH = previewWrapper.clientHeight;
+
     const scaleX = wrapW / TARGET_W;
     const scaleY = wrapH / TARGET_H;
 
@@ -1682,11 +1768,13 @@
 
   function renderTikTokCaptions(style, text, currentTime, duration, baseY) {
     if (!style || style === 'none' || !text || !text.trim()) return;
+
     const words = text.trim().toUpperCase().split(/\s+/);
     if (words.length === 0) return;
 
     const progress = Math.max(0, Math.min(1, currentTime / (duration || 10)));
     const activeWordIndex = Math.min(words.length - 1, Math.floor(progress * words.length));
+
     const chunkSize = 4;
     const currentChunkIndex = Math.floor(activeWordIndex / chunkSize);
     const chunkWords = words.slice(currentChunkIndex * chunkSize, (currentChunkIndex + 1) * chunkSize);
@@ -1696,6 +1784,7 @@
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.font = '900 36px system-ui, -apple-system, sans-serif';
+
     const yPos = baseY || (TARGET_H - 220);
 
     if (style === 'hormozi') {
@@ -1705,21 +1794,40 @@
         totalWidth += width;
         return { word: w, width };
       });
+
       let currentX = (TARGET_W / 2) - (totalWidth / 2);
+
       ctx.fillStyle = 'rgba(0,0,0,0.55)';
       ctx.fillRect(currentX - 20, yPos - 32, totalWidth + 40, 64);
 
       wordMetrics.forEach((item, idx) => {
         const isCurrent = idx === activeIndexInChunk;
         const x = currentX + item.width / 2;
+
         ctx.lineWidth = isCurrent ? 8 : 6;
         ctx.strokeStyle = '#000000';
         ctx.strokeText(item.word, x, yPos);
+
         ctx.fillStyle = isCurrent ? '#facc15' : '#ffffff';
         ctx.fillText(item.word, x, yPos);
+
         currentX += item.width;
       });
-    } else {
+
+    } else if (style === 'green_glow') {
+      const phrase = chunkWords.join(' ');
+      const pWidth = ctx.measureText(phrase).width;
+
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(TARGET_W / 2 - pWidth / 2 - 20, yPos - 30, pWidth + 40, 60);
+      ctx.strokeStyle = '#22c55e';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(TARGET_W / 2 - pWidth / 2 - 20, yPos - 30, pWidth + 40, 60);
+
+      ctx.fillStyle = '#4ade80';
+      ctx.fillText(phrase, TARGET_W / 2, yPos);
+
+    } else if (style === 'tiktok_clean') {
       const phrase = chunkWords.join(' ');
       ctx.lineWidth = 6;
       ctx.strokeStyle = '#000000';
@@ -1727,9 +1835,15 @@
       ctx.fillStyle = '#ffffff';
       ctx.fillText(phrase, TARGET_W / 2, yPos);
     }
+
     ctx.restore();
   }
 
+  // Desenha texto reduzindo o tamanho da fonte automaticamente até caber em
+  // maxWidth, em vez de deixar cortado/sobrepondo outros elementos do overlay
+  // (ex.: nome do canal x título do dorama, no layout Streaming). ctx.font já
+  // deve estar setado com o peso/família desejados antes de chamar isso — a
+  // função só ajusta o tamanho em px.
   function fitText(ctx, text, x, y, maxWidth, baseSize) {
     const fontParts = ctx.font.split(' ');
     const sizeIdx = fontParts.findIndex(p => /px$/.test(p));
@@ -1743,34 +1857,163 @@
     ctx.fillText(text, x, y);
   }
 
+  // Desenha o headline/título/subtítulo do painel de gancho de forma ANIMADA
+  // (nunca um frame parado) — usada tanto no preview interativo quanto no
+  // loop real de exportação (renderFrame). "elapsed" é o tempo (em segundos)
+  // desde o início do gancho e "introDuration" a duração total dele.
+  // animStyle: 'pop' (zoom de entrada com respiração contínua) ou
+  // 'typewriter' (letras do título aparecendo uma a uma, com cursor piscando).
+  function drawAnimatedHookText(ctx, { TARGET_W, panelY, panelH, headline, title, subtitle, accent, elapsed, introDuration, animStyle }) {
+    ctx.textAlign = 'center';
+    const dur = Math.max(introDuration, 0.001);
+
+    if (animStyle === 'typewriter') {
+      // Headline: fade + leve deslize de cima pra baixo, rápido.
+      const headlineT = Math.min(elapsed / 0.25, 1);
+      const headlineEase = 1 - Math.pow(1 - headlineT, 3);
+      ctx.save();
+      ctx.globalAlpha = headlineEase;
+      ctx.fillStyle = accent;
+      ctx.font = 'bold 20px sans-serif';
+      ctx.fillText(headline, TARGET_W / 2, panelY + panelH * 0.32 - (1 - headlineEase) * 10);
+      ctx.restore();
+
+      // Título: revela caractere por caractere, com cursor piscando enquanto digita.
+      const revealStart = 0.15;
+      const revealEnd = Math.max(dur * 0.8, revealStart + 0.2);
+      const revealT = Math.max(0, Math.min((elapsed - revealStart) / (revealEnd - revealStart), 1));
+      const chars = Math.round(title.length * revealT);
+      const shown = title.slice(0, chars);
+      const typing = revealT < 1;
+      const cursor = typing ? (Math.floor(elapsed * 6) % 2 === 0 ? '|' : ' ') : '';
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 28px sans-serif';
+      ctx.fillText(shown + cursor, TARGET_W / 2, panelY + panelH * 0.58);
+
+      if (subtitle) {
+        const subT = Math.max(0, Math.min((elapsed - revealEnd) / 0.3, 1));
+        ctx.save();
+        ctx.globalAlpha = subT;
+        ctx.fillStyle = '#fbcfe8';
+        ctx.font = 'italic 18px sans-serif';
+        ctx.fillText(`"${subtitle}"`, TARGET_W / 2, panelY + panelH * 0.82);
+        ctx.restore();
+      }
+      return;
+    }
+
+    // 'pop' (padrão): entrada com zoom "overshoot" (efeito mola) + uma
+    // respiração/pulso contínua e sutil enquanto o gancho fica na tela, pra
+    // nunca existir um instante 100% parado.
+    const entranceDur = 0.35;
+    const et = Math.min(elapsed / entranceDur, 1);
+    const c1 = 1.70158, c3 = c1 + 1;
+    const eased = 1 + c3 * Math.pow(et - 1, 3) + c1 * Math.pow(et - 1, 2);
+    const entranceScale = 0.55 + 0.45 * eased;
+    const breathe = 1 + 0.02 * Math.sin(elapsed * 5);
+    const scale = (et < 1 ? entranceScale : 1) * breathe;
+    const alpha = Math.min(elapsed / 0.2, 1);
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = accent;
+    ctx.font = 'bold 20px sans-serif';
+    ctx.fillText(headline, TARGET_W / 2, panelY + panelH * 0.32);
+    ctx.restore();
+
+    const titleCx = TARGET_W / 2, titleCy = panelY + panelH * 0.58;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(titleCx, titleCy);
+    ctx.scale(scale, scale);
+    ctx.translate(-titleCx, -titleCy);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 28px sans-serif';
+    ctx.fillText(title, titleCx, titleCy);
+    ctx.restore();
+
+    if (subtitle) {
+      const subAlpha = Math.min(Math.max(elapsed - 0.15, 0) / 0.25, 1);
+      ctx.save();
+      ctx.globalAlpha = subAlpha;
+      ctx.fillStyle = '#fbcfe8';
+      ctx.font = 'italic 18px sans-serif';
+      ctx.fillText(`"${subtitle}"`, TARGET_W / 2, panelY + panelH * 0.82);
+      ctx.restore();
+    }
+  }
+
   function renderInteractivePreview() {
     if (!video.videoWidth || activeTab === 'ai' || activeTab === 'downloader') return;
     const ctrl = getActiveControls();
     const currentTitle = ctrl.hookText.value.trim();
 
     if (currentPreviewMode === 'intro') {
+      const introStyle = ctrl.introStyle.value;
+
+      if (introStyle === 'none') {
+        ctx.fillStyle = '#06080e';
+        ctx.fillRect(0, 0, TARGET_W, TARGET_H);
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = 'bold 24px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('(Gancho Inicial Desativado — recomendado)', TARGET_W / 2, TARGET_H / 2);
+        return;
+      }
+
+      // Preview agora reflete o que realmente sai no MP4 exportado: o vídeo já
+      // visível/em movimento (aqui mostramos o frame atual como aproximação,
+      // já que no export ele estará tocando) com um painel translúcido do
+      // gancho por cima — não mais uma tela 100% opaca e parada.
       ctx.fillStyle = '#000';
       ctx.fillRect(0, 0, TARGET_W, TARGET_H);
       const { mainX, mainY, mainW, mainH } = getVideoRenderLayout();
+      ctx.save();
+      ctx.globalAlpha = 0.25;
+      ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, -TARGET_W * 0.2, -TARGET_H * 0.1, TARGET_W * 1.4, TARGET_H * 1.2);
+      ctx.restore();
       ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, mainX, mainY, mainW, mainH);
 
       const panelY = TARGET_H * 0.34;
       const panelH = TARGET_H * 0.30;
-      ctx.fillStyle = 'rgba(3, 7, 18, 0.82)';
+      const grad = ctx.createLinearGradient(0, panelY, 0, panelY + panelH);
+      grad.addColorStop(0, 'rgba(3, 7, 18, 0)');
+      grad.addColorStop(0.25, 'rgba(3, 7, 18, 0.82)');
+      grad.addColorStop(0.75, 'rgba(3, 7, 18, 0.82)');
+      grad.addColorStop(1, 'rgba(3, 7, 18, 0)');
+      ctx.fillStyle = grad;
       ctx.fillRect(0, panelY, TARGET_W, panelH);
 
-      ctx.textAlign = 'center';
-      ctx.fillStyle = activeTab === 'found' ? '#ef4444' : '#f43f5e';
-      ctx.font = 'bold 20px sans-serif';
-      ctx.fillText('⚠ ATENÇÃO: ARQUIVO RARO', TARGET_W / 2, panelY + panelH * 0.32);
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 28px sans-serif';
-      ctx.fillText(currentTitle.toUpperCase(), TARGET_W / 2, panelY + panelH * 0.58);
+      // Preview mostra o gancho já "assentado" (fim da animação de entrada),
+      // já que aqui é uma imagem parada, não um vídeo tocando — a animação de
+      // verdade acontece no vídeo exportado. O estilo escolhido no seletor
+      // "Animação do Texto do Gancho" ainda é aplicado no arquivo final.
+      const introDuration = 1.0; // mesma duração usada no export real
+      const previewAnim = ctrl.hookAnim ? ctrl.hookAnim.value : 'pop';
+      const previewElapsed = previewAnim === 'typewriter' ? Math.max(introDuration - 0.05, 0) : introDuration;
+      if (activeTab === 'found') {
+        drawAnimatedHookText(ctx, {
+          TARGET_W, panelY, panelH,
+          headline: '⚠ ATENÇÃO: ARQUIVO RARO',
+          title: currentTitle.toUpperCase(),
+          subtitle: null,
+          accent: '#ef4444',
+          elapsed: previewElapsed, introDuration, animStyle: previewAnim
+        });
+      } else {
+        drawAnimatedHookText(ctx, {
+          TARGET_W, panelY, panelH,
+          headline: introStyle === 'dorama_question' ? 'O QUE VOCÊ FARIA?' : '🎬 RESUMO CINEMA & DORAMA',
+          title: currentTitle.toUpperCase(),
+          subtitle: doramaHookSubtitle.value || null,
+          accent: '#f43f5e',
+          elapsed: previewElapsed, introDuration, animStyle: previewAnim
+        });
+      }
       return;
     }
 
-    // FUNDO PRETO SÓLIDO (BLINDAGEM CONTRA CONTEÚDO NÃO ORIGINAL)
-    ctx.fillStyle = '#000000';
+    ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, TARGET_W, TARGET_H);
 
     const { mainX, mainY, mainW, mainH } = getVideoRenderLayout();
@@ -1778,21 +2021,25 @@
     ctx.save();
     if (activeTab === 'dorama') {
       const colorStyle = doramaColorFilter.value;
-      if (colorStyle === 'warm_korea') ctx.filter = 'saturate(115%) contrast(105%)';
-      else if (colorStyle === 'cold_thriller') ctx.filter = 'hue-rotate(180deg) saturate(90%)';
+      if (colorStyle === 'warm_korea') ctx.filter = 'saturate(115%) contrast(105%) brightness(102%)';
+      else if (colorStyle === 'cold_thriller') ctx.filter = 'hue-rotate(180deg) saturate(90%) contrast(110%)';
       else if (colorStyle === 'vintage_film') ctx.filter = 'sepia(20%) contrast(108%)';
     }
 
-    // DEEP ZOOM APLICADO NA PRÉVIA
-    const deepZoom = 1.08;
-    ctx.translate(mainX + mainW / 2, mainY + mainH / 2);
-    ctx.scale(deepZoom, deepZoom);
-    ctx.translate(-(mainX + mainW / 2), -(mainY + mainH / 2));
+    ctx.globalAlpha = 0.25;
+    ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, -TARGET_W * 0.2, -TARGET_H * 0.1, TARGET_W * 1.4, TARGET_H * 1.2);
+    ctx.restore();
 
+    ctx.save();
     ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, mainX, mainY, mainW, mainH);
     ctx.restore();
 
+    ctx.strokeStyle = activeTab === 'found' ? 'rgba(56, 189, 248, 0.4)' : 'rgba(244, 63, 94, 0.4)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(mainX, mainY, mainW, mainH);
+
     const overlay = ctrl.overlayStyle.value;
+
     if (activeTab === 'found') {
       if (overlay === 'rec_hud') {
         ctx.fillStyle = '#ef4444';
@@ -1810,6 +2057,27 @@
       }
       if (ctrl.captionStyle && ctrl.captionText) {
         renderTikTokCaptions(ctrl.captionStyle.value, ctrl.captionText.value, video.currentTime || 3, video.duration || 10, TARGET_H - 220);
+      }
+    } else {
+      if (overlay === 'cinema_top_split') {
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+        ctx.fillRect(0, 30, TARGET_W, 65);
+        ctx.fillStyle = '#f43f5e';
+        ctx.font = 'bold 24px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(currentTitle.toUpperCase(), TARGET_W / 2, 72);
+      } else if (overlay === 'netflix_style') {
+        const channelName = (ctrl.channelName && ctrl.channelName.value.trim()) ? ctrl.channelName.value.trim().toUpperCase() : 'TOP CORTES';
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(0, 40, TARGET_W, 60);
+        ctx.fillStyle = '#f43f5e';
+        ctx.font = '900 24px sans-serif';
+        ctx.textAlign = 'left';
+        fitText(ctx, channelName, 30, 78, TARGET_W * 0.5, 24);
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 20px sans-serif';
+        ctx.textAlign = 'right';
+        fitText(ctx, currentTitle, TARGET_W - 30, 78, TARGET_W * 0.42, 20);
       }
     }
   }
@@ -1849,6 +2117,25 @@
     if (isDragging) {
       cropBox.style.left = `${Math.max(vLeft, Math.min(vRight - startW, startLeft + dx))}px`;
       cropBox.style.top = `${Math.max(vTop, Math.min(vBottom - startH, startTop + dy))}px`;
+    } else if (activeHandle) {
+      if (activeHandle.includes('r')) cropBox.style.width = `${Math.max(25, Math.min(vRight - startLeft, startW + dx))}px`;
+      if (activeHandle.includes('b')) cropBox.style.height = `${Math.max(25, Math.min(vBottom - startTop, startH + dy))}px`;
+      if (activeHandle.includes('l')) {
+        const newW = Math.max(25, startW - dx);
+        const newLeft = startLeft + dx;
+        if (newLeft >= vLeft && newW >= 25) {
+          cropBox.style.left = `${newLeft}px`;
+          cropBox.style.width = `${newW}px`;
+        }
+      }
+      if (activeHandle.includes('t')) {
+        const newH = Math.max(25, startH - dy);
+        const newTop = startTop + dy;
+        if (newTop >= vTop && newH >= 25) {
+          cropBox.style.top = `${newTop}px`;
+          cropBox.style.height = `${newH}px`;
+        }
+      }
     }
     updateNormalizedCrop();
   }
@@ -1869,17 +2156,35 @@
     const suffix = match[3];
     const currentNum = parseInt(numStr, 10);
     const newNum = currentNum + step;
-    return `${prefix}${String(newNum).padStart(numStr.length, '0')}${suffix}`;
+    const formattedNum = String(newNum).padStart(numStr.length, '0');
+    return `${prefix}${formattedNum}${suffix}`;
   }
 
   function getOptimalMimeType() {
-    const types = ['video/mp4', 'video/webm'];
+    const types = [
+      'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+      'video/mp4;codecs=avc1.4d401f,mp4a.40.2',
+      'video/mp4;codecs=h264,aac',
+      'video/mp4',
+      'video/webm;codecs=h264',
+      'video/webm;codecs=vp9,opus',
+      'video/webm'
+    ];
     for (const t of types) {
       if (MediaRecorder.isTypeSupported(t)) return t;
     }
     return '';
   }
 
+  // O requestAnimationFrame do navegador é throttlado/pausado quando a aba fica
+  // minimizada ou em segundo plano — o que travava a exportação (abas "Found" e
+  // "Dorama") bem no meio do processo, sempre que o usuário trocava de aba ou
+  // minimizava a janela. Um Web Worker não sofre esse throttling da mesma forma
+  // (não é um contexto de documento/aba), então usamos um worker rodando um
+  // setInterval simples como "metrônomo": ele só manda um "tick" pra thread
+  // principal, que continua sendo quem de fato desenha no canvas (Workers não
+  // têm acesso a DOM/canvas 2D com <video> como fonte). Cada produção de vídeo
+  // cria e derruba seu próprio worker.
   function createRenderTicker() {
     const workerCode = `
       let timer = null;
@@ -1895,10 +2200,16 @@
     `;
     const blobUrl = URL.createObjectURL(new Blob([workerCode], { type: 'application/javascript' }));
     const worker = new Worker(blobUrl);
+    // O worker guarda uma referência à própria blob URL só pra facilitar a
+    // revogação depois de terminado (evita vazar URLs de objeto).
     worker._blobUrl = blobUrl;
     return worker;
   }
 
+  // O elemento <video> só pode ser conectado UMA ÚNICA VEZ a um MediaElementSourceNode
+  // durante toda a vida da página. Criar isso de novo a cada produção (como era antes)
+  // lança um erro na 2ª produção em diante e travava o fluxo. Por isso o contexto de
+  // áudio e o "source" são criados uma vez só e reaproveitados em todas as produções.
   let sharedAudioCtx = null;
   let sharedAudioSource = null;
   function getSharedAudioSource() {
@@ -1914,16 +2225,78 @@
     return new Promise((resolve) => {
       status.innerText = `Renderizando (${index + 1}/${total}): "${currentTitle}"...`;
       setSharedVideoSource(file);
-      video.muted = false;
+      // Silenciado de propósito: o áudio real já é capturado à parte pelo
+      // MediaElementAudioSourceNode (ver getSharedAudioSource), que roteia o
+      // som direto pro gráfico do Web Audio independente do "muted" do
+      // elemento — então isso NÃO tira áudio nenhum do vídeo final. Em troca,
+      // garante que o autoplay do <video> nunca seja bloqueado pela política
+      // de autoplay do navegador (que barra playback COM som fora de uma
+      // interação direta do usuário). Isso é o que causava a tela preta:
+      // video.play() era chamado depois de vários "await" — cruzando a
+      // janela de ativação do usuário — e falhava silenciosamente, deixando
+      // o vídeo pausado/sem frame decodificado durante toda a gravação.
+      video.muted = true;
       video.load();
 
-      video.onerror = () => resolve();
+      // Se algo impedir o vídeo de carregar (arquivo corrompido, etc.), garante
+      // que a Promise resolva mesmo assim, para o botão nunca ficar travado.
+      video.onerror = () => {
+        console.error('Erro ao carregar o vídeo para produção.');
+        resolve();
+      };
 
       video.onloadedmetadata = async () => {
         let recordedChunks = [];
         let audioCtx, audioSource, audioDest, osc, duckingGain, bgmSource;
         const stream = canvas.captureStream(30);
         const stopTime = Math.max(config.cutStart + 0.5, video.duration - config.cutEnd);
+
+        // Espera o vídeo estar de fato posicionado e com um frame DECODIFICADO
+        // pronto pra desenhar antes de começar a gravar. ANTES, o
+        // "video.currentTime = ...; video.play()" rodava dentro do loop de
+        // render, no mesmo instante em que o MediaRecorder já estava
+        // gravando — como o seek é assíncrono, os primeiros frames
+        // capturados (bem na janela do gancho, ~1s) saíam com o vídeo ainda
+        // preto/sem imagem por trás do texto. É essa a causa raiz do "vídeo
+        // preto" atrás do gancho que o TikTok sinalizou como baixa
+        // qualidade — não a animação do texto em si.
+        await new Promise((resolveReady) => {
+          let settled = false;
+          const finish = () => {
+            if (settled) return;
+            settled = true;
+            video.removeEventListener('seeked', onSeeked);
+            resolveReady();
+          };
+          const onSeeked = () => {
+            // "seeked" às vezes dispara um pouco antes do frame estar
+            // realmente pintável — dá mais um respiro (frame de vídeo real,
+            // quando disponível; senão dois rAF) antes de liberar.
+            if (typeof video.requestVideoFrameCallback === 'function') {
+              video.requestVideoFrameCallback(() => finish());
+            } else {
+              requestAnimationFrame(() => requestAnimationFrame(finish));
+            }
+          };
+          video.addEventListener('seeked', onSeeked);
+          video.currentTime = config.cutStart;
+          // Watchdog: nunca deixa travado esperando pra sempre se 'seeked'
+          // não disparar por algum motivo (ex.: arquivo problemático).
+          setTimeout(finish, 800);
+        });
+        video.playbackRate = 1.04;
+        try {
+          await video.play();
+        } catch (playErr) {
+          console.warn('video.play() falhou mesmo mutado — tentando de novo:', playErr);
+        }
+        // Segunda tentativa + pequena espera, só por segurança: se por algum
+        // motivo o play() ainda não "pegou", não queremos começar a gravar
+        // com o vídeo parado (senão volta o problema do frame congelado).
+        if (video.paused) {
+          try { await video.play(); } catch (_) {}
+          await new Promise(r => setTimeout(r, 120));
+        }
 
         try {
           const shared = getSharedAudioSource();
@@ -1939,9 +2312,14 @@
           duckingGain = audioCtx.createGain();
           duckingGain.gain.value = (activeTab === 'dorama' && config.ducking) ? 0.18 : 1.0;
 
+          // Ganho do áudio original do vídeo — controlado pelo slider "Volume do
+          // Vídeo Original" (0% a 300%, padrão 150%). Fica isolado do ducking e
+          // do volume da música de fundo, que têm seus próprios ganhos.
           const videoVolumeGain = audioCtx.createGain();
           videoVolumeGain.gain.value = Number.isFinite(config.videoVolume) ? config.videoVolume : 1.5;
 
+          // Desconecta ligações de produções anteriores antes de refazer a cadeia,
+          // senão o áudio continuaria sendo enviado também para streams antigas.
           audioSource.disconnect();
           audioSource.connect(bq);
           bq.connect(videoVolumeGain);
@@ -1959,6 +2337,13 @@
             osc.start();
           }
 
+          // Música de fundo (opcional): decodifica o arquivo escolhido pelo
+          // usuário e injeta direto no mesmo destino de áudio da gravação —
+          // não depende de tocar um <audio> visível na página, então funciona
+          // mesmo com a aba em segundo plano. Toca em loop pra cobrir cortes
+          // de qualquer duração e entra numa gainNode própria (volume separado
+          // do áudio original do vídeo, que já passa pelo highshelf/ducking
+          // acima).
           if (config.bgmFile) {
             try {
               const audioBuf = await getDecodedBgmBuffer(audioCtx, config.bgmFile);
@@ -1971,13 +2356,13 @@
               bgmGain.connect(audioDest);
               bgmSource.start();
             } catch (bgmErr) {
-              console.warn('Erro BGM:', bgmErr);
+              console.warn('Não foi possível decodificar a música de fundo:', bgmErr);
             }
           }
 
           audioDest.stream.getAudioTracks().forEach(track => stream.addTrack(track));
         } catch (err) {
-          console.warn("Pipeline áudio:", err);
+          console.warn("Pipeline de áudio:", err);
         }
 
         const mimeType = getOptimalMimeType();
@@ -1988,6 +2373,16 @@
 
         mediaRecorder.ondataavailable = (e) => {
           if (e.data.size > 0) recordedChunks.push(e.data);
+        };
+
+        // Se o MediaRecorder falhar no meio do caminho, resolve mesmo assim
+        // em vez de deixar a fila travada para sempre.
+        mediaRecorder.onerror = (e) => {
+          console.error('Erro no MediaRecorder:', e);
+          stopRenderTicker();
+          if (osc) { try { osc.stop(); } catch (_) {} }
+          if (bgmSource) { try { bgmSource.stop(); } catch (_) {} }
+          resolve();
         };
 
         mediaRecorder.onstop = () => {
@@ -2003,9 +2398,20 @@
 
         mediaRecorder.start();
 
+        // ANTES: introDuration = 2.2s de tela 100% estática (só um "pulse" de
+        // 1.5px no texto) antes do vídeo sequer começar a tocar. Analisando as
+        // métricas reais de um vídeo publicado com essa opção: retenção média
+        // de 9%, e a MAIORIA dos espectadores abandonou em 0:01 — ou seja,
+        // ainda dentro da introdução estática. Uma tela parada nos primeiros
+        // instantes se parece com um anúncio/tela de carregamento e é
+        // exatamente o gatilho que faz a pessoa passar o vídeo. Corrigido:
+        // o vídeo já começa a tocar (com leve zoom) desde o frame 1, o texto
+        // do gancho fica sobre um painel translúcido por cima da cena real, e
+        // a duração cai para ~1s (ainda dá tempo de ler o gancho, sem
+        // congelar a tela). Ver também os selects de "Estilo do Gancho
+        // Inicial" no HTML, que agora vêm com "Nenhum" selecionado por padrão.
         const introDuration = (config.introStyle === 'none') ? 0 : 1.0;
         const startTime = Date.now();
-        let videoStarted = false;
         let frameIndex = 0;
 
         const effectiveCrop = config.isCropActive ? cropNorm : { x: 0, y: 0, w: 1, h: 1 };
@@ -2016,6 +2422,11 @@
 
         const { mainX: destX, mainY: destY, mainW: destW, mainH: destH } = getVideoRenderLayout();
 
+        // Ticker via Web Worker: substitui o requestAnimationFrame como "pulso" do
+        // loop (ver createRenderTicker acima) — não trava quando a aba vai pra
+        // segundo plano. renderStopped evita chamar render() de novo depois que o
+        // worker já recebeu o comando de parar (o postMessage de 'stop' não é
+        // instantâneo, pode haver um 'tick' em trânsito).
         let renderStopped = false;
         const renderTicker = createRenderTicker();
         function stopRenderTicker() {
@@ -2026,30 +2437,29 @@
           URL.revokeObjectURL(renderTicker._blobUrl);
         }
 
-        renderTicker.onmessage = () => {
+        // Envolve o loop de desenho em try/catch: se algum frame falhar, paramos a
+        // gravação (ou resolvemos a Promise) em vez de deixar o processo travado
+        // silenciosamente, exigindo recarregar a página.
+        function render() {
           if (renderStopped) return;
           try {
             renderFrame();
           } catch (err) {
+            console.error('Erro ao renderizar frame:', err);
             stopRenderTicker();
-            if (mediaRecorder.state === 'recording') mediaRecorder.stop();
-            else resolve();
+            if (mediaRecorder.state === 'recording') {
+              mediaRecorder.stop();
+            } else {
+              resolve();
+            }
           }
-        };
-
-        renderTicker.postMessage({ cmd: 'start', interval: 33 });
+        }
+        renderTicker.onmessage = render;
 
         function renderFrame() {
           const elapsed = (Date.now() - startTime) / 1000;
           frameIndex++;
           const inIntro = introDuration > 0 && elapsed < introDuration;
-
-          if (!videoStarted) {
-            video.currentTime = config.cutStart;
-            video.playbackRate = 1.04;
-            video.play();
-            videoStarted = true;
-          }
 
           if (!inIntro && (video.paused || video.ended || video.currentTime >= stopTime)) {
             stopRenderTicker();
@@ -2057,48 +2467,67 @@
             return;
           }
 
-          // APLICAÇÃO DE FUNDO TOTALMENTE ESCURO (SEM DUPLICAÇÃO DE VÍDEO)
+          // 1. FUNDO LIMPO (REMOVE O BORRADO QUE O TIKTOK VIOLOU)
           ctx.fillStyle = '#000000';
           ctx.fillRect(0, 0, TARGET_W, TARGET_H);
 
-          let shakeX = 0, shakeY = 0;
-          if (config.shake) {
-            shakeX = Math.sin(frameIndex * 0.25) * 1.5;
-            shakeY = Math.cos(frameIndex * 0.20) * 1.2;
-          }
-
-          const deepZoom = 1.08;
+          // 2. ENQUADRAMENTO E BLINDAGEM DE PIXELS
+          let shakeX = Math.sin(frameIndex * 0.25) * 1.5;
+          let shakeY = Math.cos(frameIndex * 0.20) * 1.2;
 
           ctx.save();
+          // APLICAÇÃO DE ZOOM PROFUNDO (BLINDAGEM DE MATRIZ)
+          // O valor 1.08 força um corte de bordas que altera o hash do arquivo final
+          const deepZoom = 1.08;
           ctx.translate(destX + destW / 2 + shakeX, destY + destH / 2 + shakeY);
           ctx.scale(deepZoom, deepZoom);
           ctx.translate(-(destX + destW / 2), -(destY + destH / 2));
-
-          if (config.mirror) {
-            ctx.scale(-1, 1);
-            ctx.drawImage(video, sx, sy, sw, sh, -destW, 0, destW, destH);
-          } else {
-            ctx.drawImage(video, sx, sy, sw, sh, 0, 0, destW, destH);
-          }
+          // DESENHO DO VÍDEO CENTRAL SEM ESPELHAMENTO DE FUNDO
+          ctx.drawImage(video, sx, sy, sw, sh, destX + shakeX, destY + shakeY, destW, destH);
           ctx.restore();
 
-          // CAMADA DE BLINDAGEM DE PIXEL INVISÍVEL
-          ctx.strokeStyle = 'rgba(0, 0, 0, 0.02)';
+          // 3. SOBREPOSIÇÃO DE ELEMENTO DE SEGURANÇA (MASCARAMENTO)
+          // Isso força o algoritmo a processar o vídeo como um elemento único edita-vel
+          ctx.strokeStyle = 'rgba(0, 0, 0, 0.02)'; // Máscara quase invisível que altera o hash de cor
           ctx.strokeRect(destX, destY, destW, destH);
 
+          // Painel translúcido do gancho, por CIMA do vídeo já em movimento —
+          // substitui a antiga tela opaca. Unificamos 'classified'/'breaking'/
+          // 'radar'/'dorama_card'/'dorama_question' num único painel de texto,
+          // já que a diferença entre eles nunca foi o problema de retenção.
           if (inIntro) {
             const panelY = TARGET_H * 0.34;
             const panelH = TARGET_H * 0.30;
-            ctx.fillStyle = 'rgba(3, 7, 18, 0.82)';
+            const grad = ctx.createLinearGradient(0, panelY, 0, panelY + panelH);
+            grad.addColorStop(0, 'rgba(3, 7, 18, 0)');
+            grad.addColorStop(0.25, 'rgba(3, 7, 18, 0.82)');
+            grad.addColorStop(0.75, 'rgba(3, 7, 18, 0.82)');
+            grad.addColorStop(1, 'rgba(3, 7, 18, 0)');
+            ctx.fillStyle = grad;
             ctx.fillRect(0, panelY, TARGET_W, panelH);
 
-            ctx.textAlign = 'center';
-            ctx.fillStyle = activeTab === 'found' ? '#ef4444' : '#f43f5e';
-            ctx.font = 'bold 20px sans-serif';
-            ctx.fillText('⚠ ATENÇÃO: ARQUIVO RARO', TARGET_W / 2, panelY + panelH * 0.32);
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 28px sans-serif';
-            ctx.fillText(currentTitle.toUpperCase(), TARGET_W / 2, panelY + panelH * 0.58);
+            const headlineByStyle = {
+              classified: '⚠ ATENÇÃO: ARQUIVO RARO',
+              breaking: '🔴 URGENTE / AO VIVO',
+              radar: 'SCANNER DE ANOMALIA ATIVO',
+              dorama_card: '🎬 RESUMO CINEMA & DORAMA',
+              dorama_question: 'O QUE VOCÊ FARIA?'
+            };
+            const accent = activeTab === 'found' ? '#ef4444' : '#f43f5e';
+            // Texto do gancho agora é sempre ANIMADO (nunca um frame parado):
+            // "pop" = zoom de entrada + respiração contínua; "typewriter" =
+            // título aparecendo letra por letra. Escolhido no seletor
+            // "Animação do Texto do Gancho".
+            drawAnimatedHookText(ctx, {
+              TARGET_W, panelY, panelH,
+              headline: headlineByStyle[config.introStyle] || (activeTab === 'found' ? '⚠ ATENÇÃO: ARQUIVO RARO' : '🎬 RESUMO CINEMA & DORAMA'),
+              title: currentTitle.toUpperCase(),
+              subtitle: (activeTab === 'dorama' && doramaHookSubtitle.value) ? doramaHookSubtitle.value : null,
+              accent,
+              elapsed,
+              introDuration,
+              animStyle: config.hookAnim || 'pop'
+            });
           }
 
           if (config.stego) {
@@ -2108,10 +2537,58 @@
             ctx.restore();
           }
 
-          if (activeTab === 'found' && config.captionStyle && config.captionText) {
-            renderTikTokCaptions(config.captionStyle, config.captionText, video.currentTime, video.duration, TARGET_H - 220);
+          const overlay = config.overlayStyle;
+          if (activeTab === 'found') {
+            if (overlay === 'rec_hud') {
+              if (Math.floor(Date.now() / 500) % 2 === 0) {
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath();
+                ctx.arc(60, 70, 7, 0, Math.PI * 2);
+                ctx.fill();
+              }
+              ctx.fillStyle = '#ffffff';
+              ctx.font = 'bold 18px monospace';
+              ctx.textAlign = 'left';
+              ctx.fillText('REC', 76, 76);
+              ctx.textAlign = 'center';
+              ctx.font = 'bold 22px sans-serif';
+              ctx.fillStyle = '#38bdf8';
+              ctx.fillText(currentTitle, TARGET_W / 2, 130);
+            }
+            if (config.captionStyle && config.captionText) {
+              renderTikTokCaptions(config.captionStyle, config.captionText, video.currentTime, video.duration, TARGET_H - 220);
+            }
+          } else {
+            if (overlay === 'cinema_top_split') {
+              ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+              ctx.fillRect(0, 30, TARGET_W, 65);
+              ctx.fillStyle = '#f43f5e';
+              ctx.font = 'bold 24px sans-serif';
+              ctx.textAlign = 'center';
+              ctx.fillText(currentTitle.toUpperCase(), TARGET_W / 2, 72);
+            } else if (overlay === 'netflix_style') {
+              const channelName = (config.channelName && config.channelName.trim()) ? config.channelName.trim().toUpperCase() : 'TOP CORTES';
+              ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+              ctx.fillRect(0, 40, TARGET_W, 60);
+              ctx.fillStyle = '#f43f5e';
+              ctx.font = '900 24px sans-serif';
+              ctx.textAlign = 'left';
+              fitText(ctx, channelName, 30, 78, TARGET_W * 0.5, 24);
+              ctx.fillStyle = '#fff';
+              ctx.font = 'bold 20px sans-serif';
+              ctx.textAlign = 'right';
+              fitText(ctx, currentTitle, TARGET_W - 30, 78, TARGET_W * 0.42, 20);
+            }
           }
+
+          // O próximo frame é disparado pelo 'tick' do worker (ver renderTicker.onmessage
+          // = render, acima) — não reagenda por si só como o requestAnimationFrame fazia.
         }
+
+        // Dispara o primeiro tick a ~30fps (33ms). O worker segue mandando 'tick'
+        // continuamente, mesmo com a aba minimizada/em segundo plano, até
+        // stopRenderTicker() ser chamado (fim do corte ou erro).
+        renderTicker.postMessage({ cmd: 'start', interval: 33 });
       };
     });
   }
@@ -2134,6 +2611,7 @@
         captionStyle: ctrl.captionStyle ? ctrl.captionStyle.value : 'none',
         captionText: ctrl.captionText ? ctrl.captionText.value : '',
         introStyle: ctrl.introStyle.value,
+        hookAnim: ctrl.hookAnim ? ctrl.hookAnim.value : 'pop',
         overlayStyle: ctrl.overlayStyle.value,
         channelName: ctrl.channelName ? ctrl.channelName.value : '',
         shake: ctrl.shake.checked,
@@ -2147,6 +2625,10 @@
       };
 
       try {
+        // Pede UM wake lock que cobre a fila inteira (mesmo padrão usado nas abas
+        // 3 e 4 — ver acquireWakeLock/releaseWakeLock), pra tela não apagar/dormir
+        // no meio de uma exportação longa.
+        await acquireWakeLock();
         for (let i = 0; i < queue.length; i++) {
           const currentTitle = incrementText(baseTitle, i);
           await processVideoItem(queue[i], currentTitle, i, queue.length, config);
@@ -2154,11 +2636,15 @@
         }
         status.innerText = `Processamento de ${queue.length} vídeo(s) concluído com sucesso!`;
       } catch (err) {
-        status.innerText = 'Ocorreu um erro ao produzir o vídeo.';
+        console.error('Erro ao produzir vídeo:', err);
+        status.innerText = 'Ocorreu um erro ao produzir o vídeo. Tente novamente.';
       } finally {
+        // Sempre reabilita o botão, mesmo se algo falhar no meio do processamento,
+        // para nunca mais precisar recarregar a página para tentar de novo.
         if (config.isCropActive && currentPreviewMode === 'overlay') cropBox.style.display = 'block';
         btn.disabled = false;
         isExportingVideo = false;
+        releaseWakeLock();
         document.querySelectorAll('.nav-btn').forEach(navBtn => navBtn.classList.remove('nav-locked'));
       }
     });
