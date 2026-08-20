@@ -2415,7 +2415,7 @@ video#sourceVideo { display: none; }
             <div class="social-transfer-card">
               <label class="checkbox-item" style="margin:0;">
                 <input type="checkbox" id="socialSendToEditorChk">
-                <span><strong>⚡ Enviar automaticamente para edição</strong><br><small>Depois do download, envia os vídeos para a aba escolhida, aplica o Modo Aprovação, ativa o Render Rápido e inicia o processamento.</small></span>
+                <span><strong>⚡ Enviar automaticamente para edição</strong><br><small>Envia os vídeos para a aba escolhida, aplica o Modo Aprovação sem ligar o desfoque manual, ativa o Render Rápido e inicia o processamento.</small></span>
               </label>
               <div id="socialEditorTargetWrap" style="display:none;">
                 <label for="socialEditorTarget">Enviar para:</label>
@@ -2445,7 +2445,7 @@ video#sourceVideo { display: none; }
                 <input type="url" id="cobaltApiUrl" placeholder="https://seu-backend.onrender.com">
                 <button type="button" class="social-secondary-btn" id="testCobaltBtn">Testar e salvar backend</button>
                 <div id="cobaltTestStatus" role="status" aria-live="polite"></div>
-                <p class="social-api-note">Depois de publicar, cole aqui apenas a URL mostrada pelo Render. Ela fica salva neste navegador. <a href="backend-setup.html" target="_blank">Abrir guia de instalação</a>.</p>
+                <p class="social-api-note">Depois de publicar, cole aqui apenas a URL mostrada pelo Render. Ela fica salva neste navegador. <a href="backend-setup.html" target="_blank">Guia de instalação</a> • <a href="YOUTUBE-COOKIES.md" target="_blank">Desbloquear YouTube no Render</a>.</p>
                 <p class="social-api-note">Use somente vídeos públicos que você possui ou tem autorização para salvar.</p>
               </div>
             </details>
@@ -7825,7 +7825,14 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
       // O fallback yt-dlp pode precisar baixar e unir vídeo+áudio no Render
       // antes de responder, então permitimos até 8 minutos para arquivos longos.
       const response = await fetchWithTimeout(mediaUrl, { cache: 'no-store' }, 8 * 60 * 1000);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      if (!response.ok) {
+        let detail = `HTTP ${response.status}`;
+        try {
+          const errorBody = await response.json();
+          detail = errorBody?.error || errorBody?.message || detail;
+        } catch (_) {}
+        throw new Error(detail);
+      }
       const blob = await response.blob();
       if (!blob.size) throw new Error('arquivo vazio');
       if (options.saveToDisk !== false) {
@@ -7886,6 +7893,14 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
     const container = target === 'found' ? tabFoundContent : tabDoramaContent;
     applyApprovalMode(container);
 
+    // No envio automático NÃO ligamos a máscara manual de desfoque. Sem uma
+    // análise visual confirmada, blurNorm pode apontar para qualquer região e
+    // esconder rosto/cena importante. O usuário ainda pode ativá-la e ajustar
+    // o quadrado amarelo manualmente antes de um processamento não automático.
+    const autoBlur = container.querySelector('.blur-chk');
+    if (autoBlur) autoBlur.checked = false;
+    blurBox.style.display = 'none';
+
     // O fast render é ligado explicitamente. Na Aba 1, desativamos a legenda
     // dinâmica automática somente neste fluxo para não obrigar o motor canvas.
     const fast = container.querySelector('.fast-chk');
@@ -7895,7 +7910,7 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
 
     const processBtn = container.querySelector('.process-btn');
     if (processBtn) processBtn.disabled = false;
-    status.innerText = `⚡ ${videos.length} vídeo(s) enviado(s) para a fila. Modo Aprovação aplicado e Render Rápido ativado. Iniciando...`;
+    status.innerText = `⚡ ${videos.length} vídeo(s) enviado(s) para a fila. Modo Aprovação aplicado, desfoque manual mantido desligado e Render Rápido ativado. Iniciando...`;
     window.showToast(`${videos.length} vídeo(s) enviado(s) para ${target === 'found' ? 'Aba 1' : 'Aba 2'}.`, 'success');
 
     // Dá tempo para o primeiro Blob montar os metadados/preview antes do clique.
@@ -7957,10 +7972,18 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
       renderSocialItems();
 
       if (wantsEditor && !editorFile) {
+        const backendReason = saved.error?.message || 'Arquivo não liberado para edição';
+        const youtubeNeedsLogin = /sign in|not a bot|cookies|login/i.test(backendReason);
         item.status = 'error';
-        item.error = 'Arquivo não liberado para edição';
+        item.error = youtubeNeedsLogin ? 'YouTube requer cookies no Render' : backendReason;
         renderSocialItems();
-        setSocialMessage(socialBatchStatus, `Não foi possível receber o arquivo como Blob para edição. Confira se o backend está conectado e tente novamente.`, true);
+        setSocialMessage(
+          socialBatchStatus,
+          youtubeNeedsLogin
+            ? 'O YouTube bloqueou o IP do Render. Adicione o arquivo youtube-cookies.txt em Environment > Secret Files e tente novamente.'
+            : `Não foi possível receber o arquivo para edição: ${backendReason}`,
+          true
+        );
         return { ok: false, editorFile: null };
       } else {
         let successMessage;
@@ -8176,7 +8199,7 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
     setSocialMessage(cobaltTestStatus, 'Acordando e testando o backend... No plano gratuito isso pode levar até 1 minuto.');
     try {
       const { endpoint } = getCobaltSettings();
-      const response = await fetchWithTimeout(endpoint + '/', {
+      const response = await fetchWithTimeout(endpoint + '/profile-health', {
         headers: { 'Accept': 'application/json' },
         cache: 'no-store'
       }, 90000);
@@ -8184,8 +8207,10 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
       const info = await response.json();
       try { localStorage.setItem('blind_social_backend_url', endpoint); }
       catch (_) {}
-      const version = info?.cobalt?.version || info?.version || 'ativa';
-      setSocialMessage(cobaltTestStatus, `✅ Backend conectado e salvo (${version}).`);
+      const cookieNote = info.youtubeCookies
+        ? 'Cookies do YouTube: ativos ✅'
+        : 'Cookies do YouTube: não configurados — podem ser necessários se o YouTube bloquear o Render.';
+      setSocialMessage(cobaltTestStatus, `✅ Backend conectado e salvo. ${cookieNote}`);
     } catch (error) {
       setSocialMessage(cobaltTestStatus, `Não conectou: ${error.message || error}. Confira a URL e aguarde o serviço terminar de iniciar.`, true);
     } finally {
