@@ -1901,32 +1901,302 @@
   // A CADA quadro. Isso maximiza a taxa de variação de pixel por quadro sem
   // ficar visível a olho nu, quebrando a leitura de hash perceptual (pHash) e
   // zerando o índice de duplicidade entre reuploads.
- // =========================================================================
-  // MOTOR REFORÇADO: ANTI-UNORIGINAL CONTENT, ANTI-STATIC & ACOUSTIC SHIELD
-  // =========================================================================
-
   function drawSubvisualNoise(ctx, intensity) {
-    const density = Math.round(110 * intensity);
+    const density = Math.round(90 * intensity);
     ctx.save();
-    // Injeção de ruído pseudo-aleatório contínuo de alta frequência
     for (let i = 0; i < density; i++) {
       const x = Math.random() * TARGET_W;
       const y = Math.random() * TARGET_H;
       const shade = Math.random() < 0.5 ? 255 : 0;
-      const alpha = 0.015 + Math.random() * 0.03;
+      const alpha = 0.01 + Math.random() * 0.025;
       ctx.fillStyle = `rgba(${shade},${shade},${shade},${alpha.toFixed(3)})`;
-      ctx.fillRect(x, y, 1.5, 1.5);
+      ctx.fillRect(x, y, 1, 1);
     }
     ctx.restore();
   }
 
+  function renderInteractivePreview() {
+    if (!video.videoWidth || activeTab === 'ai' || activeTab === 'downloader') return;
+    const ctrl = getActiveControls();
+    const currentTitle = ctrl.hookText.value.trim();
+
+    if (currentPreviewMode === 'intro') {
+      const introStyle = ctrl.introStyle.value;
+
+      if (introStyle === 'none') {
+        ctx.fillStyle = '#06080e';
+        ctx.fillRect(0, 0, TARGET_W, TARGET_H);
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = 'bold 24px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('(Gancho Inicial Desativado — recomendado)', TARGET_W / 2, TARGET_H / 2);
+        return;
+      }
+
+      // Preview agora reflete o que realmente sai no MP4 exportado: o vídeo já
+      // visível/em movimento (aqui mostramos o frame atual como aproximação,
+      // já que no export ele estará tocando) com um painel translúcido do
+      // gancho por cima — não mais uma tela 100% opaca e parada.
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, TARGET_W, TARGET_H);
+      const { mainX, mainY, mainW, mainH } = getVideoRenderLayout();
+      ctx.save();
+      ctx.globalAlpha = 0.25;
+      ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, -TARGET_W * 0.2, -TARGET_H * 0.1, TARGET_W * 1.4, TARGET_H * 1.2);
+      ctx.restore();
+      ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, mainX, mainY, mainW, mainH);
+
+      const panelY = TARGET_H * 0.34;
+      const panelH = TARGET_H * 0.30;
+      const grad = ctx.createLinearGradient(0, panelY, 0, panelY + panelH);
+      grad.addColorStop(0, 'rgba(3, 7, 18, 0)');
+      grad.addColorStop(0.25, 'rgba(3, 7, 18, 0.82)');
+      grad.addColorStop(0.75, 'rgba(3, 7, 18, 0.82)');
+      grad.addColorStop(1, 'rgba(3, 7, 18, 0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, panelY, TARGET_W, panelH);
+
+      ctx.textAlign = 'center';
+      if (activeTab === 'found') {
+        ctx.fillStyle = '#ef4444';
+        ctx.font = 'bold 20px sans-serif';
+        ctx.fillText('⚠ ATENÇÃO: ARQUIVO RARO', TARGET_W / 2, panelY + panelH * 0.32);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 28px sans-serif';
+        ctx.fillText(currentTitle.toUpperCase(), TARGET_W / 2, panelY + panelH * 0.58);
+      } else {
+        ctx.fillStyle = '#f43f5e';
+        ctx.font = 'bold 20px sans-serif';
+        ctx.fillText(introStyle === 'dorama_question' ? 'O QUE VOCÊ FARIA?' : '🎬 RESUMO CINEMA & DORAMA', TARGET_W / 2, panelY + panelH * 0.32);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 28px sans-serif';
+        ctx.fillText(currentTitle.toUpperCase(), TARGET_W / 2, panelY + panelH * 0.58);
+        if (doramaHookSubtitle.value) {
+          ctx.fillStyle = '#fbcfe8';
+          ctx.font = 'italic 18px sans-serif';
+          ctx.fillText(`"${doramaHookSubtitle.value}"`, TARGET_W / 2, panelY + panelH * 0.82);
+        }
+      }
+      return;
+    }
+
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, TARGET_W, TARGET_H);
+
+    const { mainX, mainY, mainW, mainH } = getVideoRenderLayout();
+
+    ctx.save();
+    if (activeTab === 'dorama') {
+      const colorStyle = doramaColorFilter.value;
+      if (colorStyle === 'warm_korea') ctx.filter = 'saturate(115%) contrast(105%) brightness(102%)';
+      else if (colorStyle === 'cold_thriller') ctx.filter = 'hue-rotate(180deg) saturate(90%) contrast(110%)';
+      else if (colorStyle === 'vintage_film') ctx.filter = 'sepia(20%) contrast(108%)';
+    }
+
+    ctx.globalAlpha = 0.25;
+    ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, -TARGET_W * 0.2, -TARGET_H * 0.1, TARGET_W * 1.4, TARGET_H * 1.2);
+    ctx.restore();
+
+    ctx.save();
+    ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, mainX, mainY, mainW, mainH);
+    ctx.restore();
+
+    ctx.strokeStyle = activeTab === 'found' ? 'rgba(56, 189, 248, 0.4)' : 'rgba(244, 63, 94, 0.4)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(mainX, mainY, mainW, mainH);
+
+    const overlay = ctrl.overlayStyle.value;
+
+    if (activeTab === 'found') {
+      if (overlay === 'rec_hud') {
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath();
+        ctx.arc(60, 70, 7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 18px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText('REC', 76, 76);
+        ctx.textAlign = 'center';
+        ctx.font = 'bold 22px sans-serif';
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillText(currentTitle, TARGET_W / 2, 130);
+      }
+      if (ctrl.captionStyle && ctrl.captionText) {
+        renderTikTokCaptions(ctrl.captionStyle.value, ctrl.captionText.value, video.currentTime || 3, video.duration || 10, TARGET_H - 220);
+      }
+    } else {
+      if (overlay === 'cinema_top_split') {
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+        ctx.fillRect(0, 30, TARGET_W, 65);
+        ctx.fillStyle = '#f43f5e';
+        ctx.font = 'bold 24px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(currentTitle.toUpperCase(), TARGET_W / 2, 72);
+      } else if (overlay === 'netflix_style') {
+        const channelName = (ctrl.channelName && ctrl.channelName.value.trim()) ? ctrl.channelName.value.trim().toUpperCase() : 'TOP CORTES';
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(0, 40, TARGET_W, 60);
+        ctx.fillStyle = '#f43f5e';
+        ctx.font = '900 24px sans-serif';
+        ctx.textAlign = 'left';
+        fitText(ctx, channelName, 30, 78, TARGET_W * 0.5, 24);
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 20px sans-serif';
+        ctx.textAlign = 'right';
+        fitText(ctx, currentTitle, TARGET_W - 30, 78, TARGET_W * 0.42, 20);
+      }
+    }
+  }
+
+  let isDragging = false, activeHandle = null, startX, startY, startLeft, startTop, startW, startH;
+
+  cropBox.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    startX = e.clientX;
+    startY = e.clientY;
+    startLeft = cropBox.offsetLeft;
+    startTop = cropBox.offsetTop;
+    startW = cropBox.offsetWidth;
+    startH = cropBox.offsetHeight;
+
+    if (e.target.classList.contains('handle')) activeHandle = e.target.dataset.handle;
+    else isDragging = true;
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+  });
+
+  function onPointerMove(e) {
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    const { mainX, mainY, mainW, mainH } = getVideoRenderLayout();
+    const wrapW = previewWrapper.clientWidth;
+    const wrapH = previewWrapper.clientHeight;
+    const scaleX = wrapW / TARGET_W;
+    const scaleY = wrapH / TARGET_H;
+
+    const vLeft = mainX * scaleX;
+    const vTop = mainY * scaleY;
+    const vRight = (mainX + mainW) * scaleX;
+    const vBottom = (mainY + mainH) * scaleY;
+
+    if (isDragging) {
+      cropBox.style.left = `${Math.max(vLeft, Math.min(vRight - startW, startLeft + dx))}px`;
+      cropBox.style.top = `${Math.max(vTop, Math.min(vBottom - startH, startTop + dy))}px`;
+    } else if (activeHandle) {
+      if (activeHandle.includes('r')) cropBox.style.width = `${Math.max(25, Math.min(vRight - startLeft, startW + dx))}px`;
+      if (activeHandle.includes('b')) cropBox.style.height = `${Math.max(25, Math.min(vBottom - startTop, startH + dy))}px`;
+      if (activeHandle.includes('l')) {
+        const newW = Math.max(25, startW - dx);
+        const newLeft = startLeft + dx;
+        if (newLeft >= vLeft && newW >= 25) {
+          cropBox.style.left = `${newLeft}px`;
+          cropBox.style.width = `${newW}px`;
+        }
+      }
+      if (activeHandle.includes('t')) {
+        const newH = Math.max(25, startH - dy);
+        const newTop = startTop + dy;
+        if (newTop >= vTop && newH >= 25) {
+          cropBox.style.top = `${newTop}px`;
+          cropBox.style.height = `${newH}px`;
+        }
+      }
+    }
+    updateNormalizedCrop();
+  }
+
+  function onPointerUp() {
+    isDragging = false;
+    activeHandle = null;
+    window.removeEventListener('pointermove', onPointerMove);
+    window.removeEventListener('pointerup', onPointerUp);
+    updateNormalizedCrop();
+  }
+
+  function incrementText(baseText, step) {
+    const match = baseText.match(/(.*?)(\d+)(\D*)$/);
+    if (!match) return step === 0 ? baseText : `${baseText} #${step + 1}`;
+    const prefix = match[1];
+    const numStr = match[2];
+    const suffix = match[3];
+    const currentNum = parseInt(numStr, 10);
+    const newNum = currentNum + step;
+    const formattedNum = String(newNum).padStart(numStr.length, '0');
+    return `${prefix}${formattedNum}${suffix}`;
+  }
+
+  function getOptimalMimeType() {
+    const types = [
+      'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+      'video/mp4;codecs=avc1.4d401f,mp4a.40.2',
+      'video/mp4;codecs=h264,aac',
+      'video/mp4',
+      'video/webm;codecs=h264',
+      'video/webm;codecs=vp9,opus',
+      'video/webm'
+    ];
+    for (const t of types) {
+      if (MediaRecorder.isTypeSupported(t)) return t;
+    }
+    return '';
+  }
+
+  // O requestAnimationFrame do navegador é throttlado/pausado quando a aba fica
+  // minimizada ou em segundo plano — o que travava a exportação (abas "Found" e
+  // "Dorama") bem no meio do processo, sempre que o usuário trocava de aba ou
+  // minimizava a janela. Um Web Worker não sofre esse throttling da mesma forma
+  // (não é um contexto de documento/aba), então usamos um worker rodando um
+  // setInterval simples como "metrônomo": ele só manda um "tick" pra thread
+  // principal, que continua sendo quem de fato desenha no canvas (Workers não
+  // têm acesso a DOM/canvas 2D com <video> como fonte). Cada produção de vídeo
+  // cria e derruba seu próprio worker.
+  function createRenderTicker() {
+    const workerCode = `
+      let timer = null;
+      self.onmessage = (e) => {
+        const msg = e.data || {};
+        if (msg.cmd === 'start') {
+          if (timer) clearInterval(timer);
+          timer = setInterval(() => self.postMessage('tick'), msg.interval || 33);
+        } else if (msg.cmd === 'stop') {
+          if (timer) { clearInterval(timer); timer = null; }
+        }
+      };
+    `;
+    const blobUrl = URL.createObjectURL(new Blob([workerCode], { type: 'application/javascript' }));
+    const worker = new Worker(blobUrl);
+    // O worker guarda uma referência à própria blob URL só pra facilitar a
+    // revogação depois de terminado (evita vazar URLs de objeto).
+    worker._blobUrl = blobUrl;
+    return worker;
+  }
+
+  // O elemento <video> só pode ser conectado UMA ÚNICA VEZ a um MediaElementSourceNode
+  // durante toda a vida da página. Criar isso de novo a cada produção (como era antes)
+  // lança um erro na 2ª produção em diante e travava o fluxo. Por isso o contexto de
+  // áudio e o "source" são criados uma vez só e reaproveitados em todas as produções.
+  let sharedAudioCtx = null;
+  let sharedAudioSource = null;
+  function getSharedAudioSource() {
+    if (!sharedAudioCtx) {
+      sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      sharedAudioSource = sharedAudioCtx.createMediaElementSource(video);
+    }
+    if (sharedAudioCtx.state === 'suspended') sharedAudioCtx.resume();
+    return { audioCtx: sharedAudioCtx, audioSource: sharedAudioSource };
+  }
+
   function processVideoItem(file, currentTitle, index, total, config) {
     return new Promise((resolve) => {
-      status.innerText = `Processando (${index + 1}/${total}): "${currentTitle}"...`;
+      status.innerText = `Renderizando (${index + 1}/${total}): "${currentTitle}"...`;
       setSharedVideoSource(file);
       video.muted = false;
       video.load();
 
+      // Se algo impedir o vídeo de carregar (arquivo corrompido, etc.), garante
+      // que a Promise resolva mesmo assim, para o botão nunca ficar travado.
       video.onerror = () => {
         console.error('Erro ao carregar o vídeo para produção.');
         resolve();
@@ -1944,36 +2214,46 @@
           audioSource = shared.audioSource;
           audioDest = audioCtx.createMediaStreamDestination();
 
-          // 1. Blindagem Acústica: High-Shelf em 11.2 kHz para descaracterizar espectrograma
           const bq = audioCtx.createBiquadFilter();
           bq.type = "highshelf";
-          bq.frequency.value = 11200;
-          bq.gain.value = -3.5;
+          bq.frequency.value = 11500;
+          bq.gain.value = -3.0;
 
           duckingGain = audioCtx.createGain();
           duckingGain.gain.value = (activeTab === 'dorama' && config.ducking) ? 0.18 : 1.0;
 
+          // Ganho do áudio original do vídeo — controlado pelo slider "Volume do
+          // Vídeo Original" (0% a 300%, padrão 150%). Fica isolado do ducking e
+          // do volume da música de fundo, que têm seus próprios ganhos.
           const videoVolumeGain = audioCtx.createGain();
           videoVolumeGain.gain.value = Number.isFinite(config.videoVolume) ? config.videoVolume : 1.5;
 
+          // Desconecta ligações de produções anteriores antes de refazer a cadeia,
+          // senão o áudio continuaria sendo enviado também para streams antigas.
           audioSource.disconnect();
           audioSource.connect(bq);
           bq.connect(videoVolumeGain);
           videoVolumeGain.connect(duckingGain);
           duckingGain.connect(audioDest);
 
-          // 2. Infrassom Senoidal (18.2 Hz) para invalidar Acoustic Fingerprint
           if (config.audio) {
             osc = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
             osc.type = 'sine';
             osc.frequency.value = 18.2;
-            gainNode.gain.value = 0.038;
+            gainNode.gain.value = 0.035;
             osc.connect(gainNode);
             gainNode.connect(audioDest);
             osc.start();
           }
 
+          // Música de fundo (opcional): decodifica o arquivo escolhido pelo
+          // usuário e injeta direto no mesmo destino de áudio da gravação —
+          // não depende de tocar um <audio> visível na página, então funciona
+          // mesmo com a aba em segundo plano. Toca em loop pra cobrir cortes
+          // de qualquer duração e entra numa gainNode própria (volume separado
+          // do áudio original do vídeo, que já passa pelo highshelf/ducking
+          // acima).
           if (config.bgmFile) {
             try {
               const audioBuf = await getDecodedBgmBuffer(audioCtx, config.bgmFile);
@@ -1998,13 +2278,15 @@
         const mimeType = getOptimalMimeType();
         const mediaRecorder = new MediaRecorder(stream, {
           mimeType: mimeType || undefined,
-          videoBitsPerSecond: 9500000 // 9.5 Mbps (High Bitrate anti-compressão)
+          videoBitsPerSecond: 7500000
         });
 
         mediaRecorder.ondataavailable = (e) => {
           if (e.data.size > 0) recordedChunks.push(e.data);
         };
 
+        // Se o MediaRecorder falhar no meio do caminho, resolve mesmo assim
+        // em vez de deixar a fila travada para sempre.
         mediaRecorder.onerror = (e) => {
           console.error('Erro no MediaRecorder:', e);
           stopRenderTicker();
@@ -2020,17 +2302,31 @@
 
           const blob = new Blob(recordedChunks, { type: 'video/mp4' });
           const safeName = currentTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-          const filename = `${activeTab}_pro_${safeName}_${Date.now()}.mp4`;
+          const filename = `${activeTab}_${safeName}_${Date.now()}.mp4`;
           window.saveProcessedBlob(blob, filename).then(resolve).catch(resolve);
         };
 
         mediaRecorder.start();
 
-        const introDuration = (config.introStyle === 'none') ? 0 : 1.2;
+        // ANTES: introDuration = 2.2s de tela 100% estática (só um "pulse" de
+        // 1.5px no texto) antes do vídeo sequer começar a tocar. Analisando as
+        // métricas reais de um vídeo publicado com essa opção: retenção média
+        // de 9%, e a MAIORIA dos espectadores abandonou em 0:01 — ou seja,
+        // ainda dentro da introdução estática. Uma tela parada nos primeiros
+        // instantes se parece com um anúncio/tela de carregamento e é
+        // exatamente o gatilho que faz a pessoa passar o vídeo. Corrigido:
+        // o vídeo já começa a tocar (com leve zoom) desde o frame 1, o texto
+        // do gancho fica sobre um painel translúcido por cima da cena real, e
+        // a duração cai para ~1s (ainda dá tempo de ler o gancho, sem
+        // congelar a tela). Ver também os selects de "Estilo do Gancho
+        // Inicial" no HTML, que agora vêm com "Nenhum" selecionado por padrão.
+        const introDuration = (config.introStyle === 'none') ? 0 : 1.0;
         const startTime = Date.now();
         let videoStarted = false;
         let frameIndex = 0;
-        const introParticles = createIntroParticles(40);
+        // Conjunto de partículas do "Anti-Static Filter" — gerado uma vez por
+        // vídeo processado, com posições/velocidades aleatórias próprias.
+        const introParticles = createIntroParticles(26);
 
         const effectiveCrop = config.isCropActive ? cropNorm : { x: 0, y: 0, w: 1, h: 1 };
         const sx = video.videoWidth * effectiveCrop.x;
@@ -2040,6 +2336,11 @@
 
         const { mainX: destX, mainY: destY, mainW: destW, mainH: destH } = getVideoRenderLayout();
 
+        // Ticker via Web Worker: substitui o requestAnimationFrame como "pulso" do
+        // loop (ver createRenderTicker acima) — não trava quando a aba vai pra
+        // segundo plano. renderStopped evita chamar render() de novo depois que o
+        // worker já recebeu o comando de parar (o postMessage de 'stop' não é
+        // instantâneo, pode haver um 'tick' em trânsito).
         let renderStopped = false;
         const renderTicker = createRenderTicker();
         function stopRenderTicker() {
@@ -2050,6 +2351,9 @@
           URL.revokeObjectURL(renderTicker._blobUrl);
         }
 
+        // Envolve o loop de desenho em try/catch: se algum frame falhar, paramos a
+        // gravação (ou resolvemos a Promise) em vez de deixar o processo travado
+        // silenciosamente, exigindo recarregar a página.
         function render() {
           if (renderStopped) return;
           try {
@@ -2071,10 +2375,11 @@
           frameIndex++;
           const inIntro = introDuration > 0 && elapsed < introDuration;
 
-          // 3. Micro-alteração temporal contínua (+4.5% speed)
+          // O vídeo agora começa a tocar já no primeiro frame (mesmo durante o
+          // gancho), pra nunca existir um trecho 100% parado no início do MP4.
           if (!videoStarted) {
             video.currentTime = config.cutStart;
-            video.playbackRate = 1.045;
+            video.playbackRate = 1.04;
             video.play();
             videoStarted = true;
           }
@@ -2088,75 +2393,74 @@
           ctx.fillStyle = '#000000';
           ctx.fillRect(0, 0, TARGET_W, TARGET_H);
 
-          // 4. Micro-oscilação angular e de fluxo óptico
           let shakeX = 0, shakeY = 0;
           if (config.shake) {
-            shakeX = Math.sin(frameIndex * 0.28) * 1.8;
-            shakeY = Math.cos(frameIndex * 0.22) * 1.4;
+            shakeX = Math.sin(frameIndex * 0.25) * 1.5;
+            shakeY = Math.cos(frameIndex * 0.20) * 1.2;
           }
 
-          // 5. Micro-zoom senoidal perpétuo (102% a 106%) que destrói o pHash visual
-          const dynamicZoom = 1.02 + Math.sin(frameIndex * 0.04) * 0.035;
-          const introZoom = inIntro ? (1 + 0.05 * (elapsed / introDuration)) : 1;
-          const totalZoom = dynamicZoom * introZoom;
+          // Leve zoom-in (efeito Ken Burns) enquanto o gancho está na tela —
+          // reforça a sensação de movimento contínuo em vez de frame congelado.
+          const introZoom = inIntro ? 1 + 0.06 * (elapsed / introDuration) : 1;
 
-          // Fundo Dinâmico Ambient Flare
           ctx.save();
-          ctx.globalAlpha = 0.28;
-          const bgW = TARGET_W * 1.38;
-          const bgH = TARGET_H * 1.25;
-          ctx.drawImage(video, sx, sy, sw, sh, (TARGET_W - bgW) / 2, (TARGET_H - bgH) / 2, bgW, bgH);
+          ctx.globalAlpha = 0.25;
+          ctx.drawImage(video, sx, sy, sw, sh, -TARGET_W * 0.2, -TARGET_H * 0.1, TARGET_W * 1.4, TARGET_H * 1.2);
           ctx.restore();
 
-          // Renderização Principal com Matriz Espacial + Zoom Contínuo
           ctx.save();
           if (config.mirror) {
             ctx.translate(destX + destW + shakeX, destY + shakeY);
             ctx.scale(-1, 1);
             ctx.translate(destW / 2, destH / 2);
-            ctx.scale(totalZoom, totalZoom);
+            ctx.scale(introZoom, introZoom);
             ctx.translate(-destW / 2, -destH / 2);
             ctx.drawImage(video, sx, sy, sw, sh, 0, 0, destW, destH);
           } else {
             ctx.translate(destX + destW / 2 + shakeX, destY + destH / 2 + shakeY);
-            ctx.scale(totalZoom, totalZoom);
+            ctx.scale(introZoom, introZoom);
             ctx.translate(-(destX + destW / 2), -(destY + destH / 2));
             ctx.drawImage(video, sx, sy, sw, sh, destX + shakeX, destY + shakeY, destW, destH);
           }
           ctx.restore();
 
-          ctx.strokeStyle = activeTab === 'found' ? 'rgba(56, 189, 248, 0.45)' : 'rgba(244, 63, 94, 0.45)';
+          ctx.strokeStyle = activeTab === 'found' ? 'rgba(56, 189, 248, 0.4)' : 'rgba(244, 63, 94, 0.4)';
           ctx.lineWidth = 2;
           ctx.strokeRect(destX + shakeX, destY + shakeY, destW, destH);
 
-          // 6. Anti-Static Hook: Movimento Real com partículas e pulso
+          // Painel translúcido do gancho, por CIMA do vídeo já em movimento —
+          // substitui a antiga tela opaca. Unificamos 'classified'/'breaking'/
+          // 'radar'/'dorama_card'/'dorama_question' num único painel de texto,
+          // já que a diferença entre eles nunca foi o problema de retenção.
           if (inIntro) {
             const panelY = TARGET_H * 0.34;
             const panelH = TARGET_H * 0.30;
             const grad = ctx.createLinearGradient(0, panelY, 0, panelY + panelH);
             grad.addColorStop(0, 'rgba(3, 7, 18, 0)');
-            grad.addColorStop(0.25, 'rgba(3, 7, 18, 0.85)');
-            grad.addColorStop(0.75, 'rgba(3, 7, 18, 0.85)');
+            grad.addColorStop(0.25, 'rgba(3, 7, 18, 0.82)');
+            grad.addColorStop(0.75, 'rgba(3, 7, 18, 0.82)');
             grad.addColorStop(1, 'rgba(3, 7, 18, 0)');
             ctx.fillStyle = grad;
             ctx.fillRect(0, panelY, TARGET_W, panelH);
 
+            // Partículas dinâmicas + ruído analógico próprios da tela de
+            // abertura — nunca deixam o quadro "parado" nos primeiros
+            // segundos (Anti-Static Filter).
             drawIntroParticles(ctx, introParticles, elapsed, panelY, panelH);
-            drawSubvisualNoise(ctx, 1.8);
-
-            // Linha de varredura contínua
-            const scanY = (frameIndex * 14) % TARGET_H;
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.035)';
-            ctx.fillRect(0, scanY, TARGET_W, 16);
+            drawSubvisualNoise(ctx, 1.6);
 
             const headlineByStyle = {
-              classified: '⚠ REGISTRO DESCLASSIFICADO',
+              classified: '⚠ ATENÇÃO: ARQUIVO RARO',
               breaking: '🔴 URGENTE / AO VIVO',
               radar: 'SCANNER DE ANOMALIA ATIVO',
               dorama_card: '🎬 RESUMO CINEMA & DORAMA',
               dorama_question: 'O QUE VOCÊ FARIA?'
             };
             const accent = activeTab === 'found' ? '#ef4444' : '#f43f5e';
+
+            // Micro-pulsação contínua e sutil nos textos (nunca 100%
+            // estático): cada linha respira numa frequência levemente
+            // diferente, com o texto sempre centralizado no seu próprio eixo.
             const pulse = (freq, amp) => 1 + amp * Math.sin(elapsed * freq);
 
             ctx.textAlign = 'center';
@@ -2165,19 +2469,19 @@
             ctx.save();
             const headlineY = panelY + panelH * 0.32;
             ctx.translate(TARGET_W / 2, headlineY);
-            ctx.scale(pulse(6, 0.025), pulse(6, 0.025));
+            ctx.scale(pulse(6, 0.02), pulse(6, 0.02));
             ctx.fillText(
-              headlineByStyle[config.introStyle] || (activeTab === 'found' ? '⚠ REGISTRO DESCLASSIFICADO' : '🎬 RESUMO CINEMA & DORAMA'),
+              headlineByStyle[config.introStyle] || (activeTab === 'found' ? '⚠ ATENÇÃO: ARQUIVO RARO' : '🎬 RESUMO CINEMA & DORAMA'),
               0, 0
             );
             ctx.restore();
 
             ctx.fillStyle = '#ffffff';
-            ctx.font = '900 28px sans-serif';
+            ctx.font = 'bold 28px sans-serif';
             ctx.save();
             const titleY = panelY + panelH * 0.58;
             ctx.translate(TARGET_W / 2, titleY);
-            ctx.scale(pulse(4.5, 0.02), pulse(4.5, 0.02));
+            ctx.scale(pulse(4.5, 0.018), pulse(4.5, 0.018));
             ctx.fillText(currentTitle.toUpperCase(), 0, 0);
             ctx.restore();
 
@@ -2187,26 +2491,24 @@
               ctx.save();
               const subtitleY = panelY + panelH * 0.82;
               ctx.translate(TARGET_W / 2, subtitleY);
-              ctx.scale(pulse(5.2, 0.018), pulse(5.2, 0.018));
+              ctx.scale(pulse(5.2, 0.015), pulse(5.2, 0.015));
               ctx.fillText(`"${doramaHookSubtitle.value}"`, 0, 0);
               ctx.restore();
             }
           }
 
-          // 7. Esteganografia de Luminância quadro a quadro
           if (config.stego) {
-            const grainAlpha = (frameIndex % 2 === 0) ? 0.024 : 0.015;
-            ctx.fillStyle = (frameIndex % 3 === 0)
-              ? `rgba(255, 255, 255, ${grainAlpha})`
-              : `rgba(0, 0, 0, ${grainAlpha})`;
-            ctx.fillRect(0, 0, TARGET_W, TARGET_H);
-            drawSubvisualNoise(ctx, inIntro ? 1.2 : 0.85);
+            // Ruído sub-visual em todo quadro (não só no intro), com posição
+            // e opacidade recalculadas do zero a cada frame — maximiza a
+            // taxa de variação de pixel/quadro pra quebrar a leitura de hash
+            // perceptual (pHash) e zerar o índice de duplicidade.
+            drawSubvisualNoise(ctx, inIntro ? 1 : 0.7);
           }
 
           const overlay = config.overlayStyle;
           if (activeTab === 'found') {
             if (overlay === 'rec_hud') {
-              if (Math.floor(Date.now() / 450) % 2 === 0) {
+              if (Math.floor(Date.now() / 500) % 2 === 0) {
                 ctx.fillStyle = '#ef4444';
                 ctx.beginPath();
                 ctx.arc(60, 70, 7, 0, Math.PI * 2);
@@ -2226,7 +2528,7 @@
             }
           } else {
             if (overlay === 'cinema_top_split') {
-              ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+              ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
               ctx.fillRect(0, 30, TARGET_W, 65);
               ctx.fillStyle = '#f43f5e';
               ctx.font = 'bold 24px sans-serif';
@@ -2234,7 +2536,7 @@
               ctx.fillText(currentTitle.toUpperCase(), TARGET_W / 2, 72);
             } else if (overlay === 'netflix_style') {
               const channelName = (config.channelName && config.channelName.trim()) ? config.channelName.trim().toUpperCase() : 'TOP CORTES';
-              ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+              ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
               ctx.fillRect(0, 40, TARGET_W, 60);
               ctx.fillStyle = '#f43f5e';
               ctx.font = '900 24px sans-serif';
@@ -2246,12 +2548,19 @@
               fitText(ctx, currentTitle, TARGET_W - 30, 78, TARGET_W * 0.42, 20);
             }
           }
+
+          // O próximo frame é disparado pelo 'tick' do worker (ver renderTicker.onmessage
+          // = render, acima) — não reagenda por si só como o requestAnimationFrame fazia.
         }
 
+        // Dispara o primeiro tick a ~30fps (33ms). O worker segue mandando 'tick'
+        // continuamente, mesmo com a aba minimizada/em segundo plano, até
+        // stopRenderTicker() ser chamado (fim do corte ou erro).
         renderTicker.postMessage({ cmd: 'start', interval: 33 });
       };
     });
   }
+
   document.querySelectorAll('#tabFoundContent .process-btn, #tabDoramaContent .process-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       const queue = getCurrentQueue();
