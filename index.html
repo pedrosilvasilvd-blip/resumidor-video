@@ -4184,10 +4184,10 @@ video#sourceVideo { display: none; }
     if (!config.blur) {
       notes.push('🔳 Máscara de desfoque desligada — se o vídeo de origem tiver logo ou QR code, ative para cobrir.');
     }
-    if (config.pitchSemitones === 0 && activeTab !== 'dorama') {
+    if (config.pitchSemitones === 0 && activeTab !== 'dorama' && !config.autoApprovalPreset) {
       warnings.push('🎵 Áudio sem alteração de altura — se houver música protegida, o Content ID pode reconhecer. Ative o "Desafinar Áudio".');
-    } else if (activeTab === 'dorama') {
-      notes.push('🎵 Dorama: áudio mantido obrigatoriamente no tom original (0 semitons).');
+    } else if (activeTab === 'dorama' || config.autoApprovalPreset) {
+      notes.push('🎵 Áudio mantido em 0 semitons para preservar a sincronia exata com o vídeo.');
     }
     const outDur = Math.max(0, (videoDuration || 0) - config.cutStart - config.cutEnd);
     if (videoDuration > 0 && outDur < 5) {
@@ -4319,9 +4319,11 @@ video#sourceVideo { display: none; }
         videoVolume: ctrl.videoVolume ? parseFloat(ctrl.videoVolume.value) : 1.5,
         // Defesa dupla: mesmo que o HTML seja alterado pelo navegador, Dorama
         // nunca sai com pitch diferente de zero.
-        pitchSemitones: activeTab === 'dorama'
+        // No fluxo automático o pitch fica sempre em zero para preservar a
+        // duração e a sincronia exata entre áudio e vídeo nas duas abas.
+        pitchSemitones: autoApprovalPreset
           ? 0
-          : (autoApprovalPreset ? 1 : (ctrl.pitch ? parseFloat(ctrl.pitch.value) : 0)),
+          : (activeTab === 'dorama' ? 0 : (ctrl.pitch ? parseFloat(ctrl.pitch.value) : 0)),
         autoApprovalPreset
       };
 
@@ -4842,7 +4844,13 @@ video#sourceVideo { display: none; }
         } else {
             vf.push(`scale=${mainW}:${mainH}`);
         }
-        if (F !== 1) vf.unshift(`setpts=PTS/${F.toFixed(5)}`);
+        // Zera o timestamp de cada stream antes da exportação. Sem isso, vídeos
+        // vindos de Shorts/CDNs podem carregar um offset inicial diferente do
+        // áudio e sair progressivamente fora de sincronia.
+        vf.unshift('fps=30');
+        vf.unshift(F !== 1
+            ? `setpts=(PTS-STARTPTS)/${F.toFixed(5)}`
+            : 'setpts=PTS-STARTPTS');
         vf.push(`pad=${TARGET_W}:${TARGET_H}:${mainX}:${mainY}:black`);
         // Ruído depois do scale/pad para não ser suavizado pelo redimensionamento.
         if (opts.stego) vf.push('noise=alls=8:allf=t+u');
@@ -4895,12 +4903,18 @@ video#sourceVideo { display: none; }
         // ---- áudio (índices de input calculados dinamicamente) ----
         const audioParts = [];
         const mixInputs = [];
-        let a0 = 'volume=' + (Number.isFinite(opts.videoVolume) ? opts.videoVolume : 1.5)
+        let a0 = 'asetpts=PTS-STARTPTS,volume=' + (Number.isFinite(opts.videoVolume) ? opts.videoVolume : 1.5)
             + (opts.ducking || opts.narrationFile ? '*0.22' : '');
         if (opts.audioShield) {
             a0 += ',highshelf=f=11200:g=-3.5,equalizer=f=18.2:width_type=h:width=4:g=2';
         }
-        if (F !== 1) a0 += `,asetrate=${Math.round(48000 * F)},aresample=48000`;
+        // Primeiro normaliza qualquer entrada (44.1k, 48k, 24k...) para 48k.
+        // O código anterior aplicava asetrate como se TODA fonte já fosse 48k,
+        // o que alterava a duração do áudio e causava desalinhamento.
+        if (F !== 1) {
+            a0 += `,aresample=48000,asetrate=${Math.round(48000 * F)},aresample=48000`;
+        }
+        a0 += ',aresample=async=1:first_pts=0';
         audioParts.push(`[0:a]${a0}[a0]`);
         mixInputs.push('[a0]');
 
@@ -4910,14 +4924,16 @@ video#sourceVideo { display: none; }
             const bgmName = 'fast_bgm.' + (opts.bgmFile.name.split('.').pop() || 'mp3');
             await ff.writeFile(bgmName, (await fetchFile(opts.bgmFile)).slice());
             const bv = Number.isFinite(opts.bgmVolume) ? opts.bgmVolume : 0.35;
-            audioParts.push(`[${nextAudioInput}:a]volume=${bv}[a${nextAudioInput}]`);
+            audioParts.push(`[${nextAudioInput}:a]asetpts=PTS-STARTPTS,volume=${bv},aresample=async=1:first_pts=0[a${nextAudioInput}]`);
             mixInputs.push(`[a${nextAudioInput}]`);
             nextAudioInput++;
         }
         if (opts.narrationFile) {
             const narrName = 'fast_narr.wav';
             await ff.writeFile(narrName, (await fetchFile(opts.narrationFile)).slice());
-            const nChain = F !== 1 ? `asetrate=${Math.round(48000 * F)},aresample=48000,volume=1.0` : 'volume=1.0';
+            const nChain = F !== 1
+                ? `asetpts=PTS-STARTPTS,aresample=48000,asetrate=${Math.round(48000 * F)},aresample=48000,volume=1.0,aresample=async=1:first_pts=0`
+                : 'asetpts=PTS-STARTPTS,volume=1.0,aresample=async=1:first_pts=0';
             audioParts.push(`[${nextAudioInput}:a]${nChain}[a${nextAudioInput}]`);
             mixInputs.push(`[a${nextAudioInput}]`);
             nextAudioInput++;
@@ -7927,6 +7943,8 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
     const autoBlur = container.querySelector('.blur-chk');
     if (autoBlur) autoBlur.checked = false;
     blurBox.style.display = 'none';
+    const autoPitch = container.querySelector('.pitch-select');
+    if (autoPitch) autoPitch.value = '0';
 
     // O fast render é ligado explicitamente. Na Aba 1, desativamos a legenda
     // dinâmica automática somente neste fluxo para não obrigar o motor canvas.
@@ -7941,7 +7959,7 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
     // força as camadas no objeto de configuração, sem depender apenas do estado
     // visual dos checkboxes.
     container.dataset.autoApprovalPreset = '1';
-    status.innerText = `⚡ ${videos.length} vídeo(s) enviado(s) para a fila. Modo Aprovação aplicado, desfoque manual mantido desligado e Render Rápido ativado. Iniciando...`;
+    status.innerText = `⚡ ${videos.length} vídeo(s) na fila. Blindagem automática forçada, desfoque desligado, áudio sincronizado em 0 semitons e Render Rápido ativado. Iniciando...`;
     window.showToast(`${videos.length} vídeo(s) enviado(s) para ${target === 'found' ? 'Aba 1' : 'Aba 2'}.`, 'success');
 
     // Dá tempo para o primeiro Blob montar os metadados/preview antes do clique.
