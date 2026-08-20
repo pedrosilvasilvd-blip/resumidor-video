@@ -415,7 +415,7 @@ body {
 }
 
 /* =========================================================================
-   PREVIEW MONITOR COLUMN (ABAS 1 E 2)
+   PREVIEW MONITOR COLUMN (ABAS 1, 2 E 3)
    ========================================================================= */
 .preview-column {
   background: var(--panel-bg);
@@ -532,6 +532,48 @@ canvas {
   display: block;
 }
 
+/* Prévia dedicada da Aba 3 dentro do mesmo monitor das Abas 1 e 2 */
+#aiVideoPreview {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: none;
+  background: #020408;
+  border: 0;
+  border-radius: 0;
+  margin: 0;
+}
+#aiPreviewEmpty {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(129, 140, 248, 0.12), transparent 42%),
+    #020408;
+}
+#aiVideoPreviewInfo {
+  display: none;
+  width: 100%;
+  text-align: center;
+  font-size: 0.74rem;
+  color: #a5b4fc;
+  margin: 10px 0 0;
+  line-height: 1.4;
+  word-break: break-word;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(129, 140, 248, 0.2);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
 /* Bounding Boxes */
 #cropBox {
   position: absolute;
@@ -590,7 +632,7 @@ canvas {
 }
 
 /* =========================================================================
-   CONTROLS COLUMN (ABAS 1 E 2) & CARDS SYSTEM
+   CONTROLS COLUMN (ABAS 1, 2 E 3) & CARDS SYSTEM
    ========================================================================= */
 .controls-column {
   background: var(--panel-bg);
@@ -636,6 +678,11 @@ canvas {
   border: 1px solid rgba(244, 63, 94, 0.3);
   color: #fb7185;
 }
+.module-badge.indigo {
+  background: rgba(129, 140, 248, 0.15);
+  border: 1px solid rgba(129, 140, 248, 0.3);
+  color: #a5b4fc;
+}
 
 h2 {
   margin: 0 0 6px 0;
@@ -650,6 +697,11 @@ h2 {
 }
 .dorama-theme h2 {
   background: linear-gradient(135deg, #ffffff 0%, #fb7185 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.ai-theme h2 {
+  background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -693,7 +745,7 @@ label {
   font-weight: 600;
   letter-spacing: 0.01em;
 }
-input[type="text"], input[type="password"], input[type="number"], textarea, select {
+input[type="text"], input[type="password"], input[type="number"], input[type="url"], textarea, select {
   width: 100%;
   padding: 10px 12px;
   border-radius: var(--radius-sm);
@@ -705,7 +757,7 @@ input[type="text"], input[type="password"], input[type="number"], textarea, sele
   transition: all 0.2s ease;
   outline: none;
 }
-input[type="text"]:focus, input[type="password"]:focus, input[type="number"]:focus, textarea:focus, select:focus {
+input[type="text"]:focus, input[type="password"]:focus, input[type="number"]:focus, input[type="url"]:focus, textarea:focus, select:focus {
   border-color: rgba(56, 189, 248, 0.5);
   box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
   background: #0d1527;
@@ -1009,7 +1061,7 @@ input[type="file"]:hover {
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  padding: 24px 30px;
+  padding: 20px 24px;
   height: calc(100vh - 32px);
   box-sizing: border-box;
   overflow-y: auto;
@@ -1031,7 +1083,7 @@ input[type="file"]:hover {
 
 .ai30-panel .container {
   width: 100%;
-  max-width: 980px;
+  max-width: none;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -1039,34 +1091,27 @@ input[type="file"]:hover {
 }
 
 .ai-hero-header {
-  text-align: center;
-  margin-bottom: 5px;
+  text-align: left;
+  margin-bottom: 20px;
 }
-.ai30-panel h1 {
-  text-align: center;
-  font-size: 2rem;
+.ai30-panel .ai-hero-header h2 {
+  margin: 0 0 6px 0;
+  font-size: 1.45rem;
   font-weight: 800;
-  margin: 0 0 8px 0;
   letter-spacing: -0.02em;
-  background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 50%, #c084fc 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-.ai30-panel p.subtitle {
-  text-align: center;
-  color: var(--v30-text-muted);
-  margin: 0;
-  font-size: 0.88rem;
-  line-height: 1.5;
 }
 
 .ai30-panel .card {
   background-color: var(--v30-card-bg);
   border: 1px solid var(--v30-border-color);
-  border-radius: var(--radius-lg);
-  padding: 22px 24px;
-  box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.04);
   box-sizing: border-box;
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+.ai30-panel .card:hover {
+  border-color: var(--card-border-hover);
 }
 
 .ai30-panel .grid {
@@ -1254,11 +1299,11 @@ input[type="file"]:hover {
 }
 
 /* =========================================================================
-   ABA 4: DOWNLOADER TIKTOK EM LOTE
+   ABA 4: CENTRAL DE DOWNLOADS SOCIAIS
    ========================================================================= */
 .ai-grid-container {
   display: grid;
-  grid-template-columns: 420px 1fr;
+  grid-template-columns: 430px 1fr;
   gap: 18px;
   height: calc(100vh - 32px);
   width: 100%;
@@ -1277,50 +1322,200 @@ input[type="file"]:hover {
   box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-/* Download Queue Items */
-.dl-item {
+.social-platform-row {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  background: rgba(18, 26, 44, 0.7);
-  border: 1px solid var(--card-border);
-  border-radius: var(--radius-md);
-  margin-bottom: 10px;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.2s;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: -4px 0 16px;
 }
-.dl-item:hover {
-  border-color: rgba(16, 185, 129, 0.4);
-  background: rgba(23, 33, 54, 0.85);
-}
-.dl-item-title {
-  font-size: 0.82rem;
-  color: #f3f4f6;
-  max-width: 68%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-weight: 500;
-}
-.dl-item-btn {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: #fff;
-  border: none;
-  border-radius: var(--radius-sm);
-  padding: 7px 14px;
-  font-size: 0.76rem;
-  font-weight: 700;
-  cursor: pointer;
-  text-decoration: none;
+.social-platform-chip {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  border: 1px solid rgba(255,255,255,0.12);
 }
-.dl-item-btn:hover {
-  filter: brightness(1.15);
+.social-platform-chip.youtube { color:#f87171; background:rgba(239,68,68,0.10); border-color:rgba(239,68,68,0.28); }
+.social-platform-chip.instagram { color:#f0abfc; background:rgba(217,70,239,0.10); border-color:rgba(217,70,239,0.28); }
+.social-platform-chip.tiktok { color:#5eead4; background:rgba(20,184,166,0.10); border-color:rgba(20,184,166,0.28); }
+
+.social-options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
+.social-options-grid label { margin-top: 10px; }
+#socialSearchStatus, #socialBatchStatus, #cobaltTestStatus {
+  min-height: 18px;
+  margin-top: 10px;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  color: var(--accent-emerald-light);
+}
+#socialSearchStatus.is-error, #socialBatchStatus.is-error, #cobaltTestStatus.is-error { color:#fda4af; }
+
+.social-advanced-card {
+  margin-top: 18px;
+  border: 1px solid rgba(129,140,248,0.25);
+  border-radius: var(--radius-md);
+  background: rgba(129,140,248,0.05);
+  overflow: hidden;
+}
+.social-advanced-card summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 12px 14px;
+  color: #c7d2fe;
+  font-size: 0.78rem;
+  font-weight: 800;
+  user-select: none;
+}
+.social-advanced-card summary::-webkit-details-marker { display:none; }
+.social-advanced-card summary::after { content:'▾'; float:right; color:#818cf8; }
+.social-advanced-card[open] summary::after { content:'▴'; }
+.social-advanced-body {
+  border-top: 1px solid rgba(129,140,248,0.18);
+  padding: 2px 14px 14px;
+}
+.social-advanced-body p {
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+.social-api-note a { color:#a5b4fc; }
+
+.social-secondary-btn, .social-primary-small {
+  border-radius: var(--radius-sm);
+  padding: 8px 11px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all .2s ease;
+}
+.social-secondary-btn {
+  background: rgba(255,255,255,0.04);
+  color: #cbd5e1;
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.social-secondary-btn:hover { background:rgba(255,255,255,0.09); color:#fff; }
+.social-secondary-btn.danger { color:#fda4af; border-color:rgba(244,63,94,0.25); }
+.social-primary-small {
+  background: linear-gradient(135deg,#10b981,#047857);
+  color:#fff;
+  border:0;
+  box-shadow:0 3px 10px rgba(16,185,129,.25);
+}
+.social-primary-small:disabled, .social-secondary-btn:disabled { opacity:.4; cursor:not-allowed; }
+
+.social-results-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  position: sticky;
+  top: -22px;
+  z-index: 8;
+  background: rgba(13,19,33,0.96);
+  backdrop-filter: blur(18px);
+  padding-top: 4px;
+}
+#socialResultSummary {
+  margin: 5px 0 0;
+  color: var(--text-muted);
+  font-size: .75rem;
+}
+.social-toolbar { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:7px; }
+.social-media-list { display:flex; flex-direction:column; gap:10px; margin-top:12px; }
+.social-empty-state {
+  min-height: 300px;
+  border: 1px dashed rgba(255,255,255,.12);
+  border-radius: var(--radius-md);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:30px;
+  color:var(--text-muted);
+  gap:8px;
+  background:rgba(0,0,0,.12);
+}
+.social-empty-state strong { color:#e2e8f0; }
+.social-empty-state span { max-width:430px; font-size:.78rem; line-height:1.5; }
+.social-empty-icon { font-size:2rem; }
+
+.social-media-card {
+  display:grid;
+  grid-template-columns: 28px 116px minmax(0,1fr) auto;
+  gap:12px;
+  align-items:center;
+  padding:11px;
+  border-radius:var(--radius-md);
+  border:1px solid var(--card-border);
+  background:rgba(18,26,44,.72);
+  box-shadow:var(--shadow-sm);
+  transition:border-color .2s, transform .2s, background .2s;
+}
+.social-media-card:hover { border-color:rgba(16,185,129,.36); background:rgba(23,33,54,.88); transform:translateY(-1px); }
+.social-media-card.is-selected { border-color:rgba(16,185,129,.55); box-shadow:0 0 0 2px rgba(16,185,129,.08); }
+.social-media-card.is-loading { opacity:.72; }
+.social-card-check { width:17px; height:17px; accent-color:#10b981; cursor:pointer; }
+.social-thumb {
+  width:116px;
+  height:72px;
+  border-radius:8px;
+  background:linear-gradient(135deg,#111827,#020617);
+  overflow:hidden;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:1.5rem;
+  color:#64748b;
+  border:1px solid rgba(255,255,255,.08);
+}
+.social-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+.social-card-main { min-width:0; }
+.social-card-title { color:#f8fafc; font-size:.84rem; font-weight:750; line-height:1.35; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+.social-card-sub { margin-top:4px; color:var(--text-dim); font-size:.7rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.social-card-badges { display:flex; gap:6px; flex-wrap:wrap; margin-top:7px; }
+.social-mini-badge { border-radius:999px; padding:3px 7px; font-size:.62rem; font-weight:800; border:1px solid rgba(255,255,255,.1); color:#cbd5e1; background:rgba(255,255,255,.04); }
+.social-mini-badge.ready { color:#6ee7b7; border-color:rgba(16,185,129,.3); background:rgba(16,185,129,.08); }
+.social-mini-badge.loading { color:#fde68a; border-color:rgba(251,191,36,.3); }
+.social-mini-badge.error { color:#fda4af; border-color:rgba(244,63,94,.3); }
+.social-mini-badge.youtube { color:#fca5a5; }
+.social-mini-badge.instagram { color:#f0abfc; }
+.social-mini-badge.tiktok { color:#5eead4; }
+.social-card-actions { display:flex; flex-direction:column; gap:7px; min-width:116px; }
+.social-card-actions button, .social-card-actions a {
+  text-align:center;
+  justify-content:center;
+  text-decoration:none;
+  border-radius:7px;
+  padding:8px 10px;
+  font-size:.7rem;
+  font-weight:800;
+  cursor:pointer;
+}
+.social-card-main-btn { border:0; color:#fff; background:linear-gradient(135deg,#10b981,#047857); }
+.social-card-main-btn.prepare { background:linear-gradient(135deg,#6366f1,#4338ca); }
+.social-card-main-btn:disabled { opacity:.45; cursor:not-allowed; }
+.social-card-open { color:#94a3b8; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); }
+.social-card-open:hover { color:#fff; background:rgba(255,255,255,.08); }
+
+@media (max-width: 760px) {
+  .social-options-grid { grid-template-columns:1fr; }
+  .social-results-header { position:static; flex-direction:column; }
+  .social-toolbar { justify-content:flex-start; }
+  .social-media-card { grid-template-columns:24px 92px minmax(0,1fr); }
+  .social-thumb { width:92px; height:64px; }
+  .social-card-actions { grid-column:2 / -1; flex-direction:row; }
+  .social-card-actions > * { flex:1; }
+}
+
 
 /* Floating Toast System */
 .toast-container {
@@ -1425,8 +1620,8 @@ video#sourceVideo { display: none; }
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
         </div>
         <div class="nav-btn-text">
-          <span class="nav-btn-title">Baixar Vídeos TikTok</span>
-          <span class="nav-btn-sub">Lote & Perfil Pro</span>
+          <span class="nav-btn-title">Downloads Sociais</span>
+          <span class="nav-btn-sub">YouTube • Instagram • TikTok</span>
         </div>
       </button>
     </nav>
@@ -1556,11 +1751,11 @@ video#sourceVideo { display: none; }
   <main class="main-content">
     <div class="dashboard found-theme" id="appDashboard">
 
-      <!-- Monitor Fixo das Abas 1 e 2 -->
+      <!-- Monitor Fixo das Abas 1, 2 e 3 -->
       <div class="preview-column" id="blindPreviewColumn">
         <div class="preview-header-bar">
           <div class="preview-header" id="previewModeTitle">📺 Monitor de Prévia (9:16)</div>
-          <span class="preview-badge-res">9:16 FHD</span>
+          <span class="preview-badge-res" id="previewBadgeRes">9:16 FHD</span>
         </div>
         <div class="preview-modes">
           <button class="mode-btn active" id="btnPreviewOverlay">👁 Vídeo + Overlay</button>
@@ -1568,6 +1763,8 @@ video#sourceVideo { display: none; }
         </div>
         <div class="preview-wrapper" id="previewWrapper">
           <canvas id="previewCanvas"></canvas>
+          <video id="aiVideoPreview" controls playsinline preload="metadata"></video>
+          <div id="aiPreviewEmpty">🎬 Selecione um vídeo na Aba 3 para visualizar aqui antes de gerar o roteiro e os cortes.</div>
           <div id="cropBox">
             <div class="handle tl" data-handle="tl"></div>
             <div class="handle tr" data-handle="tr"></div>
@@ -1585,6 +1782,7 @@ video#sourceVideo { display: none; }
             <div class="handle bc" data-handle="bc"></div>
           </div>
         </div>
+        <p id="aiVideoPreviewInfo"></p>
         <div id="status">Aguardando seleção de arquivos...</div>
       </div>
 
@@ -1773,7 +1971,7 @@ video#sourceVideo { display: none; }
 
           <div class="approval-box">
             <div class="control-title" style="color:#10b981;">🛡️ Modo Aprovação (anti-flag)</div>
-            <p style="font-size:0.75rem;color:var(--text-muted);margin:4px 0 10px;line-height:1.4;">Aplica de uma vez a configuração contra <strong>não original + baixa qualidade + QR code</strong>: gancho desligado, edição criativa, desfoque de marca/QR, desafino leve e sem marca de canal.</p>
+            <p style="font-size:0.75rem;color:var(--text-muted);margin:4px 0 10px;line-height:1.4;">Aplica de uma vez a configuração contra <strong>não original + baixa qualidade + QR code</strong>: gancho desligado, edição criativa com cor cinematográfica fixa, desfoque de marca/QR, áudio no tom original (0) e sem marca de canal.</p>
             <button type="button" class="approval-btn">⚡ Aplicar Modo Aprovação</button>
             <label class="checkbox-item" style="margin-top:10px;">
               <input type="checkbox" class="fast-chk">
@@ -1849,12 +2047,13 @@ video#sourceVideo { display: none; }
             <label>Nome do Canal / Marca (aparece no topo, layout Streaming):</label>
             <input type="text" class="channel-name-input" value="" placeholder="(vazio = sem marca)" maxlength="20">
 
-            <label>Filtro de Gradação de Cor (Color Grading):</label>
+            <label>Cor Cinematográfica Fixa (mantida do início ao fim):</label>
             <select id="doramaColorFilter">
-              <option value="warm_korea">K-Drama Warm (Cores Vivas e Pele Suave)</option>
-              <option value="cold_thriller">Cold Thriller (Tom Frio e Alto Contraste)</option>
-              <option value="vintage_film">Vintage 35mm (Filme de Cinema Clássico)</option>
+              <option value="warm_korea" selected>K-Drama Warm — quente, viva e pele suave</option>
+              <option value="cold_thriller">Cold Thriller — fria e dramática</option>
+              <option value="vintage_film">Vintage 35mm — cinema clássico</option>
             </select>
+            <p style="font-size:0.72rem;color:var(--text-muted);margin:4px 0 0;line-height:1.4;">A cor escolhida permanece igual no vídeo inteiro, inclusive com a Edição Criativa Automática. Os cortes podem mudar o enquadramento, mas nunca alternam a cor.</p>
           </div>
 
           <div class="pro-card">
@@ -1876,17 +2075,11 @@ video#sourceVideo { display: none; }
               <span class="control-val bgm-volume-val">35%</span>
             </div>
 
-            <label>🎵 Desafinar Áudio (anti Content ID de música):</label>
-            <select class="pitch-select">
-              <option value="0" selected>0 = Sem alteração</option>
-              <option value="1">+1 semitom (sobe o tom, acelera ~6%)</option>
-              <option value="-1">−1 semitom (desce o tom, desacelera ~6%)</option>
-              <option value="2">+2 semitons</option>
-              <option value="-2">−2 semitons</option>
-              <option value="3">+3 semitons</option>
-              <option value="-3">−3 semitons</option>
+            <label>🎵 Desafinar Áudio (fixo em zero):</label>
+            <select class="pitch-select" disabled aria-label="Desafinar áudio fixo em zero">
+              <option value="0" selected>0 = Sem alteração (fixo)</option>
             </select>
-            <p style="font-size:0.72rem;color:var(--text-muted);margin:4px 0 0;line-height:1.4;">Muda a <strong>altura real</strong> do áudio (não só volume/EQ), deslocando os picos espectrais — é o que de fato quebra o reconhecimento de música. O vídeo continua sincronizado (a velocidade muda junto com o tom).</p>
+            <p style="font-size:0.72rem;color:var(--text-muted);margin:4px 0 0;line-height:1.4;">O áudio de Dorama, Séries & Cinema sempre preserva a tonalidade original: <strong>0 semitons</strong>, sem desafinação.</p>
           </div>
 
           <div class="feature-list">
@@ -1913,7 +2106,7 @@ video#sourceVideo { display: none; }
             </label>
             <label class="checkbox-item">
               <input type="checkbox" class="creative-chk">
-              <span><strong>🎬 Edição Criativa Automática:</strong> re-enquadramento com zoom focal (simula cortes de câmera), transições de flash entre cortes e leve variação de velocidade — transformação real anti "não original", aplicada sozinha na exportação.</span>
+              <span><strong>🎬 Edição Criativa Automática:</strong> re-enquadramento com zoom focal (simula cortes de câmera), transições entre cortes e leve variação de velocidade. A <strong>cor cinematográfica escolhida fica fixa</strong> do início ao fim — sem alternar entre quente, fria, vívida ou vintage a cada corte.</span>
             </label>
           </div>
 
@@ -1938,9 +2131,12 @@ video#sourceVideo { display: none; }
       <div class="tab-content" id="tabAiContent">
         <div class="ai30-panel">
           <div class="container">
-            <div class="ai-hero-header">
-              <h1>Resumidor de Vídeo & Roteirista IA</h1>
-              <p class="subtitle">Envie seu vídeo e receba o corte exato com narração em 3ª pessoa, dublada por uma voz sintética humanizada</p>
+            <div class="ai-hero-header module-header">
+              <div class="module-badge-row">
+                <span class="module-badge indigo">⚡ Módulo IA Studio</span>
+              </div>
+              <h2>Resumidor de Vídeo & Roteirista IA</h2>
+              <p class="desc">Envie seu vídeo e receba o corte exato com narração em 3ª pessoa, dublada por uma voz sintética humanizada.</p>
             </div>
 
             <div class="card">
@@ -1959,8 +2155,7 @@ video#sourceVideo { display: none; }
                   <input type="file" id="aiVideoFile" accept="video/*" multiple>
                 </div>
                 <p id="aiQueueInfo" style="display:none; font-size:0.8rem; color:var(--text-muted); margin:6px 0 0;"></p>
-                <video id="aiVideoPreview" controls style="display:none; width:100%; border-radius:var(--radius-md); margin-top:10px; max-height:320px; background:#000; border:1px solid var(--border-color);"></video>
-                <p id="aiVideoPreviewInfo" style="display:none; font-size:0.8rem; color:var(--text-muted); margin:6px 0 0;"></p>
+                <p style="font-size:0.74rem;color:var(--text-muted);margin:6px 0 0;line-height:1.4;">A prévia do primeiro vídeo selecionado aparece no monitor à esquerda.</p>
               </div>
 
               <div class="grid">
@@ -2140,73 +2335,104 @@ video#sourceVideo { display: none; }
         </div>
       </div>
 
-      <!-- ABA 4: DOWNLOADER TIKTOK EM LOTE -->
+      <!-- ABA 4: CENTRAL DE DOWNLOADS SOCIAIS -->
       <div class="tab-content" id="tabDownloaderContent">
         <div class="ai-grid-container">
 
           <div class="ai-left-panel">
             <div class="module-header">
               <div class="module-badge-row">
-                <span class="module-badge" style="background:rgba(16, 185, 129, 0.15); border:1px solid rgba(16, 185, 129, 0.3); color:#34d399;">📥 Batch Downloader</span>
+                <span class="module-badge" style="background:rgba(16, 185, 129, 0.15); border:1px solid rgba(16, 185, 129, 0.3); color:#34d399;">📥 Downloader Multiplataforma</span>
               </div>
-              <h2>Downloader TikTok em Lote</h2>
-              <p class="desc">Baixe múltiplos vídeos sem marca d'água instantaneamente colando os links (1 por linha).</p>
+              <h2>Downloads Sociais</h2>
+              <p class="desc">Cole links de vídeos, perfis ou canais. Os itens encontrados aparecem à direita para você escolher o que deseja baixar.</p>
             </div>
 
-            <label for="tiktokUrls">Cole os Links do TikTok:</label>
-            <textarea id="tiktokUrls" placeholder="https://www.tiktok.com/@usuario/video/123456789&#10;https://www.tiktok.com/@usuario/video/987654321" style="min-height: 180px; font-size: 0.8rem;"></textarea>
+            <div class="social-platform-row" aria-label="Plataformas aceitas">
+              <span class="social-platform-chip youtube">▶ YouTube</span>
+              <span class="social-platform-chip instagram">◎ Instagram</span>
+              <span class="social-platform-chip tiktok">♪ TikTok</span>
+            </div>
 
-            <button class="btn-action" id="downloadUrlsBtn" style="width:100%; margin-top:14px;">
-              ⚡ Baixar Todos os Vídeos
+            <label for="socialLinksInput">Links de vídeo, perfil ou canal:</label>
+            <textarea id="socialLinksInput" placeholder="Cole um ou mais links, um por linha:&#10;https://www.tiktok.com/@usuario&#10;https://www.youtube.com/@canal&#10;https://www.instagram.com/usuario/&#10;https://www.instagram.com/reel/..." style="min-height:170px;font-size:0.8rem;"></textarea>
+
+            <div class="social-options-grid">
+              <div>
+                <label for="socialProfileLimit">Máximo por perfil:</label>
+                <select id="socialProfileLimit">
+                  <option value="12">12 vídeos</option>
+                  <option value="24" selected>24 vídeos</option>
+                  <option value="48">48 vídeos</option>
+                  <option value="96">96 vídeos</option>
+                </select>
+              </div>
+              <div>
+                <label for="socialQuality">Qualidade:</label>
+                <select id="socialQuality">
+                  <option value="1080" selected>1080p</option>
+                  <option value="720">720p</option>
+                  <option value="480">480p</option>
+                  <option value="max">Máxima</option>
+                </select>
+              </div>
+            </div>
+
+            <button class="btn-action" id="socialAnalyzeBtn" type="button">
+              🔎 Buscar e Mostrar Vídeos
             </button>
 
-            <!-- Downloader de Perfil Inteiro -->
-            <div class="pro-card control-box" style="margin-top:20px; border-color:rgba(16, 185, 129, 0.35);">
-              <div class="control-title" style="color:var(--accent-emerald); display:flex; align-items:center; gap:8px; font-size:1rem;">
-                🚀 Baixar Perfil Inteiro
-              </div>
-              <p style="font-size:0.75rem; color:var(--text-muted); margin:4px 0 12px 0; line-height:1.4;">Informe o @usuario ou o link do perfil. O app busca todos os vídeos públicos e baixa um por um automaticamente.</p>
+            <div id="socialSearchStatus" role="status" aria-live="polite"></div>
 
-              <label for="tiktokProfileInput" style="font-size:0.78rem; font-weight:bold; color:var(--text-main); display:block; margin-bottom:6px;">Usuário ou Link do Perfil:</label>
-              <input type="text" id="tiktokProfileInput" placeholder="@usuario ou https://www.tiktok.com/@usuario" style="width:100%; box-sizing:border-box; margin-bottom:12px;">
+            <details class="social-advanced-card" id="socialApiSettings">
+              <summary>⚙️ Motor universal para YouTube e Instagram</summary>
+              <div class="social-advanced-body">
+                <p>O TikTok possui resolução automática. Para preparar downloads do YouTube e Instagram em um HTML estático, informe a URL de uma instância própria do <strong>Cobalt API</strong> com CORS habilitado.</p>
+                <label for="cobaltApiUrl">URL da sua API Cobalt:</label>
+                <input type="url" id="cobaltApiUrl" placeholder="https://seu-cobalt.exemplo.com">
 
-              <div style="display:flex; gap:10px; margin-bottom:14px;">
-                <div style="flex:1;">
-                  <label for="tiktokProfileLimit" style="font-size:0.78rem; font-weight:bold; color:var(--text-main); display:block; margin-bottom:6px;">Limite de vídeos:</label>
-                  <input type="number" id="tiktokProfileLimit" min="0" step="1" value="0" placeholder="0 = sem limite" style="width:100%; box-sizing:border-box;">
+                <div class="social-options-grid">
+                  <div>
+                    <label for="cobaltAuthType">Autenticação:</label>
+                    <select id="cobaltAuthType">
+                      <option value="none">Sem chave</option>
+                      <option value="Api-Key">Api-Key</option>
+                      <option value="Bearer">Bearer</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label for="cobaltApiKey">Chave (opcional):</label>
+                    <input type="password" id="cobaltApiKey" placeholder="Sua chave">
+                  </div>
                 </div>
-                <div style="flex:1;">
-                  <label for="tiktokProfileOrder" style="font-size:0.78rem; font-weight:bold; color:var(--text-main); display:block; margin-bottom:6px;">Ordenar por:</label>
-                  <select id="tiktokProfileOrder" style="width:100%; box-sizing:border-box;">
-                    <option value="recentes">Mais recentes</option>
-                    <option value="antigos">Mais antigos</option>
-                    <option value="curtidos">Mais curtidos</option>
-                  </select>
-                </div>
+
+                <button type="button" class="social-secondary-btn" id="testCobaltBtn">Testar e salvar API</button>
+                <div id="cobaltTestStatus" role="status" aria-live="polite"></div>
+                <p class="social-api-note">Use somente vídeos públicos que você possui ou tem autorização para salvar. <a href="https://github.com/imputnet/cobalt/blob/main/docs/run-an-instance.md" target="_blank" rel="noopener">Documentação para instalar o Cobalt</a>.</p>
               </div>
-
-              <button class="btn-action" id="downloadProfileBtn" style="width:100%; background:linear-gradient(135deg, #10b981 0%, #059669 100%);">
-                📥 Buscar e Baixar Perfil
-              </button>
-              <div id="profileFetchStatus" style="margin-top:8px; font-size:0.75rem; color:var(--text-muted); text-align:center; line-height:1.3;"></div>
-            </div>
-
-            <!-- Guia rápido do Bookmarklet -->
-            <div class="pro-card control-box" style="margin-top:14px; border-color:rgba(255,255,255,0.08);">
-              <div class="control-title" style="color:var(--accent-yellow);">💡 Alternativa manual (bookmarklet)</div>
-              <p style="font-size:0.75rem; color:var(--text-muted); margin:4px 0 8px 0; line-height:1.4;">Arraste o botão abaixo para a sua barra de favoritos. Quando estiver em qualquer perfil no TikTok, clique nele para copiar todos os links automaticamente:</p>
-              <a href="javascript:(async function(){const sleep=ms=>new Promise(r=>setTimeout(r,ms));let lastH=0,retries=0;while(retries<3){window.scrollTo(0,document.body.scrollHeight);await sleep(800);let newH=document.body.scrollHeight;if(newH===lastH){retries++;}else{retries=0;lastH=newH;}}const links=Array.from(document.querySelectorAll('div[data-e2e=%22user-post-item%22] a')).map(a=>a.href.split('?')[0]).filter(url=>url.includes('/video/')).filter((v,i,a)=>a.indexOf(v)===i);if(links.length===0){alert('Nenhum vídeo encontrado.');return;}await navigator.clipboard.writeText(links.join('\n'));alert('✅ ' + links.length + ' links copiados! Cole agora na aba de download.');})();" style="display:block; text-align:center; background:#1e293b; color:#38bdf8; padding:9px; border-radius:var(--radius-sm); font-size:0.78rem; text-decoration:none; font-weight:bold; border:1px dashed #38bdf8; transition:all 0.2s;">
-                ⭐ Copiar Links do Perfil (Arraste p/ Favoritos)
-              </a>
-            </div>
-
-            <div id="dlStatus" style="margin-top:12px; font-weight:bold; color:var(--accent-emerald); text-align:center; font-size:0.85rem;"></div>
+            </details>
           </div>
 
-          <div class="ai-right-panel">
-            <div class="control-title" style="font-size:1.05rem; margin-top:0; color:#fff;">📦 Fila de Processamento & Downloads</div>
-            <div id="dlQueueList" style="margin-top:14px;">
-              <p style="color:var(--text-muted); font-size:0.85rem;">Os vídeos processados aparecerão aqui conforme forem baixados para o seu computador.</p>
+          <div class="ai-right-panel social-results-panel">
+            <div class="social-results-header">
+              <div>
+                <div class="control-title" style="font-size:1.05rem;margin-top:0;color:#fff;">🎞️ Vídeos encontrados</div>
+                <p id="socialResultSummary">Nenhum item carregado.</p>
+              </div>
+              <div class="social-toolbar">
+                <button type="button" id="socialSelectAllBtn" class="social-secondary-btn">Selecionar todos</button>
+                <button type="button" id="socialClearBtn" class="social-secondary-btn danger">Limpar</button>
+                <button type="button" id="socialDownloadSelectedBtn" class="social-primary-small" disabled>⬇️ Baixar selecionados</button>
+              </div>
+            </div>
+
+            <div id="socialBatchStatus" role="status" aria-live="polite"></div>
+            <div id="socialMediaList" class="social-media-list">
+              <div class="social-empty-state">
+                <div class="social-empty-icon">🔗</div>
+                <strong>Cole um link para começar</strong>
+                <span>Perfis e canais serão expandidos em uma lista. Nada será baixado automaticamente.</span>
+              </div>
             </div>
           </div>
 
@@ -2276,6 +2502,51 @@ video#sourceVideo { display: none; }
     [tabFoundContent, tabDoramaContent, tabAiContent, tabDownloaderContent].forEach(c => c.classList.remove('active'));
   }
 
+  // A Aba 3 agora usa o mesmo monitor lateral das Abas 1 e 2. Esta função
+  // alterna o conteúdo do monitor sem misturar o canvas das edições com o
+  // player do Roteirista IA.
+  function setSharedPreviewMode(mode) {
+    const isAi = mode === 'ai';
+    const aiPreview = document.getElementById('aiVideoPreview');
+    const aiInfo = document.getElementById('aiVideoPreviewInfo');
+    const aiEmpty = document.getElementById('aiPreviewEmpty');
+    const editorCanvas = document.getElementById('previewCanvas');
+    const previewModes = document.querySelector('#blindPreviewColumn .preview-modes');
+    const previewTitle = document.getElementById('previewModeTitle');
+    const previewBadge = document.getElementById('previewBadgeRes');
+    const sharedStatus = document.getElementById('status');
+
+    if (mode === 'hidden') {
+      if (aiPreview && !aiPreview.paused) aiPreview.pause();
+      return;
+    }
+
+    if (previewModes) previewModes.style.display = isAi ? 'none' : 'flex';
+    if (editorCanvas) editorCanvas.style.display = isAi ? 'none' : 'block';
+    cropBox.style.display = 'none';
+    blurBox.style.display = 'none';
+
+    if (isAi) {
+      const hasVideo = aiPreview && aiPreview.hasAttribute('src');
+      if (previewTitle) previewTitle.textContent = '🎬 Prévia do Vídeo IA';
+      if (previewBadge) previewBadge.textContent = 'ORIGINAL';
+      if (sharedStatus) sharedStatus.style.display = 'none';
+      if (aiPreview) aiPreview.style.display = hasVideo ? 'block' : 'none';
+      if (aiEmpty) aiEmpty.style.display = hasVideo ? 'none' : 'flex';
+      if (aiInfo) aiInfo.style.display = hasVideo && aiInfo.textContent ? 'block' : 'none';
+    } else {
+      if (aiPreview) {
+        if (!aiPreview.paused) aiPreview.pause();
+        aiPreview.style.display = 'none';
+      }
+      if (aiEmpty) aiEmpty.style.display = 'none';
+      if (aiInfo) aiInfo.style.display = 'none';
+      if (previewTitle) previewTitle.textContent = '📺 Monitor de Prévia (9:16)';
+      if (previewBadge) previewBadge.textContent = '9:16 FHD';
+      if (sharedStatus) sharedStatus.style.display = 'block';
+    }
+  }
+
   tabBtnFound.addEventListener('click', () => {
     if (isExportingVideo) { alert('⏳ Aguarde o processamento do vídeo atual terminar antes de trocar de aba — trocar agora gera um MP4 incompleto.'); return; }
     activeTab = 'found';
@@ -2286,6 +2557,7 @@ video#sourceVideo { display: none; }
     appDashboard.className = 'dashboard found-theme';
     blindPreviewColumn.style.display = 'flex';
     mainControlsColumn.style.display = 'block';
+    setSharedPreviewMode('editor');
     loadPreviewForTab('found');
     syncActiveTabElements();
     renderInteractivePreview();
@@ -2304,6 +2576,7 @@ video#sourceVideo { display: none; }
     appDashboard.className = 'dashboard dorama-theme';
     blindPreviewColumn.style.display = 'flex';
     mainControlsColumn.style.display = 'block';
+    setSharedPreviewMode('editor');
     loadPreviewForTab('dorama');
     syncActiveTabElements();
     renderInteractivePreview();
@@ -2319,9 +2592,10 @@ video#sourceVideo { display: none; }
     tabBtnAi.classList.add('active');
     tabAiContent.classList.add('active');
     
-    appDashboard.className = 'dashboard ai-theme full-mode';
-    blindPreviewColumn.style.display = 'none';
+    appDashboard.className = 'dashboard ai-theme';
+    blindPreviewColumn.style.display = 'flex';
     mainControlsColumn.style.display = 'none';
+    setSharedPreviewMode('ai');
   });
 
   tabBtnDownloader.addEventListener('click', () => {
@@ -2332,6 +2606,7 @@ video#sourceVideo { display: none; }
     tabDownloaderContent.classList.add('active');
     
     appDashboard.className = 'dashboard downloader-theme full-mode';
+    setSharedPreviewMode('hidden');
     blindPreviewColumn.style.display = 'none';
     mainControlsColumn.style.display = 'none';
   });
@@ -2587,12 +2862,14 @@ video#sourceVideo { display: none; }
     const set = (sel, val) => { const el = container.querySelector(sel); if (el) el.value = val; };
     const check = (sel) => { const el = container.querySelector(sel); if (el) el.checked = true; };
     set('.intro-style-select', 'none');   // abertura com movimento real (nunca estática)
-    check('.creative-chk');               // re-enquadramento + corte duro + cor
+    check('.creative-chk');               // re-enquadramento + cortes; cor fixa no Dorama
     check('.blur-chk');                   // esconde QR code / logo / marca d'água
     check('.mirror-chk');                 // espelhamento anti duplicidade
     check('.shake-chk');                  // micro-oscilação
     check('.stego-chk');                  // ruído sub-visual
-    set('.pitch-select', '1');            // desafino +1 semitom (anti Content ID)
+    // No módulo Dorama o tom é sempre original (0). O módulo Found mantém o
+    // comportamento anterior do Modo Aprovação.
+    set('.pitch-select', container.id === 'tabDoramaContent' ? '0' : '1');
     set('.channel-name-input', '');       // sem marca de canal (anti "logotipo")
     if (video.videoWidth && currentPreviewMode === 'overlay' && container.querySelector('.blur-chk')) {
       setupBlurBox();
@@ -2993,68 +3270,48 @@ video#sourceVideo { display: none; }
   // laterais) e um color grading próprio (quente, frio, vívido, vintage). A
   // troca é SECA (corte duro), não um morph suave — é isso que faz o vídeo
   // parecer editado em vários takes, como um editor real.
-  const CREATIVE_CLIPS_FOUND = [
-    { z: 1.28, fx: 0.50, fy: 0.35, grade: 'warm' },
-    { z: 1.42, fx: 0.36, fy: 0.60, grade: 'cool' },
-    { z: 1.20, fx: 0.64, fy: 0.45, grade: 'vivid' },
-    { z: 1.46, fx: 0.50, fy: 0.70, grade: 'vintage' },
-    { z: 1.32, fx: 0.32, fy: 0.38, grade: 'warm' },
-    { z: 1.24, fx: 0.68, fy: 0.54, grade: 'cool' },
-    { z: 1.44, fx: 0.50, fy: 0.50, grade: 'vivid' },
-    { z: 1.26, fx: 0.44, fy: 0.66, grade: 'vintage' },
+  const CREATIVE_CLIPS = [
+    { z: 1.30, fx: 0.50, fy: 0.32, grade: 'warm' },
+    { z: 1.46, fx: 0.34, fy: 0.62, grade: 'cool' },
+    { z: 1.20, fx: 0.66, fy: 0.44, grade: 'vivid' },
+    { z: 1.52, fx: 0.50, fy: 0.72, grade: 'vintage' },
+    { z: 1.36, fx: 0.30, fy: 0.36, grade: 'warm' },
+    { z: 1.24, fx: 0.70, fy: 0.56, grade: 'cool' },
+    { z: 1.48, fx: 0.50, fy: 0.50, grade: 'vivid' },
+    { z: 1.28, fx: 0.42, fy: 0.68, grade: 'vintage' },
   ];
-  const CREATIVE_GRADES_FOUND = {
+  const CREATIVE_GRADES = {
     warm:    'saturate(1.18) sepia(0.12) contrast(1.07) brightness(1.03)',
     cool:    'saturate(0.88) hue-rotate(8deg) contrast(1.09) brightness(0.97)',
     vivid:   'saturate(1.40) contrast(1.14)',
     vintage: 'sepia(0.30) contrast(1.12) brightness(0.95)',
   };
 
-  const DORAMA_CINEMA_FILTERS = {
-    warm_korea:    'saturate(1.10) contrast(1.04) brightness(1.02) sepia(0.04)',
-    cold_thriller: 'saturate(0.92) contrast(1.08) brightness(0.98) hue-rotate(10deg)',
-    vintage_film:  'sepia(0.12) contrast(1.06) brightness(0.98) saturate(0.95)',
-    none:          'none'
+  // No módulo Dorama a gradação é escolhida UMA vez e permanece idêntica do
+  // primeiro ao último frame. A Edição Criativa continua mudando enquadramento,
+  // zoom e ritmo, mas nunca mais alterna warm/cool/vivid/vintage a cada corte.
+  const DORAMA_FIXED_GRADES = {
+    warm_korea:   'saturate(1.12) sepia(0.04) contrast(1.06) brightness(1.02)',
+    cold_thriller:'saturate(0.88) hue-rotate(6deg) contrast(1.10) brightness(0.98)',
+    vintage_film: 'saturate(0.92) sepia(0.22) contrast(1.08) brightness(0.98)',
   };
+  function getDoramaFixedGrade(style) {
+    return DORAMA_FIXED_GRADES[style] || DORAMA_FIXED_GRADES.warm_korea;
+  }
 
-  function getCreativeEditState(elapsed, inIntro, currentTab, doramaFilterKey) {
-    if (currentTab === 'dorama') {
-      // MODO CINEMA & DORAMA PRO: Conforto visual máximo, ZERO flashes brancos, cores cinematográficas estáveis
-      const baseFilter = DORAMA_CINEMA_FILTERS[doramaFilterKey] || DORAMA_CINEMA_FILTERS.warm_korea;
-      // Movimento contínuo e suave (Ken Burns) que quebra pHash visual sem solavancos ou cortes bruscos:
-      const zoom = 1.035 + 0.035 * Math.sin(elapsed * 0.32);
-      const fx = 0.50 + 0.030 * Math.cos(elapsed * 0.26);
-      const fy = 0.48 + 0.020 * Math.sin(elapsed * 0.20);
-      return { 
-        zoom, 
-        fx, 
-        fy, 
-        grade: baseFilter, 
-        isDirectFilter: true, 
-        flash: 0,             // ZERO FLASH: conforto visual absoluto
-        speed: 1.0            // velocidade natural e estável para diálogo
-      };
-    }
-
-    // MODO FOUND FOOTAGE & TERROR (Estilo Analógico / VHS)
-    const clipDur = 2.5;
+  function getCreativeEditState(elapsed, inIntro) {
+    const clipDur = 2.5;            // segundos por "corte" (mais dinâmico)
     const idx = Math.max(0, Math.floor(elapsed / clipDur));
     const t = elapsed - idx * clipDur;
-    const clip = CREATIVE_CLIPS_FOUND[idx % CREATIVE_CLIPS_FOUND.length];
+    const clip = CREATIVE_CLIPS[idx % CREATIVE_CLIPS.length];
+    // Corte DURO: o enquadramento e a cor trocam de uma vez, sem morph.
     let flash = 0;
     if (!inIntro && idx > 0 && t < 0.18) {
       flash = Math.max(0, 1 - t / 0.18);
     }
+    // Rampa de velocidade alternada (normal x acelerado) por corte.
     const speed = (idx % 2 === 0) ? 1.0 : 1.13;
-    return { 
-      zoom: clip.z, 
-      fx: clip.fx, 
-      fy: clip.fy, 
-      grade: CREATIVE_GRADES_FOUND[clip.grade] || '', 
-      isDirectFilter: false, 
-      flash, 
-      speed 
-    };
+    return { zoom: clip.z, fx: clip.fx, fy: clip.fy, grade: clip.grade, flash, speed };
   }
 
   function drawRecHud(ctx, title, blink) {
@@ -3127,11 +3384,18 @@ video#sourceVideo { display: none; }
       ctx.fillStyle = '#000';
       ctx.fillRect(0, 0, TARGET_W, TARGET_H);
       const { mainX, mainY, mainW, mainH } = getVideoRenderLayout();
+      const introDoramaGrade = activeTab === 'dorama'
+        ? getDoramaFixedGrade(doramaColorFilter.value)
+        : '';
       ctx.save();
+      if (introDoramaGrade) ctx.filter = introDoramaGrade;
       ctx.globalAlpha = 0.25;
       ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, -TARGET_W * 0.2, -TARGET_H * 0.1, TARGET_W * 1.4, TARGET_H * 1.2);
       ctx.restore();
+      ctx.save();
+      if (introDoramaGrade) ctx.filter = introDoramaGrade;
       ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, mainX, mainY, mainW, mainH);
+      ctx.restore();
 
       const panelY = TARGET_H * 0.34;
       const panelH = TARGET_H * 0.30;
@@ -3172,17 +3436,18 @@ video#sourceVideo { display: none; }
 
     const { mainX, mainY, mainW, mainH } = getVideoRenderLayout();
 
-    ctx.save();
-    if (activeTab === 'dorama') {
-      const colorStyle = (doramaColorFilter && doramaColorFilter.value) ? doramaColorFilter.value : 'warm_korea';
-      ctx.filter = DORAMA_CINEMA_FILTERS[colorStyle] || 'none';
-    }
+    const previewDoramaGrade = activeTab === 'dorama'
+      ? getDoramaFixedGrade(doramaColorFilter.value)
+      : '';
 
+    ctx.save();
+    if (previewDoramaGrade) ctx.filter = previewDoramaGrade;
     ctx.globalAlpha = 0.25;
     ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, -TARGET_W * 0.2, -TARGET_H * 0.1, TARGET_W * 1.4, TARGET_H * 1.2);
     ctx.restore();
 
     ctx.save();
+    if (previewDoramaGrade) ctx.filter = previewDoramaGrade;
     ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, mainX, mainY, mainW, mainH);
     ctx.restore();
 
@@ -3699,6 +3964,7 @@ video#sourceVideo { display: none; }
           // preenchimento de fundo mais forte pra cobrir os cantos que o
           // re-enquadramento/zoom deixam à mostra (estilo "fundo preenchido").
           ctx.save();
+          if (activeTab === 'dorama') ctx.filter = getDoramaFixedGrade(config.colorFilter);
           ctx.globalAlpha = config.creativeEdit ? 0.72 : 0.28;
           const bgW = TARGET_W * 1.38;
           const bgH = TARGET_H * 1.25;
@@ -3708,20 +3974,12 @@ video#sourceVideo { display: none; }
           // 5b. Edição Criativa Automática: punch-in focal + flash, simulando
           // cortes e re-enquadramento reais. Com o recurso desligado, o
           // transform é identidade (nenhuma mudança no comportamento atual).
-          const doramaFilterVal = (doramaColorFilter && doramaColorFilter.value) ? doramaColorFilter.value : 'warm_korea';
-          const edit = config.creativeEdit 
-            ? getCreativeEditState(elapsed, inIntro, activeTab, doramaFilterVal) 
-            : { 
-                zoom: 1, 
-                fx: 0.5, 
-                fy: 0.5, 
-                grade: (activeTab === 'dorama' ? (DORAMA_CINEMA_FILTERS[doramaFilterVal] || '') : ''), 
-                isDirectFilter: true, 
-                flash: 0, 
-                speed: 1 
-              };
-
+          const edit = config.creativeEdit ? getCreativeEditState(elapsed, inIntro) : { zoom: 1, fx: 0.5, fy: 0.5, grade: '', flash: 0, speed: 1 };
           if (config.creativeEdit) {
+            // rampa de velocidade por corte (normal x acelerado). Só reescreve
+            // o playbackRate quando o valor ALVO muda (1x por corte, não 1x por
+            // frame) — reescrever a toda frame fazia o vídeo renegociar a
+            // sincronia e podia derrubar frames.
             const targetRate = TIMING.BASE_SPEED * pitchFactor * edit.speed;
             if (targetRate !== lastPlaybackRate) {
               video.playbackRate = targetRate;
@@ -3737,12 +3995,12 @@ video#sourceVideo { display: none; }
             ctx.scale(edit.zoom, edit.zoom);
             ctx.translate(-cfX, -cfY);
           }
-
-          // Gradação de Cor Estável & Confortável
-          if (edit.grade) {
-            ctx.filter = edit.grade;
-          } else if (activeTab === 'dorama') {
-            ctx.filter = DORAMA_CINEMA_FILTERS[doramaFilterVal] || 'none';
+          // Dorama usa UMA cor fixa no vídeo inteiro. Só o módulo Found pode
+          // continuar usando a gradação criativa variável por corte.
+          if (activeTab === 'dorama') {
+            ctx.filter = getDoramaFixedGrade(config.colorFilter);
+          } else if (config.creativeEdit && edit.grade && CREATIVE_GRADES[edit.grade]) {
+            ctx.filter = CREATIVE_GRADES[edit.grade];
           }
 
           // Renderização Principal com Matriz Espacial + Zoom Contínuo
@@ -3771,8 +4029,7 @@ video#sourceVideo { display: none; }
           ctx.strokeRect(destX + shakeX, destY + shakeY, destW, destH);
 
           // Transição de "flash" entre cortes (cobre a tela por ~0,26s)
-          // Transição de flash suave (apenas no modo Found Footage analógico; ZERO flash no modo Dorama para conforto total)
-          if (config.creativeEdit && edit.flash > 0 && activeTab !== 'dorama') {
+          if (config.creativeEdit && edit.flash > 0) {
             ctx.fillStyle = `rgba(255, 255, 255, ${(edit.flash * 0.8).toFixed(3)})`;
             ctx.fillRect(0, 0, TARGET_W, TARGET_H);
           }
@@ -3887,8 +4144,10 @@ video#sourceVideo { display: none; }
     if (!config.blur) {
       notes.push('🔳 Máscara de desfoque desligada — se o vídeo de origem tiver logo ou QR code, ative para cobrir.');
     }
-    if (config.pitchSemitones === 0) {
+    if (config.pitchSemitones === 0 && activeTab !== 'dorama') {
       warnings.push('🎵 Áudio sem alteração de altura — se houver música protegida, o Content ID pode reconhecer. Ative o "Desafinar Áudio".');
+    } else if (activeTab === 'dorama') {
+      notes.push('🎵 Dorama: áudio mantido obrigatoriamente no tom original (0 semitons).');
     }
     const outDur = Math.max(0, (videoDuration || 0) - config.cutStart - config.cutEnd);
     if (videoDuration > 0 && outDur < 5) {
@@ -3961,7 +4220,7 @@ video#sourceVideo { display: none; }
       videoHeight: meta.h,
       tab: activeTab,
       overlayStyle: config.overlayStyle,
-      doramaColorFilter: (doramaColorFilter && doramaColorFilter.value) ? doramaColorFilter.value : 'warm_korea',
+      colorFilter: config.colorFilter,
       channelName: config.channelName,
       title: currentTitle
     }, (label, loaded, total) => {
@@ -4000,6 +4259,7 @@ video#sourceVideo { display: none; }
         narration: ctrl.narration ? ctrl.narration.checked : false,
         introStyle: ctrl.introStyle.value,
         overlayStyle: ctrl.overlayStyle.value,
+        colorFilter: activeTab === 'dorama' ? doramaColorFilter.value : '',
         channelName: ctrl.channelName ? ctrl.channelName.value : '',
         shake: ctrl.shake.checked,
         mirror: ctrl.mirror ? ctrl.mirror.checked : false,
@@ -4009,7 +4269,9 @@ video#sourceVideo { display: none; }
         bgmFile: (ctrl.bgmInput && ctrl.bgmInput.files && ctrl.bgmInput.files[0]) ? ctrl.bgmInput.files[0] : null,
         bgmVolume: ctrl.bgmVolume ? parseFloat(ctrl.bgmVolume.value) : 0.35,
         videoVolume: ctrl.videoVolume ? parseFloat(ctrl.videoVolume.value) : 1.5,
-        pitchSemitones: ctrl.pitch ? parseFloat(ctrl.pitch.value) : 0
+        // Defesa dupla: mesmo que o HTML seja alterado pelo navegador, Dorama
+        // nunca sai com pitch diferente de zero.
+        pitchSemitones: activeTab === 'dorama' ? 0 : (ctrl.pitch ? parseFloat(ctrl.pitch.value) : 0)
       };
 
       // Checklist de pré-export: se houver avisos, pergunta antes de gastar
@@ -4160,6 +4422,7 @@ video#sourceVideo { display: none; }
     document.getElementById('aiVideoFile').addEventListener('change', (e) => {
         const preview = document.getElementById('aiVideoPreview');
         const info = document.getElementById('aiVideoPreviewInfo');
+        const emptyPreview = document.getElementById('aiPreviewEmpty');
         const queueInfo = document.getElementById('aiQueueInfo');
         const files = e.target.files;
         const file = files[0];
@@ -4172,6 +4435,7 @@ video#sourceVideo { display: none; }
         if (!file) {
             preview.style.display = 'none';
             preview.removeAttribute('src');
+            if (emptyPreview) emptyPreview.style.display = activeTab === 'ai' ? 'flex' : 'none';
             info.style.display = 'none';
             queueInfo.style.display = 'none';
             currentVideoWidth = null;
@@ -4193,7 +4457,8 @@ video#sourceVideo { display: none; }
 
         previewObjectURL = URL.createObjectURL(file);
         preview.src = previewObjectURL;
-        preview.style.display = 'block';
+        preview.style.display = activeTab === 'ai' ? 'block' : 'none';
+        if (emptyPreview) emptyPreview.style.display = 'none';
         currentVideoWidth = null;
         currentVideoHeight = null;
 
@@ -4501,34 +4766,24 @@ video#sourceVideo { display: none; }
         }
         if (opts.mirror) vf.push('hflip');
         if (opts.tab === 'dorama') {
-            // Gradação de cor cinematográfica estável e natural para Dorama (sem flashes ou distorções)
-            if (opts.doramaColorFilter === 'cold_thriller') {
-                vf.push('eq=saturation=0.92:contrast=1.08:brightness=-0.01');
-            } else if (opts.doramaColorFilter === 'vintage_film') {
-                vf.push('eq=saturation=0.95:contrast=1.06:brightness=-0.01');
-            } else {
-                vf.push('eq=saturation=1.10:contrast=1.04:brightness=0.01');
-            }
-            if (opts.creativeEdit) {
-                // Movimento suave Ken Burns sem solavancos
-                const zw = Math.max(2, Math.round(mainW * 1.06 / 2) * 2);
-                const zh = Math.max(2, Math.round(mainH * 1.06 / 2) * 2);
-                vf.push(`scale=${zw}:${zh}`);
-                vf.push(`crop=${mainW}:${mainH}:x='(iw-ow)/2+sin(n*0.015)*4':y='(ih-oh)/2+cos(n*0.012)*3'`);
-            } else {
-                vf.push(`scale=${mainW}:${mainH}`);
-            }
+            // Uma única gradação do início ao fim, inclusive no motor rápido.
+            const fixedDoramaEq = {
+                warm_korea: 'eq=saturation=1.12:contrast=1.06:brightness=0.02',
+                cold_thriller: 'eq=saturation=0.88:contrast=1.10:brightness=-0.02',
+                vintage_film: 'eq=saturation=0.92:contrast=1.08:brightness=-0.01'
+            };
+            vf.push(fixedDoramaEq[opts.colorFilter] || fixedDoramaEq.warm_korea);
+        } else if (opts.creativeEdit) {
+            vf.push('eq=saturation=1.35:contrast=1.12');
+        }
+        if (opts.stego) vf.push('noise=alls=6:allf=t');
+        if (opts.creativeEdit) {
+            const zw = Math.max(2, Math.round(mainW * 1.16 / 2) * 2);
+            const zh = Math.max(2, Math.round(mainH * 1.16 / 2) * 2);
+            vf.push(`scale=${zw}:${zh}`);
+            vf.push(`crop=${mainW}:${mainH}:x='(iw-ow)/2+sin(n*0.045)*10':y='(ih-oh)/2+cos(n*0.038)*8'`);
         } else {
-            if (opts.creativeEdit) vf.push('eq=saturation=1.35:contrast=1.12');
-            if (opts.stego) vf.push('noise=alls=6:allf=t');
-            if (opts.creativeEdit) {
-                const zw = Math.max(2, Math.round(mainW * 1.16 / 2) * 2);
-                const zh = Math.max(2, Math.round(mainH * 1.16 / 2) * 2);
-                vf.push(`scale=${zw}:${zh}`);
-                vf.push(`crop=${mainW}:${mainH}:x='(iw-ow)/2+sin(n*0.045)*10':y='(ih-oh)/2+cos(n*0.038)*8'`);
-            } else {
-                vf.push(`scale=${mainW}:${mainH}`);
-            }
+            vf.push(`scale=${mainW}:${mainH}`);
         }
         if (F !== 1) vf.unshift(`setpts=PTS/${F.toFixed(5)}`);
         vf.push(`pad=${TARGET_W}:${TARGET_H}:${mainX}:${mainY}:black`);
@@ -6753,226 +7008,895 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
 
 </script>
 
-  <!-- Script 4: Downloader TikTok em Lote -->
+  <!-- Script 4: Central de Downloads Sociais -->
   <script>
-  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+  function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
-  // --- Pipeline da Aba 4: Downloader TikTok em Lote ---
-  const tiktokUrls = document.getElementById('tiktokUrls');
-  const downloadUrlsBtn = document.getElementById('downloadUrlsBtn');
-  const dlStatus = document.getElementById('dlStatus');
-  const dlQueueList = document.getElementById('dlQueueList');
+  // ===== ABA 4: CENTRAL DE DOWNLOADS SOCIAIS ===============================
+  // A página é estática. A listagem de perfis usa fontes públicas (TikWM,
+  // feed RSS do YouTube e leitura pública do Instagram). A preparação dos
+  // arquivos de YouTube/Instagram usa uma instância Cobalt informada pelo
+  // usuário; não usamos escondido um servidor de terceiros.
+  const socialLinksInput = document.getElementById('socialLinksInput');
+  const socialProfileLimit = document.getElementById('socialProfileLimit');
+  const socialQuality = document.getElementById('socialQuality');
+  const socialAnalyzeBtn = document.getElementById('socialAnalyzeBtn');
+  const socialSearchStatus = document.getElementById('socialSearchStatus');
+  const socialBatchStatus = document.getElementById('socialBatchStatus');
+  const socialMediaList = document.getElementById('socialMediaList');
+  const socialResultSummary = document.getElementById('socialResultSummary');
+  const socialSelectAllBtn = document.getElementById('socialSelectAllBtn');
+  const socialClearBtn = document.getElementById('socialClearBtn');
+  const socialDownloadSelectedBtn = document.getElementById('socialDownloadSelectedBtn');
+  const cobaltApiUrl = document.getElementById('cobaltApiUrl');
+  const cobaltAuthType = document.getElementById('cobaltAuthType');
+  const cobaltApiKey = document.getElementById('cobaltApiKey');
+  const testCobaltBtn = document.getElementById('testCobaltBtn');
+  const cobaltTestStatus = document.getElementById('cobaltTestStatus');
 
-  async function downloadVideoDirectly(videoUrl, filename) {
-    try {
-      const response = await fetch(videoUrl);
-      const blob = await response.blob();
-      await window.saveProcessedBlob(blob, filename);
-      return true;
-    } catch (err) {
-      const a = document.createElement('a');
-      a.href = videoUrl;
-      a.target = '_blank';
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      return true;
-    }
-  }
+  let socialItems = [];
+  let socialItemSequence = 0;
 
-  downloadUrlsBtn.addEventListener('click', async () => {
-    const rawText = tiktokUrls.value.trim();
-    if (!rawText) {
-      alert('Cole ao menos um link válido do TikTok.');
-      return;
-    }
+  const platformInfo = {
+    youtube: { label: 'YouTube', icon: '▶' },
+    instagram: { label: 'Instagram', icon: '◎' },
+    tiktok: { label: 'TikTok', icon: '♪' },
+  };
 
-    const urls = rawText.split('\n').map(u => u.trim()).filter(u => u.includes('tiktok.com'));
-    if (urls.length === 0) {
-      alert('Nenhum link do TikTok identificado.');
-      return;
-    }
-
-    downloadUrlsBtn.disabled = true;
-    dlQueueList.innerHTML = '';
-    dlStatus.innerText = `Processando lista de ${urls.length} link(s)...`;
-
-    for (let i = 0; i < urls.length; i++) {
-      const url = urls[i];
-      dlStatus.innerText = `Baixando (${i + 1}/${urls.length})...`;
-
-      try {
-        const data = await fetchJsonWithCorsFallback(`https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`);
-
-        if (data.code === 0 && data.data && data.data.play) {
-          const title = data.data.title || `tiktok_${Date.now()}`;
-          const safeTitle = title.substring(0, 30).replace(/[^a-z0-9]/gi, '_').toLowerCase();
-
-          const dlItem = document.createElement('div');
-          dlItem.className = 'dl-item';
-          dlItem.innerHTML = `
-            <div class="dl-item-title">${i + 1}. ${title}</div>
-            <a href="${data.data.play}" target="_blank" download="${safeTitle}.mp4" class="dl-item-btn">Baixado ✅</a>
-          `;
-          dlQueueList.appendChild(dlItem);
-
-          await downloadVideoDirectly(data.data.play, `${safeTitle}.mp4`);
-        }
-      } catch (err) {
-        console.warn('Erro ao processar URL individual:', err);
-      }
-
-      await sleep(1500);
-    }
-
-    dlStatus.innerText = `Todos os ${urls.length} vídeos foram baixados!`;
-    downloadUrlsBtn.disabled = false;
-  });
-
-  // --- Downloader de Perfil Inteiro (busca automática via API, sem site externo) ---
-  const tiktokProfileInput = document.getElementById('tiktokProfileInput');
-  const tiktokProfileLimit = document.getElementById('tiktokProfileLimit');
-  const tiktokProfileOrder = document.getElementById('tiktokProfileOrder');
-  const downloadProfileBtn = document.getElementById('downloadProfileBtn');
-  const profileFetchStatus = document.getElementById('profileFetchStatus');
-
-  function extractTiktokUsername(raw) {
-    let s = (raw || '').trim();
-    if (!s) return null;
-    s = s.split('?')[0].split('#')[0];
-    const match = s.match(/@([a-zA-Z0-9._]+)/);
-    if (match) return match[1];
-    s = s.replace(/^https?:\/\/(www\.)?tiktok\.com\//i, '').replace(/\/$/, '');
-    s = s.replace(/^@/, '');
-    return s || null;
-  }
-
-  // O GitHub Pages só serve arquivos estáticos (sem backend), e o endpoint
-  // tikwm.com/api/user/posts não libera CORS para chamadas via navegador.
-  // Por isso passamos a requisição por proxies CORS públicos, com fallback
-  // caso o primeiro esteja fora do ar.
-  const CORS_PROXIES = [
-    (url) => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
-    (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+  // Proxies públicos são usados somente para consultar metadados/listas
+  // públicas quando a origem bloqueia CORS. Downloads não passam por eles.
+  const SOCIAL_CORS_PROXIES = [
+    url => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+    url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
   ];
 
-  async function fetchJsonWithCorsFallback(targetUrl) {
-    let lastErr = null;
-    // 1ª tentativa: direto (funciona se o tikwm liberar CORS futuramente)
-    try {
-      const res = await fetch(targetUrl);
-      if (res.ok) return await res.json();
-    } catch (e) { lastErr = e; }
-
-    // Tentativas seguintes: via proxies CORS
-    for (const buildProxyUrl of CORS_PROXIES) {
-      try {
-        const res = await fetch(buildProxyUrl(targetUrl));
-        if (!res.ok) continue;
-        return await res.json();
-      } catch (e) {
-        lastErr = e;
-      }
-    }
-    throw lastErr || new Error('Falha ao buscar dados (CORS).');
+  function setSocialMessage(el, message, isError = false) {
+    if (!el) return;
+    el.textContent = message || '';
+    el.classList.toggle('is-error', !!isError);
   }
 
-  async function fetchAllProfileVideos(username, limit, onProgress) {
+  async function fetchWithTimeout(url, options = {}, timeoutMs = 18000) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetch(url, { ...options, signal: controller.signal });
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  async function fetchTextWithCorsFallback(targetUrl) {
+    let lastError = null;
+    const candidates = [targetUrl, ...SOCIAL_CORS_PROXIES.map(build => build(targetUrl))];
+    for (const url of candidates) {
+      try {
+        const response = await fetchWithTimeout(url, { cache: 'no-store' });
+        if (!response.ok) {
+          lastError = new Error(`HTTP ${response.status}`);
+          continue;
+        }
+        const text = await response.text();
+        if (text && text.trim()) return text;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    throw lastError || new Error('A origem não permitiu consultar os dados públicos.');
+  }
+
+  async function fetchJsonWithCorsFallback(targetUrl) {
+    let lastError = null;
+    const candidates = [targetUrl, ...SOCIAL_CORS_PROXIES.map(build => build(targetUrl))];
+    for (const url of candidates) {
+      try {
+        const response = await fetchWithTimeout(url, { cache: 'no-store' });
+        if (!response.ok) {
+          lastError = new Error(`HTTP ${response.status}`);
+          continue;
+        }
+        const text = await response.text();
+        try {
+          const parsed = JSON.parse(text);
+          // Alguns proxies devolvem uma página/objeto de erro com HTTP 200.
+          // Só aceitamos JSON de verdade e deixamos o próximo fallback tentar.
+          if (parsed && typeof parsed === 'object') return parsed;
+        } catch (_) {
+          lastError = new Error('resposta não era JSON');
+        }
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    throw lastError || new Error('O serviço respondeu em um formato inválido.');
+  }
+
+  function normalizeSocialUrl(raw) {
+    let value = String(raw || '').trim().replace(/[),.;]+$/, '');
+    if (!value) return null;
+    if (/^@[A-Za-z0-9._-]+$/.test(value)) {
+      value = `https://www.tiktok.com/${value}`;
+    }
+    if (!/^https?:\/\//i.test(value)) value = `https://${value}`;
+    try {
+      const url = new URL(value);
+      url.hash = '';
+      return url.toString();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function extractInputLinks(raw) {
+    const matches = String(raw || '').match(/(?:https?:\/\/|www\.)[^\s]+|@[A-Za-z0-9._-]+/gi) || [];
+    return [...new Set(matches.map(normalizeSocialUrl).filter(Boolean))];
+  }
+
+  function detectSocialPlatform(rawUrl) {
+    try {
+      const host = new URL(rawUrl).hostname.toLowerCase().replace(/^www\./, '');
+      if (host === 'youtu.be' || host === 'youtube.com' || host.endsWith('.youtube.com')) return 'youtube';
+      if (host === 'instagram.com' || host.endsWith('.instagram.com')) return 'instagram';
+      if (host === 'tiktok.com' || host.endsWith('.tiktok.com')) return 'tiktok';
+    } catch (_) {}
+    return null;
+  }
+
+  function classifySocialLink(rawUrl, platform) {
+    const url = new URL(rawUrl);
+    const parts = url.pathname.split('/').filter(Boolean);
+    if (platform === 'tiktok') {
+      const isProfile = parts[0] && parts[0].startsWith('@') && !parts.includes('video');
+      return isProfile ? 'profile' : 'media';
+    }
+    if (platform === 'youtube') {
+      const directSegments = ['watch', 'shorts', 'embed', 'live'];
+      const isDirect = url.hostname.includes('youtu.be') || directSegments.some(x => parts[0] === x) || url.searchParams.has('v');
+      return isDirect ? 'media' : 'profile';
+    }
+    if (platform === 'instagram') {
+      const directSegments = ['p', 'reel', 'reels', 'tv', 'stories'];
+      return directSegments.includes(parts[0]) ? 'media' : 'profile';
+    }
+    return 'media';
+  }
+
+  function safeFilename(text, fallback = 'video') {
+    const cleaned = String(text || fallback)
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9._-]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .slice(0, 72);
+    return cleaned || fallback;
+  }
+
+  function platformFallbackTitle(platform) {
+    return `${platformInfo[platform]?.label || 'Vídeo'} — link para preparar`;
+  }
+
+  function createSocialItem(data) {
+    return {
+      id: `social-${++socialItemSequence}`,
+      platform: data.platform,
+      sourceUrl: data.sourceUrl,
+      title: data.title || platformFallbackTitle(data.platform),
+      author: data.author || '',
+      thumb: data.thumb || '',
+      readyUrl: data.readyUrl || '',
+      filename: data.filename || '',
+      mediaType: data.mediaType || 'video',
+      selected: !!data.selected,
+      status: data.readyUrl ? 'ready' : 'pending',
+      error: '',
+      parentId: data.parentId || null,
+      date: data.date || '',
+    };
+  }
+
+  function addSocialItems(items) {
+    const existing = new Set(socialItems.map(item => item.readyUrl || item.sourceUrl));
+    let added = 0;
+    for (const raw of items) {
+      const key = raw.readyUrl || raw.sourceUrl;
+      if (!key || existing.has(key)) continue;
+      socialItems.push(createSocialItem(raw));
+      existing.add(key);
+      added++;
+    }
+    renderSocialItems();
+    return added;
+  }
+
+  function itemStatusLabel(item) {
+    if (item.status === 'ready') return ['Pronto para baixar', 'ready'];
+    if (item.status === 'done') return ['Baixado', 'ready'];
+    if (item.status === 'loading') return ['Preparando...', 'loading'];
+    if (item.status === 'picker') return ['Escolha as opções abaixo', 'ready'];
+    if (item.status === 'error') return [item.error || 'Falha', 'error'];
+    return ['Aguardando preparação', ''];
+  }
+
+  function renderSocialItems() {
+    socialMediaList.innerHTML = '';
+
+    if (socialItems.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'social-empty-state';
+      empty.innerHTML = '<div class="social-empty-icon">🔗</div><strong>Cole um link para começar</strong><span>Perfis e canais serão expandidos em uma lista. Nada será baixado automaticamente.</span>';
+      socialMediaList.appendChild(empty);
+    } else {
+      socialItems.forEach(item => socialMediaList.appendChild(buildSocialCard(item)));
+    }
+
+    const selectedCount = socialItems.filter(item => item.selected).length;
+    const readyCount = socialItems.filter(item => item.readyUrl).length;
+    socialResultSummary.textContent = socialItems.length
+      ? `${socialItems.length} item(ns) • ${readyCount} pronto(s) • ${selectedCount} selecionado(s)`
+      : 'Nenhum item carregado.';
+    socialDownloadSelectedBtn.disabled = selectedCount === 0;
+  }
+
+  function buildSocialCard(item) {
+    const card = document.createElement('article');
+    card.className = `social-media-card${item.selected ? ' is-selected' : ''}${item.status === 'loading' ? ' is-loading' : ''}`;
+    card.dataset.itemId = item.id;
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className = 'social-card-check';
+    checkbox.checked = item.selected;
+    checkbox.disabled = item.status === 'picker';
+    checkbox.setAttribute('aria-label', `Selecionar ${item.title}`);
+    checkbox.addEventListener('change', () => {
+      item.selected = checkbox.checked;
+      renderSocialItems();
+    });
+
+    const thumb = document.createElement('div');
+    thumb.className = 'social-thumb';
+    if (item.thumb) {
+      const img = document.createElement('img');
+      img.src = item.thumb;
+      img.alt = '';
+      img.loading = 'lazy';
+      img.referrerPolicy = 'no-referrer';
+      img.addEventListener('error', () => {
+        img.remove();
+        thumb.textContent = platformInfo[item.platform]?.icon || '🎬';
+      });
+      thumb.appendChild(img);
+    } else {
+      thumb.textContent = platformInfo[item.platform]?.icon || '🎬';
+    }
+
+    const main = document.createElement('div');
+    main.className = 'social-card-main';
+    const title = document.createElement('div');
+    title.className = 'social-card-title';
+    title.textContent = item.title;
+    const sub = document.createElement('div');
+    sub.className = 'social-card-sub';
+    sub.textContent = [item.author, item.date, item.sourceUrl].filter(Boolean).join(' • ');
+    const badges = document.createElement('div');
+    badges.className = 'social-card-badges';
+    const platformBadge = document.createElement('span');
+    platformBadge.className = `social-mini-badge ${item.platform}`;
+    platformBadge.textContent = platformInfo[item.platform]?.label || item.platform;
+    const [statusText, statusClass] = itemStatusLabel(item);
+    const statusBadge = document.createElement('span');
+    statusBadge.className = `social-mini-badge ${statusClass}`;
+    statusBadge.textContent = statusText;
+    badges.append(platformBadge, statusBadge);
+    main.append(title, sub, badges);
+
+    const actions = document.createElement('div');
+    actions.className = 'social-card-actions';
+    const mainButton = document.createElement('button');
+    mainButton.type = 'button';
+    mainButton.className = `social-card-main-btn${item.readyUrl ? '' : ' prepare'}`;
+    mainButton.disabled = item.status === 'loading' || item.status === 'picker';
+    mainButton.textContent = item.status === 'loading'
+      ? 'Aguarde...'
+      : item.readyUrl
+        ? (item.status === 'done' ? '⬇️ Baixar novamente' : '⬇️ Baixar')
+        : '🔎 Preparar';
+    mainButton.addEventListener('click', async () => {
+      if (item.readyUrl) await downloadSocialItem(item);
+      else await prepareSocialItem(item);
+    });
+
+    const open = document.createElement('a');
+    open.className = 'social-card-open';
+    open.href = item.sourceUrl;
+    open.target = '_blank';
+    open.rel = 'noopener';
+    open.textContent = 'Abrir original';
+    actions.append(mainButton, open);
+
+    card.append(checkbox, thumb, main, actions);
+    return card;
+  }
+
+  function extractTikTokUsername(rawUrl) {
+    try {
+      const match = new URL(rawUrl).pathname.match(/@([A-Za-z0-9._-]+)/);
+      return match ? match[1] : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  async function fetchTikTokProfileItems(profileUrl, limit, onProgress) {
+    const username = extractTikTokUsername(profileUrl);
+    if (!username) throw new Error('Não consegui identificar o @usuário do TikTok.');
     let cursor = 0;
     let all = [];
     let hasMore = true;
-    let safety = 0;
+    let rounds = 0;
 
-    while (hasMore && safety < 100) {
-      safety++;
-      const apiUrl = `https://www.tikwm.com/api/user/posts?unique_id=${encodeURIComponent(username)}&count=35&cursor=${cursor}`;
-      const json = await fetchJsonWithCorsFallback(apiUrl);
-
-      if (json.code !== 0 || !json.data) {
-        throw new Error(json.msg || 'Perfil não encontrado ou é privado.');
-      }
-
+    while (hasMore && all.length < limit && rounds < 10) {
+      rounds++;
+      const endpoint = `https://www.tikwm.com/api/user/posts?unique_id=${encodeURIComponent(username)}&count=35&cursor=${cursor}`;
+      const json = await fetchJsonWithCorsFallback(endpoint);
+      if (json.code !== 0 || !json.data) throw new Error(json.msg || 'Perfil TikTok não encontrado, privado ou temporariamente bloqueado.');
       const videos = json.data.videos || json.data.list || [];
       all = all.concat(videos);
-      hasMore = !!json.data.hasMore && videos.length > 0;
-      cursor = json.data.cursor !== undefined ? json.data.cursor : (cursor + videos.length);
-
-      if (onProgress) onProgress(all.length);
-      if (limit > 0 && all.length >= limit) { all = all.slice(0, limit); break; }
+      if (onProgress) onProgress(Math.min(all.length, limit));
+      hasMore = !!(json.data.hasMore ?? json.data.has_more) && videos.length > 0;
+      cursor = json.data.cursor ?? json.data.max_cursor ?? (cursor + videos.length);
       if (!hasMore) break;
-      await sleep(700);
+      await sleep(350);
     }
 
-    return all;
+    return all.slice(0, limit).map((video, index) => {
+      const videoId = video.video_id || video.id || video.aweme_id || '';
+      const sourceUrl = videoId
+        ? `https://www.tiktok.com/@${username}/video/${videoId}`
+        : profileUrl;
+      const readyUrl = video.play || video.hdplay || video.wmplay || '';
+      return {
+        platform: 'tiktok',
+        sourceUrl,
+        title: video.title || video.desc || `TikTok de @${username} #${index + 1}`,
+        author: `@${username}`,
+        thumb: video.cover || video.origin_cover || video.ai_dynamic_cover || '',
+        readyUrl,
+        filename: `${safeFilename(video.title || `${username}_${videoId || index + 1}`)}.mp4`,
+      };
+    });
   }
 
-  downloadProfileBtn.addEventListener('click', async () => {
-    const username = extractTiktokUsername(tiktokProfileInput.value);
-    if (!username) {
-      alert('Digite um @usuario ou link de perfil válido do TikTok.');
+  async function resolveYouTubeChannelId(channelUrl) {
+    const url = new URL(channelUrl);
+    const direct = url.pathname.match(/\/channel\/(UC[A-Za-z0-9_-]{20,30})/);
+    if (direct) return direct[1];
+
+    const html = await fetchTextWithCorsFallback(channelUrl);
+    const patterns = [
+      /"channelId"\s*:\s*"(UC[A-Za-z0-9_-]{20,30})"/,
+      /"externalId"\s*:\s*"(UC[A-Za-z0-9_-]{20,30})"/,
+      /itemprop="channelId"\s+content="(UC[A-Za-z0-9_-]{20,30})"/,
+      /channel_id=(UC[A-Za-z0-9_-]{20,30})/,
+    ];
+    for (const pattern of patterns) {
+      const match = html.match(pattern);
+      if (match) return match[1];
+    }
+    throw new Error('Não consegui localizar o ID desse canal do YouTube. Tente o link no formato youtube.com/channel/UC...');
+  }
+
+  function youtubeItemsFromRssJson(json, limit) {
+    if (!json || json.status !== 'ok' || !Array.isArray(json.items) || !json.items.length) return [];
+    return json.items.slice(0, limit).map(entry => {
+      const videoId = extractYouTubeVideoId(entry.link || '') || String(entry.guid || '').split(':').pop();
+      return {
+        platform: 'youtube',
+        sourceUrl: entry.link || `https://www.youtube.com/watch?v=${videoId}`,
+        title: entry.title || 'Vídeo do YouTube',
+        author: entry.author || json.feed?.author || '',
+        date: entry.pubDate ? new Date(entry.pubDate.replace(' ', 'T') + 'Z').toLocaleDateString('pt-BR') : '',
+        thumb: entry.thumbnail || (videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : ''),
+        filename: `${safeFilename(entry.title || videoId || 'youtube')}.mp4`,
+      };
+    });
+  }
+
+  async function fetchYouTubeFeedViaRss2Json(feedUrl, limit) {
+    const endpoint = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`;
+    const response = await fetchWithTimeout(endpoint, { cache: 'no-store' }, 25000);
+    if (!response.ok) throw new Error(`RSS2JSON HTTP ${response.status}`);
+    return youtubeItemsFromRssJson(await response.json(), limit);
+  }
+
+  async function fetchYouTubeChannelItems(channelUrl, limit) {
+    const parsed = new URL(channelUrl);
+    const parts = parsed.pathname.split('/').filter(Boolean);
+
+    // Muitos canais antigos usam o mesmo nome do @handle no feed "user".
+    // Tentamos essa rota primeiro porque o RSS2JSON já libera CORS e evita
+    // depender de um proxy para ler a página enorme do canal.
+    const possibleUser = parts[0] === 'user'
+      ? parts[1]
+      : (parts[0] && parts[0].startsWith('@') ? parts[0].slice(1) : null);
+    if (possibleUser) {
+      try {
+        const userFeed = `https://www.youtube.com/feeds/videos.xml?user=${encodeURIComponent(possibleUser)}`;
+        const items = await fetchYouTubeFeedViaRss2Json(userFeed, limit);
+        if (items.length) return items;
+      } catch (_) { /* handles novos podem não ter feed por username */ }
+    }
+
+    const channelId = await resolveYouTubeChannelId(channelUrl);
+    const feedUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${encodeURIComponent(channelId)}`;
+
+    // Caminho principal: serviço RSS com CORS, estável para páginas estáticas.
+    try {
+      const items = await fetchYouTubeFeedViaRss2Json(feedUrl, limit);
+      if (items.length) return items;
+    } catch (_) { /* cai para o XML direto/proxies */ }
+
+    const xmlText = await fetchTextWithCorsFallback(feedUrl);
+    const xml = new DOMParser().parseFromString(xmlText, 'application/xml');
+    if (xml.querySelector('parsererror')) throw new Error('O feed do canal do YouTube retornou XML inválido.');
+    const entries = Array.from(xml.getElementsByTagName('entry')).slice(0, limit);
+    if (!entries.length) throw new Error('Nenhum vídeo público apareceu no feed recente desse canal.');
+
+    return entries.map(entry => {
+      const videoIdNode = entry.getElementsByTagNameNS('*', 'videoId')[0];
+      const titleNode = entry.getElementsByTagName('title')[0];
+      const authorNode = entry.getElementsByTagName('name')[0];
+      const publishedNode = entry.getElementsByTagName('published')[0];
+      const linkNode = Array.from(entry.getElementsByTagName('link')).find(node => node.getAttribute('rel') === 'alternate');
+      const videoId = videoIdNode?.textContent?.trim() || '';
+      return {
+        platform: 'youtube',
+        sourceUrl: linkNode?.getAttribute('href') || `https://www.youtube.com/watch?v=${videoId}`,
+        title: titleNode?.textContent?.trim() || 'Vídeo do YouTube',
+        author: authorNode?.textContent?.trim() || '',
+        date: publishedNode?.textContent ? new Date(publishedNode.textContent).toLocaleDateString('pt-BR') : '',
+        thumb: videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : '',
+        filename: `${safeFilename(titleNode?.textContent || videoId || 'youtube')}.mp4`,
+      };
+    });
+  }
+
+  function extractInstagramUsername(rawUrl) {
+    try {
+      const first = new URL(rawUrl).pathname.split('/').filter(Boolean)[0] || '';
+      const reserved = new Set(['p', 'reel', 'reels', 'tv', 'stories', 'explore', 'accounts']);
+      return first && !reserved.has(first.toLowerCase()) ? first.replace(/^@/, '') : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  async function fetchInstagramProfileItems(profileUrl, limit) {
+    const username = extractInstagramUsername(profileUrl);
+    if (!username) throw new Error('Não consegui identificar o usuário do Instagram.');
+    const canonical = `https://www.instagram.com/${username}/`;
+    const html = await fetchTextWithCorsFallback(canonical);
+    const normalized = html.replace(/\\u002F/g, '/').replace(/\\\//g, '/');
+    const found = [];
+    const seen = new Set();
+
+    const add = (type, code) => {
+      if (!code || seen.has(code) || found.length >= limit) return;
+      seen.add(code);
+      const normalizedType = type === 'tv' ? 'p' : type;
+      found.push({
+        platform: 'instagram',
+        sourceUrl: `https://www.instagram.com/${normalizedType}/${code}/`,
+        title: `Instagram @${username} • ${normalizedType === 'reel' ? 'Reel' : 'Publicação'} ${found.length + 1}`,
+        author: `@${username}`,
+        filename: `instagram_${safeFilename(username)}_${code}.mp4`,
+      });
+    };
+
+    let match;
+    const hrefPattern = /\/(reel|p|tv)\/([A-Za-z0-9_-]{5,})/g;
+    while ((match = hrefPattern.exec(normalized)) && found.length < limit) add(match[1], match[2]);
+    const shortcodePattern = /"shortcode"\s*:\s*"([A-Za-z0-9_-]{5,})"/g;
+    while ((match = shortcodePattern.exec(normalized)) && found.length < limit) add('p', match[1]);
+
+    if (!found.length) {
+      throw new Error('O Instagram não liberou a lista pública deste perfil. Cole os links individuais de Reels/publicações; perfis privados ou com login obrigatório não podem ser listados.');
+    }
+    return found;
+  }
+
+  function extractYouTubeVideoId(rawUrl) {
+    try {
+      const url = new URL(rawUrl);
+      if (url.hostname.includes('youtu.be')) return url.pathname.split('/').filter(Boolean)[0] || '';
+      if (url.searchParams.get('v')) return url.searchParams.get('v');
+      const match = url.pathname.match(/\/(?:shorts|embed|live)\/([A-Za-z0-9_-]{6,15})/);
+      return match ? match[1] : '';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  async function buildDirectSocialItem(sourceUrl, platform) {
+    const base = {
+      platform,
+      sourceUrl,
+      title: platformFallbackTitle(platform),
+      filename: `${platform}_${Date.now()}.mp4`,
+    };
+    if (platform === 'youtube') {
+      const videoId = extractYouTubeVideoId(sourceUrl);
+      if (videoId) {
+        base.thumb = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+        base.filename = `youtube_${videoId}.mp4`;
+      }
+      try {
+        const meta = await fetchJsonWithCorsFallback(`https://www.youtube.com/oembed?url=${encodeURIComponent(sourceUrl)}&format=json`);
+        base.title = meta.title || base.title;
+        base.author = meta.author_name || '';
+        base.thumb = meta.thumbnail_url || base.thumb;
+        base.filename = `${safeFilename(meta.title || videoId || 'youtube')}.mp4`;
+      } catch (_) { /* metadados são opcionais */ }
+    } else if (platform === 'instagram') {
+      base.title = 'Publicação / Reel do Instagram';
+      base.filename = `instagram_${Date.now()}.mp4`;
+    } else if (platform === 'tiktok') {
+      base.title = 'Vídeo do TikTok';
+      base.filename = `tiktok_${Date.now()}.mp4`;
+    }
+    return base;
+  }
+
+  async function resolveTikTokMedia(sourceUrl) {
+    const json = await fetchJsonWithCorsFallback(`https://www.tikwm.com/api/?url=${encodeURIComponent(sourceUrl)}`);
+    if (json.code !== 0 || !json.data) throw new Error(json.msg || 'Não consegui preparar esse TikTok.');
+    const data = json.data;
+    const outputs = [];
+    if (Array.isArray(data.images) && data.images.length) {
+      data.images.forEach((url, index) => outputs.push({
+        url,
+        type: 'photo',
+        thumb: url,
+        filename: `${safeFilename(data.title || 'tiktok_foto')}_${index + 1}.jpg`,
+      }));
+    }
+    const videoUrl = data.play || data.hdplay || data.wmplay;
+    if (videoUrl) outputs.unshift({
+      url: videoUrl,
+      type: 'video',
+      thumb: data.cover || data.origin_cover || '',
+      filename: `${safeFilename(data.title || data.id || 'tiktok')}.mp4`,
+      title: data.title || 'Vídeo do TikTok',
+      author: data.author?.unique_id ? `@${data.author.unique_id}` : '',
+    });
+    if (!outputs.length) throw new Error('O TikTok não retornou nenhum arquivo público para esse link.');
+    return outputs;
+  }
+
+  function getCobaltSettings() {
+    const endpoint = cobaltApiUrl.value.trim().replace(/\/+$/, '');
+    const authType = cobaltAuthType.value;
+    const key = cobaltApiKey.value.trim();
+    if (!endpoint) {
+      const error = new Error('Configure a URL da sua API Cobalt em “Motor universal para YouTube e Instagram”.');
+      error.code = 'COBALT_NOT_CONFIGURED';
+      throw error;
+    }
+    try { new URL(endpoint); } catch (_) { throw new Error('A URL da API Cobalt é inválida.'); }
+    return { endpoint, authType, key };
+  }
+
+  async function resolveWithCobalt(sourceUrl) {
+    const { endpoint, authType, key } = getCobaltSettings();
+    const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json' };
+    if (authType !== 'none' && key) headers.Authorization = `${authType} ${key}`;
+    const response = await fetchWithTimeout(endpoint + '/', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        url: sourceUrl,
+        downloadMode: 'auto',
+        videoQuality: socialQuality.value,
+        youtubeVideoCodec: 'h264',
+        youtubeVideoContainer: 'mp4',
+        filenameStyle: 'basic',
+        localProcessing: 'disabled',
+        allowH265: false,
+      }),
+    }, 90000);
+
+    let data;
+    try { data = await response.json(); }
+    catch (_) { throw new Error(`A API Cobalt respondeu sem JSON (HTTP ${response.status}).`); }
+    if (!response.ok || data.status === 'error') {
+      const code = data?.error?.code || data?.error || `HTTP ${response.status}`;
+      throw new Error(`Cobalt: ${code}`);
+    }
+
+    if ((data.status === 'tunnel' || data.status === 'redirect') && data.url) {
+      return [{ url: data.url, type: 'video', filename: data.filename || 'video.mp4' }];
+    }
+    if (data.status === 'picker' && Array.isArray(data.picker)) {
+      const list = data.picker.map((media, index) => ({
+        url: media.url,
+        type: media.type || 'video',
+        thumb: media.thumb || '',
+        filename: `${safeFilename(data.filename || 'midia')}_${index + 1}.${media.type === 'photo' ? 'jpg' : 'mp4'}`,
+      }));
+      if (data.audio) list.push({ url: data.audio, type: 'audio', filename: data.audioFilename || 'audio.mp3' });
+      return list;
+    }
+    if (data.status === 'local-processing' && Array.isArray(data.tunnel) && data.tunnel.length) {
+      return data.tunnel.map((url, index) => ({
+        url,
+        type: index === 0 ? 'video' : 'audio',
+        filename: data.output?.filename || `arquivo_${index + 1}.mp4`,
+      }));
+    }
+    throw new Error(`A API Cobalt retornou um estado não reconhecido: ${data.status || 'vazio'}.`);
+  }
+
+  async function prepareSocialItem(item, options = {}) {
+    if (item.readyUrl) return [item];
+    item.status = 'loading';
+    item.error = '';
+    renderSocialItems();
+    setSocialMessage(socialBatchStatus, `Preparando: ${item.title}`);
+
+    try {
+      let outputs;
+      if (item.platform === 'tiktok') {
+        try {
+          outputs = await resolveTikTokMedia(item.sourceUrl);
+        } catch (tikTokError) {
+          // Se o TikWM estiver indisponível e o usuário configurou Cobalt,
+          // tenta o motor universal antes de informar falha.
+          if (cobaltApiUrl.value.trim()) outputs = await resolveWithCobalt(item.sourceUrl);
+          else throw tikTokError;
+        }
+      } else {
+        outputs = await resolveWithCobalt(item.sourceUrl);
+      }
+
+      if (!outputs || outputs.length === 0) throw new Error('Nenhum arquivo disponível.');
+      if (outputs.length === 1) {
+        const output = outputs[0];
+        item.readyUrl = output.url;
+        item.thumb = output.thumb || item.thumb;
+        item.filename = output.filename || item.filename || `${safeFilename(item.title)}.mp4`;
+        item.mediaType = output.type || 'video';
+        item.title = output.title || item.title;
+        item.author = output.author || item.author;
+        item.status = 'ready';
+        renderSocialItems();
+        setSocialMessage(socialBatchStatus, `✅ “${item.title}” está pronto. Clique em Baixar.`);
+        return [item];
+      }
+
+      const children = outputs.map((output, index) => ({
+        platform: item.platform,
+        sourceUrl: item.sourceUrl,
+        title: `${item.title} — opção ${index + 1} (${output.type || 'mídia'})`,
+        author: item.author,
+        thumb: output.thumb || item.thumb,
+        readyUrl: output.url,
+        filename: output.filename || `${safeFilename(item.title)}_${index + 1}.${output.type === 'photo' ? 'jpg' : 'mp4'}`,
+        mediaType: output.type || 'video',
+        parentId: item.id,
+      }));
+      item.status = 'picker';
+      item.selected = false;
+      const added = addSocialItems(children);
+      renderSocialItems();
+      setSocialMessage(socialBatchStatus, `✅ ${added} opção(ões) adicionada(s). Escolha quais deseja baixar.`);
+      return [];
+    } catch (error) {
+      item.status = 'error';
+      item.error = error.message || String(error);
+      renderSocialItems();
+      setSocialMessage(socialBatchStatus, item.error, true);
+      if (error.code === 'COBALT_NOT_CONFIGURED') {
+        document.getElementById('socialApiSettings').open = true;
+        cobaltApiUrl.focus();
+      }
+      return [];
+    }
+  }
+
+  async function saveRemoteMedia(mediaUrl, filename) {
+    try {
+      const response = await fetchWithTimeout(mediaUrl, { cache: 'no-store' }, 120000);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const blob = await response.blob();
+      if (!blob.size) throw new Error('arquivo vazio');
+      await window.saveProcessedBlob(blob, filename);
+      return 'saved';
+    } catch (error) {
+      // Muitos CDNs não liberam CORS, mas aceitam navegação direta. Nesse caso,
+      // o link é aberto com download/Content-Disposition em vez de falhar.
+      const anchor = document.createElement('a');
+      anchor.href = mediaUrl;
+      anchor.target = '_blank';
+      anchor.rel = 'noopener';
+      anchor.download = filename;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      return 'opened';
+    }
+  }
+
+  async function downloadSocialItem(item) {
+    if (!item.readyUrl) {
+      await prepareSocialItem(item);
+      if (!item.readyUrl) return false;
+    }
+    item.status = 'loading';
+    renderSocialItems();
+    setSocialMessage(socialBatchStatus, `Baixando: ${item.title}`);
+    try {
+      const extension = item.mediaType === 'photo' ? 'jpg' : item.mediaType === 'audio' ? 'mp3' : 'mp4';
+      const filename = item.filename || `${safeFilename(item.title)}.${extension}`;
+      const mode = await saveRemoteMedia(item.readyUrl, filename);
+      item.status = 'done';
+      renderSocialItems();
+      setSocialMessage(
+        socialBatchStatus,
+        mode === 'saved'
+          ? `✅ Download iniciado: ${filename}`
+          : `✅ O arquivo foi aberto para download em uma nova guia: ${filename}`
+      );
+      return true;
+    } catch (error) {
+      item.status = 'error';
+      item.error = error.message || String(error);
+      renderSocialItems();
+      setSocialMessage(socialBatchStatus, `Falha no download: ${item.error}`, true);
+      return false;
+    }
+  }
+
+  socialAnalyzeBtn.addEventListener('click', async () => {
+    const links = extractInputLinks(socialLinksInput.value);
+    if (!links.length) {
+      setSocialMessage(socialSearchStatus, 'Cole pelo menos um link válido do YouTube, Instagram ou TikTok.', true);
       return;
     }
 
-    const limit = Math.max(0, parseInt(tiktokProfileLimit.value, 10) || 0);
-    const order = tiktokProfileOrder.value;
-
-    downloadProfileBtn.disabled = true;
-    downloadUrlsBtn.disabled = true;
-    dlQueueList.innerHTML = '';
-    profileFetchStatus.innerText = `Buscando vídeos de @${username}...`;
-    dlStatus.innerText = '';
+    const limit = Math.max(1, parseInt(socialProfileLimit.value, 10) || 24);
+    socialAnalyzeBtn.disabled = true;
+    setSocialMessage(socialSearchStatus, `Analisando ${links.length} link(s)...`);
+    let successes = 0;
+    let failures = 0;
+    let addedTotal = 0;
 
     try {
-      let videos = await fetchAllProfileVideos(username, limit, (count) => {
-        profileFetchStatus.innerText = `Encontrados ${count} vídeo(s) até agora...`;
-      });
+      for (let index = 0; index < links.length; index++) {
+        const link = links[index];
+        const platform = detectSocialPlatform(link);
+        if (!platform) {
+          failures++;
+          setSocialMessage(socialSearchStatus, `Ignorando link não suportado (${index + 1}/${links.length}).`, true);
+          continue;
+        }
+        const kind = classifySocialLink(link, platform);
+        setSocialMessage(socialSearchStatus, `${platformInfo[platform].label}: ${kind === 'profile' ? 'buscando perfil/canal' : 'adicionando vídeo'} (${index + 1}/${links.length})...`);
 
-      if (videos.length === 0) {
-        profileFetchStatus.innerText = 'Nenhum vídeo público encontrado para este perfil.';
-        return;
+        try {
+          let items;
+          if (kind === 'profile') {
+            if (platform === 'tiktok') {
+              items = await fetchTikTokProfileItems(link, limit, count => {
+                setSocialMessage(socialSearchStatus, `TikTok: ${count} vídeo(s) encontrado(s)...`);
+              });
+            } else if (platform === 'youtube') {
+              items = await fetchYouTubeChannelItems(link, limit);
+            } else {
+              items = await fetchInstagramProfileItems(link, limit);
+            }
+          } else {
+            items = [await buildDirectSocialItem(link, platform)];
+          }
+          const added = addSocialItems(items);
+          addedTotal += added;
+          successes++;
+        } catch (error) {
+          console.warn('Falha ao analisar link social:', link, error);
+          failures++;
+          setSocialMessage(socialSearchStatus, `${platformInfo[platform].label}: ${error.message || error}`, true);
+        }
       }
 
-      if (order === 'antigos') {
-        videos = videos.slice().reverse();
-      } else if (order === 'curtidos') {
-        videos = videos.slice().sort((a, b) => (b.digg_count || 0) - (a.digg_count || 0));
-      }
-      if (limit > 0) videos = videos.slice(0, limit);
-
-      profileFetchStatus.innerText = `${videos.length} vídeo(s) encontrado(s). Iniciando downloads...`;
-
-      for (let i = 0; i < videos.length; i++) {
-        const v = videos[i];
-        const playUrl = v.play || v.hdplay || v.wmplay;
-        if (!playUrl) continue;
-
-        const title = v.title || `${username}_${i + 1}`;
-        const safeTitle = (title.substring(0, 30).replace(/[^a-z0-9]/gi, '_').toLowerCase()) || `${username}_${i + 1}`;
-
-        dlStatus.innerText = `Baixando (${i + 1}/${videos.length})...`;
-
-        const dlItem = document.createElement('div');
-        dlItem.className = 'dl-item';
-        dlItem.innerHTML = `
-          <div class="dl-item-title">${i + 1}. ${title}</div>
-          <a href="${playUrl}" target="_blank" download="${safeTitle}.mp4" class="dl-item-btn">Baixado ✅</a>
-        `;
-        dlQueueList.appendChild(dlItem);
-
-        await downloadVideoDirectly(playUrl, `${safeTitle}.mp4`);
-        await sleep(1500);
-      }
-
-      dlStatus.innerText = `Todos os ${videos.length} vídeos do perfil @${username} foram baixados!`;
-      profileFetchStatus.innerText = 'Concluído.';
-    } catch (err) {
-      profileFetchStatus.innerText = 'Erro: ' + (err.message || err);
+      const message = `Busca concluída: ${addedTotal} novo(s) item(ns) exibido(s)` +
+        (failures ? `; ${failures} link(s) não puderam ser listados.` : '.');
+      setSocialMessage(socialSearchStatus, message, successes === 0 && failures > 0);
+      if (addedTotal) window.showToast(`${addedTotal} vídeo(s) disponível(is) para você escolher.`, 'success');
     } finally {
-      downloadProfileBtn.disabled = false;
-      downloadUrlsBtn.disabled = false;
+      socialAnalyzeBtn.disabled = false;
     }
   });
+
+  socialSelectAllBtn.addEventListener('click', () => {
+    const selectable = socialItems.filter(item => item.status !== 'picker');
+    const shouldSelect = selectable.some(item => !item.selected);
+    selectable.forEach(item => { item.selected = shouldSelect; });
+    renderSocialItems();
+  });
+
+  socialClearBtn.addEventListener('click', () => {
+    socialItems = [];
+    setSocialMessage(socialBatchStatus, '');
+    setSocialMessage(socialSearchStatus, 'Lista limpa.');
+    renderSocialItems();
+  });
+
+  socialDownloadSelectedBtn.addEventListener('click', async () => {
+    const selected = socialItems.filter(item => item.selected && item.status !== 'picker');
+    if (!selected.length) return;
+    socialDownloadSelectedBtn.disabled = true;
+    let downloaded = 0;
+    let needsChoice = 0;
+
+    for (let index = 0; index < selected.length; index++) {
+      const item = selected[index];
+      setSocialMessage(socialBatchStatus, `Fila ${index + 1}/${selected.length}: ${item.title}`);
+      if (!item.readyUrl) {
+        const prepared = await prepareSocialItem(item, { batch: true });
+        if (!item.readyUrl) {
+          if (item.status === 'picker' || prepared.length === 0) needsChoice++;
+          continue;
+        }
+      }
+      if (await downloadSocialItem(item)) downloaded++;
+      await sleep(550);
+    }
+
+    setSocialMessage(
+      socialBatchStatus,
+      `Fila concluída: ${downloaded} download(s) iniciado(s)` +
+        (needsChoice ? `; ${needsChoice} item(ns) geraram opções para você escolher na lista.` : '.')
+    );
+    socialDownloadSelectedBtn.disabled = socialItems.every(item => !item.selected);
+  });
+
+  // Configuração do Cobalt: endpoint e tipo de autenticação podem persistir;
+  // a chave fica somente na sessão atual e nunca é salva no localStorage.
+  try {
+    cobaltApiUrl.value = localStorage.getItem('blind_cobalt_url') || '';
+    cobaltAuthType.value = localStorage.getItem('blind_cobalt_auth') || 'none';
+  } catch (_) {}
+
+  [cobaltApiUrl, cobaltAuthType].forEach(input => input.addEventListener('change', () => {
+    try {
+      localStorage.setItem('blind_cobalt_url', cobaltApiUrl.value.trim());
+      localStorage.setItem('blind_cobalt_auth', cobaltAuthType.value);
+    } catch (_) {}
+  }));
+
+  testCobaltBtn.addEventListener('click', async () => {
+    testCobaltBtn.disabled = true;
+    setSocialMessage(cobaltTestStatus, 'Testando conexão...');
+    try {
+      const { endpoint, authType, key } = getCobaltSettings();
+      const headers = { 'Accept': 'application/json' };
+      if (authType !== 'none' && key) headers.Authorization = `${authType} ${key}`;
+      const response = await fetchWithTimeout(endpoint + '/', { headers, cache: 'no-store' }, 20000);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const info = await response.json();
+      try {
+        localStorage.setItem('blind_cobalt_url', endpoint);
+        localStorage.setItem('blind_cobalt_auth', authType);
+      } catch (_) {}
+      const version = info?.cobalt?.version || info?.version || 'ativa';
+      setSocialMessage(cobaltTestStatus, `✅ API conectada e salva (${version}).`);
+    } catch (error) {
+      setSocialMessage(cobaltTestStatus, `Não conectou: ${error.message || error}. Confira CORS, URL e autenticação.`, true);
+    } finally {
+      testCobaltBtn.disabled = false;
+    }
+  });
+
+  renderSocialItems();
 
   // Liga os links de download das abas de Resumo IA e Sincronização à pasta
   // de destino escolhida na barra lateral, se houver uma selecionada.
@@ -6980,5 +7904,5 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
   window.wireDownloadLinkToSaveFolder(document.getElementById('aiSyncDownloadLink'));
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2e2c56c99d55efb',t:'MTc4NzI0MzMwNg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2e316192a57b92f',t:'MTc4NzI0NjYxMQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
