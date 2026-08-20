@@ -980,6 +980,18 @@
             <span class="control-val bgm-volume-val">35%</span>
           </div>
 
+          <label>🎵 Desafinar Áudio (anti Content ID de música):</label>
+          <select class="pitch-select">
+            <option value="0" selected>0 = Sem alteração</option>
+            <option value="1">+1 semitom (sobe o tom, acelera ~6%)</option>
+            <option value="-1">−1 semitom (desce o tom, desacelera ~6%)</option>
+            <option value="2">+2 semitons</option>
+            <option value="-2">−2 semitons</option>
+            <option value="3">+3 semitons</option>
+            <option value="-3">−3 semitons</option>
+          </select>
+          <p style="font-size:0.72rem;color:var(--text-muted);margin:4px 0 0;line-height:1.4;">Muda a <strong>altura real</strong> do áudio (não só volume/EQ), deslocando os picos espectrais — é o que de fato quebra o reconhecimento de música. O vídeo continua sincronizado (a velocidade muda junto com o tom).</p>
+
           <div class="feature-list">
             <label class="checkbox-item">
               <input type="checkbox" class="shake-chk" checked>
@@ -1093,6 +1105,18 @@
             <input type="range" class="bgm-volume-range" min="0" max="1" step="0.05" value="0.35">
             <span class="control-val bgm-volume-val">35%</span>
           </div>
+
+          <label>🎵 Desafinar Áudio (anti Content ID de música):</label>
+          <select class="pitch-select">
+            <option value="0" selected>0 = Sem alteração</option>
+            <option value="1">+1 semitom (sobe o tom, acelera ~6%)</option>
+            <option value="-1">−1 semitom (desce o tom, desacelera ~6%)</option>
+            <option value="2">+2 semitons</option>
+            <option value="-2">−2 semitons</option>
+            <option value="3">+3 semitons</option>
+            <option value="-3">−3 semitons</option>
+          </select>
+          <p style="font-size:0.72rem;color:var(--text-muted);margin:4px 0 0;line-height:1.4;">Muda a <strong>altura real</strong> do áudio (não só volume/EQ), deslocando os picos espectrais — é o que de fato quebra o reconhecimento de música. O vídeo continua sincronizado (a velocidade muda junto com o tom).</p>
 
           <div class="feature-list">
             <label class="checkbox-item">
@@ -1633,6 +1657,7 @@
       bgmInput: container.querySelector('.bgm-input'),
       bgmVolume: container.querySelector('.bgm-volume-range'),
       videoVolume: container.querySelector('.video-volume-range'),
+      pitch: container.querySelector('.pitch-select'),
       processBtn: container.querySelector('.process-btn')
     };
   }
@@ -2058,30 +2083,39 @@
   // (centro, topo, base, laterais) que simulam cortes de câmera; (2) transição
   // de "flash" entre um corte e outro; (3) leve variação de velocidade. O
   // resultado parece editado em vários takes, não um vídeo passado inteiro.
-  const CREATIVE_FRAMINGS = [
-    { z: 1.00, fx: 0.50, fy: 0.50 },
-    { z: 1.22, fx: 0.50, fy: 0.30 },
-    { z: 1.30, fx: 0.50, fy: 0.74 },
-    { z: 1.18, fx: 0.32, fy: 0.52 },
-    { z: 1.25, fx: 0.70, fy: 0.52 },
-    { z: 1.14, fx: 0.50, fy: 0.58 },
+  // Cada "corte" tem zoom forte (1.2x a 1.5x), um foco diferente (topo, base,
+  // laterais) e um color grading próprio (quente, frio, vívido, vintage). A
+  // troca é SECA (corte duro), não um morph suave — é isso que faz o vídeo
+  // parecer editado em vários takes, como um editor real.
+  const CREATIVE_CLIPS = [
+    { z: 1.30, fx: 0.50, fy: 0.32, grade: 'warm' },
+    { z: 1.46, fx: 0.34, fy: 0.62, grade: 'cool' },
+    { z: 1.20, fx: 0.66, fy: 0.44, grade: 'vivid' },
+    { z: 1.52, fx: 0.50, fy: 0.72, grade: 'vintage' },
+    { z: 1.36, fx: 0.30, fy: 0.36, grade: 'warm' },
+    { z: 1.24, fx: 0.70, fy: 0.56, grade: 'cool' },
+    { z: 1.48, fx: 0.50, fy: 0.50, grade: 'vivid' },
+    { z: 1.28, fx: 0.42, fy: 0.68, grade: 'vintage' },
   ];
+  const CREATIVE_GRADES = {
+    warm:    'saturate(1.18) sepia(0.12) contrast(1.07) brightness(1.03)',
+    cool:    'saturate(0.88) hue-rotate(8deg) contrast(1.09) brightness(0.97)',
+    vivid:   'saturate(1.40) contrast(1.14)',
+    vintage: 'sepia(0.30) contrast(1.12) brightness(0.95)',
+  };
   function getCreativeEditState(elapsed, inIntro) {
-    const clipDur = 3.0;            // segundos por "corte"
+    const clipDur = 2.5;            // segundos por "corte" (mais dinâmico)
     const idx = Math.max(0, Math.floor(elapsed / clipDur));
     const t = elapsed - idx * clipDur;
-    const cur = CREATIVE_FRAMINGS[idx % CREATIVE_FRAMINGS.length];
-    const prev = CREATIVE_FRAMINGS[Math.max(0, idx - 1) % CREATIVE_FRAMINGS.length];
-    const k = Math.min(1, t / 0.55);
-    const smooth = k * k * (3 - 2 * k); // smoothstep: transição suave entre focos
-    const zoom = prev.z + (cur.z - prev.z) * smooth;
-    const fx = prev.fx + (cur.fx - prev.fx) * smooth;
-    const fy = prev.fy + (cur.fy - prev.fy) * smooth;
+    const clip = CREATIVE_CLIPS[idx % CREATIVE_CLIPS.length];
+    // Corte DURO: o enquadramento e a cor trocam de uma vez, sem morph.
     let flash = 0;
-    if (!inIntro && idx > 0 && t < 0.26) {
-      flash = Math.max(0, 1 - t / 0.26);
+    if (!inIntro && idx > 0 && t < 0.18) {
+      flash = Math.max(0, 1 - t / 0.18);
     }
-    return { zoom, fx, fy, flash };
+    // Rampa de velocidade alternada (normal x acelerado) por corte.
+    const speed = (idx % 2 === 0) ? 1.0 : 1.13;
+    return { zoom: clip.z, fx: clip.fx, fy: clip.fy, grade: clip.grade, flash, speed };
   }
 
   function renderInteractivePreview() {
@@ -2432,6 +2466,15 @@
         const stream = canvas.captureStream(30);
         const stopTime = Math.max(config.cutStart + 0.5, video.duration - config.cutEnd);
 
+        // Desafino de áudio (anti Content ID): muda a ALTURA real do áudio,
+        // não só volume/EQ. Com preservesPitch=false, o playbackRate passa a
+        // alterar o tom junto com a velocidade — deslocar um semitom muda os
+        // picos espectrais e quebra o fingerprint de música. (Se o navegador
+        // não suportar preservesPitch, vira no-op inofensivo.)
+        const pitchSemitones = Number.isFinite(config.pitchSemitones) ? config.pitchSemitones : 0;
+        const pitchFactor = pitchSemitones !== 0 ? Math.pow(2, pitchSemitones / 12) : 1;
+        try { video.preservesPitch = (pitchSemitones === 0); } catch (e) {}
+
         try {
           const shared = getSharedAudioSource();
           audioCtx = shared.audioCtx;
@@ -2609,7 +2652,7 @@
           // 3. Micro-alteração temporal contínua (+4.5% speed)
           if (!videoStarted) {
             video.currentTime = config.cutStart;
-            video.playbackRate = 1.045;
+            video.playbackRate = 1.045 * pitchFactor;
             video.play();
             videoStarted = true;
           }
@@ -2635,9 +2678,11 @@
           const introZoom = inIntro ? (1 + 0.05 * (elapsed / introDuration)) : 1;
           const totalZoom = dynamicZoom * introZoom;
 
-          // Fundo Dinâmico Ambient Flare
+          // Fundo Dinâmico Ambient Flare — com edição criativa, vira um
+          // preenchimento de fundo mais forte pra cobrir os cantos que o
+          // re-enquadramento/zoom deixam à mostra (estilo "fundo preenchido").
           ctx.save();
-          ctx.globalAlpha = 0.28;
+          ctx.globalAlpha = config.creativeEdit ? 0.72 : 0.28;
           const bgW = TARGET_W * 1.38;
           const bgH = TARGET_H * 1.25;
           ctx.drawImage(video, sx, sy, sw, sh, (TARGET_W - bgW) / 2, (TARGET_H - bgH) / 2, bgW, bgH);
@@ -2646,10 +2691,12 @@
           // 5b. Edição Criativa Automática: punch-in focal + flash, simulando
           // cortes e re-enquadramento reais. Com o recurso desligado, o
           // transform é identidade (nenhuma mudança no comportamento atual).
-          const edit = config.creativeEdit ? getCreativeEditState(elapsed, inIntro) : { zoom: 1, fx: 0.5, fy: 0.5, flash: 0 };
+          const edit = config.creativeEdit ? getCreativeEditState(elapsed, inIntro) : { zoom: 1, fx: 0.5, fy: 0.5, grade: '', flash: 0, speed: 1 };
           if (config.creativeEdit) {
-            // leve variação de velocidade contínua (acelera/desacelera ~±4%)
-            video.playbackRate = 1.045 * (0.96 + 0.07 * (0.5 + 0.5 * Math.sin(elapsed * 0.8)));
+            // rampa de velocidade por corte (normal x acelerado) — muda o ritmo
+            // como um editor real; o áudio acompanha (pitch preservado quando
+            // não há desafino).
+            video.playbackRate = 1.045 * pitchFactor * edit.speed;
           }
 
           ctx.save();
@@ -2659,6 +2706,10 @@
             ctx.translate(cfX, cfY);
             ctx.scale(edit.zoom, edit.zoom);
             ctx.translate(-cfX, -cfY);
+            // color grading do "corte" — muda o clima de cada take
+            if (edit.grade && CREATIVE_GRADES[edit.grade]) {
+              ctx.filter = CREATIVE_GRADES[edit.grade];
+            }
           }
 
           // Renderização Principal com Matriz Espacial + Zoom Contínuo
@@ -2821,6 +2872,37 @@
     });
   }
 
+  // --- Relatório de Pré-Export (validação honesta) -------------------------
+  // Nenhum software prevê se o TikTok vai segurar o vídeo — o único teste real
+  // é subir. Mas dá pra checar, de verdade, as MESMAS coisas que a plataforma
+  // mede: tela parada no início, marca d'água/logotipo, áudio com música
+  // protegida e duração curta demais. Este relatório olha a configuração e o
+  // vídeo carregado e avisa ANTES de gastar tempo processando.
+  function buildPreExportReport(config, videoDuration, queueLength) {
+    const warnings = [];
+    const notes = [];
+    if (config.introStyle !== 'none') {
+      warnings.push('🎬 Gancho inicial ATIVADO — os primeiros segundos podem ser lidos como tela sem movimento real. Prefira estilo "Nenhum".');
+    }
+    if (config.overlayStyle === 'netflix_style' && config.channelName && config.channelName.trim()) {
+      warnings.push('🏷️ Nome de canal visível no topo — pode ser interpretado como marca d\'água/logotipo. Deixe o campo "Nome do Canal / Marca" vazio.');
+    }
+    if (!config.blur) {
+      notes.push('🔳 Máscara de desfoque desligada — se o vídeo de origem tiver logo ou QR code, ative para cobrir.');
+    }
+    if (config.pitchSemitones === 0) {
+      warnings.push('🎵 Áudio sem alteração de altura — se houver música protegida, o Content ID pode reconhecer. Ative o "Desafinar Áudio".');
+    }
+    const outDur = Math.max(0, (videoDuration || 0) - config.cutStart - config.cutEnd);
+    if (videoDuration > 0 && outDur < 5) {
+      warnings.push('⏱️ Vídeo de saída muito curto (menos de 5s) — conteúdo muito curto é marcado como baixa qualidade.');
+    }
+    if (queueLength > 1) {
+      notes.push('📦 Fila com ' + queueLength + ' vídeos — processa em sequência; confira o checklist no primeiro.');
+    }
+    return { warnings, notes };
+  }
+
   document.querySelectorAll('#tabFoundContent .process-btn, #tabDoramaContent .process-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       const queue = getCurrentQueue();
@@ -2851,8 +2933,30 @@
         ducking: ctrl.ducking ? ctrl.ducking.checked : false,
         bgmFile: (ctrl.bgmInput && ctrl.bgmInput.files && ctrl.bgmInput.files[0]) ? ctrl.bgmInput.files[0] : null,
         bgmVolume: ctrl.bgmVolume ? parseFloat(ctrl.bgmVolume.value) : 0.35,
-        videoVolume: ctrl.videoVolume ? parseFloat(ctrl.videoVolume.value) : 1.5
+        videoVolume: ctrl.videoVolume ? parseFloat(ctrl.videoVolume.value) : 1.5,
+        pitchSemitones: ctrl.pitch ? parseFloat(ctrl.pitch.value) : 0
       };
+
+      // Checklist de pré-export: se houver avisos, pergunta antes de gastar
+      // tempo processando. Nunca deve travar o fluxo — falha silenciosa.
+      try {
+        const report = buildPreExportReport(config, video.duration || 0, queue.length);
+        if (report.warnings.length > 0) {
+          const texto = '⚠️ CHECKLIST ANTES DE PROCESSAR\n\n' +
+            report.warnings.join('\n') +
+            (report.notes.length ? '\n\nℹ️ Dicas:\n' + report.notes.join('\n') : '') +
+            '\n\nDeseja processar mesmo assim?';
+          if (!confirm(texto)) {
+            status.innerText = 'Processamento cancelado pelo checklist.';
+            btn.disabled = false;
+            isExportingVideo = false;
+            document.querySelectorAll('.nav-btn').forEach(navBtn => navBtn.classList.remove('nav-locked'));
+            if (config.isCropActive && currentPreviewMode === 'overlay') cropBox.style.display = 'block';
+            if (config.blur && currentPreviewMode === 'overlay' && video.videoWidth) setupBlurBox();
+            return;
+          }
+        }
+      } catch (e) { /* checklist nunca deve travar o fluxo */ }
 
       try {
         // Pede UM wake lock que cobre a fila inteira (mesmo padrão usado nas abas
@@ -5566,5 +5670,5 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
   window.wireDownloadLinkToSaveFolder(document.getElementById('aiSyncDownloadLink'));
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2de839489b5cf1d',t:'MTc4NzE5ODY2Ng=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2dea43babd913de',t:'MTc4NzIwMDAwNA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
