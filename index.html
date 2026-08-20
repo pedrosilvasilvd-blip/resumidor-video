@@ -2993,35 +2993,68 @@ video#sourceVideo { display: none; }
   // laterais) e um color grading próprio (quente, frio, vívido, vintage). A
   // troca é SECA (corte duro), não um morph suave — é isso que faz o vídeo
   // parecer editado em vários takes, como um editor real.
-  const CREATIVE_CLIPS = [
-    { z: 1.30, fx: 0.50, fy: 0.32, grade: 'warm' },
-    { z: 1.46, fx: 0.34, fy: 0.62, grade: 'cool' },
-    { z: 1.20, fx: 0.66, fy: 0.44, grade: 'vivid' },
-    { z: 1.52, fx: 0.50, fy: 0.72, grade: 'vintage' },
-    { z: 1.36, fx: 0.30, fy: 0.36, grade: 'warm' },
-    { z: 1.24, fx: 0.70, fy: 0.56, grade: 'cool' },
-    { z: 1.48, fx: 0.50, fy: 0.50, grade: 'vivid' },
-    { z: 1.28, fx: 0.42, fy: 0.68, grade: 'vintage' },
+  const CREATIVE_CLIPS_FOUND = [
+    { z: 1.28, fx: 0.50, fy: 0.35, grade: 'warm' },
+    { z: 1.42, fx: 0.36, fy: 0.60, grade: 'cool' },
+    { z: 1.20, fx: 0.64, fy: 0.45, grade: 'vivid' },
+    { z: 1.46, fx: 0.50, fy: 0.70, grade: 'vintage' },
+    { z: 1.32, fx: 0.32, fy: 0.38, grade: 'warm' },
+    { z: 1.24, fx: 0.68, fy: 0.54, grade: 'cool' },
+    { z: 1.44, fx: 0.50, fy: 0.50, grade: 'vivid' },
+    { z: 1.26, fx: 0.44, fy: 0.66, grade: 'vintage' },
   ];
-  const CREATIVE_GRADES = {
+  const CREATIVE_GRADES_FOUND = {
     warm:    'saturate(1.18) sepia(0.12) contrast(1.07) brightness(1.03)',
     cool:    'saturate(0.88) hue-rotate(8deg) contrast(1.09) brightness(0.97)',
     vivid:   'saturate(1.40) contrast(1.14)',
     vintage: 'sepia(0.30) contrast(1.12) brightness(0.95)',
   };
-  function getCreativeEditState(elapsed, inIntro) {
-    const clipDur = 2.5;            // segundos por "corte" (mais dinâmico)
+
+  const DORAMA_CINEMA_FILTERS = {
+    warm_korea:    'saturate(1.10) contrast(1.04) brightness(1.02) sepia(0.04)',
+    cold_thriller: 'saturate(0.92) contrast(1.08) brightness(0.98) hue-rotate(10deg)',
+    vintage_film:  'sepia(0.12) contrast(1.06) brightness(0.98) saturate(0.95)',
+    none:          'none'
+  };
+
+  function getCreativeEditState(elapsed, inIntro, currentTab, doramaFilterKey) {
+    if (currentTab === 'dorama') {
+      // MODO CINEMA & DORAMA PRO: Conforto visual máximo, ZERO flashes brancos, cores cinematográficas estáveis
+      const baseFilter = DORAMA_CINEMA_FILTERS[doramaFilterKey] || DORAMA_CINEMA_FILTERS.warm_korea;
+      // Movimento contínuo e suave (Ken Burns) que quebra pHash visual sem solavancos ou cortes bruscos:
+      const zoom = 1.035 + 0.035 * Math.sin(elapsed * 0.32);
+      const fx = 0.50 + 0.030 * Math.cos(elapsed * 0.26);
+      const fy = 0.48 + 0.020 * Math.sin(elapsed * 0.20);
+      return { 
+        zoom, 
+        fx, 
+        fy, 
+        grade: baseFilter, 
+        isDirectFilter: true, 
+        flash: 0,             // ZERO FLASH: conforto visual absoluto
+        speed: 1.0            // velocidade natural e estável para diálogo
+      };
+    }
+
+    // MODO FOUND FOOTAGE & TERROR (Estilo Analógico / VHS)
+    const clipDur = 2.5;
     const idx = Math.max(0, Math.floor(elapsed / clipDur));
     const t = elapsed - idx * clipDur;
-    const clip = CREATIVE_CLIPS[idx % CREATIVE_CLIPS.length];
-    // Corte DURO: o enquadramento e a cor trocam de uma vez, sem morph.
+    const clip = CREATIVE_CLIPS_FOUND[idx % CREATIVE_CLIPS_FOUND.length];
     let flash = 0;
     if (!inIntro && idx > 0 && t < 0.18) {
       flash = Math.max(0, 1 - t / 0.18);
     }
-    // Rampa de velocidade alternada (normal x acelerado) por corte.
     const speed = (idx % 2 === 0) ? 1.0 : 1.13;
-    return { zoom: clip.z, fx: clip.fx, fy: clip.fy, grade: clip.grade, flash, speed };
+    return { 
+      zoom: clip.z, 
+      fx: clip.fx, 
+      fy: clip.fy, 
+      grade: CREATIVE_GRADES_FOUND[clip.grade] || '', 
+      isDirectFilter: false, 
+      flash, 
+      speed 
+    };
   }
 
   function drawRecHud(ctx, title, blink) {
@@ -3141,10 +3174,8 @@ video#sourceVideo { display: none; }
 
     ctx.save();
     if (activeTab === 'dorama') {
-      const colorStyle = doramaColorFilter.value;
-      if (colorStyle === 'warm_korea') ctx.filter = 'saturate(115%) contrast(105%) brightness(102%)';
-      else if (colorStyle === 'cold_thriller') ctx.filter = 'hue-rotate(180deg) saturate(90%) contrast(110%)';
-      else if (colorStyle === 'vintage_film') ctx.filter = 'sepia(20%) contrast(108%)';
+      const colorStyle = (doramaColorFilter && doramaColorFilter.value) ? doramaColorFilter.value : 'warm_korea';
+      ctx.filter = DORAMA_CINEMA_FILTERS[colorStyle] || 'none';
     }
 
     ctx.globalAlpha = 0.25;
@@ -3677,12 +3708,20 @@ video#sourceVideo { display: none; }
           // 5b. Edição Criativa Automática: punch-in focal + flash, simulando
           // cortes e re-enquadramento reais. Com o recurso desligado, o
           // transform é identidade (nenhuma mudança no comportamento atual).
-          const edit = config.creativeEdit ? getCreativeEditState(elapsed, inIntro) : { zoom: 1, fx: 0.5, fy: 0.5, grade: '', flash: 0, speed: 1 };
+          const doramaFilterVal = (doramaColorFilter && doramaColorFilter.value) ? doramaColorFilter.value : 'warm_korea';
+          const edit = config.creativeEdit 
+            ? getCreativeEditState(elapsed, inIntro, activeTab, doramaFilterVal) 
+            : { 
+                zoom: 1, 
+                fx: 0.5, 
+                fy: 0.5, 
+                grade: (activeTab === 'dorama' ? (DORAMA_CINEMA_FILTERS[doramaFilterVal] || '') : ''), 
+                isDirectFilter: true, 
+                flash: 0, 
+                speed: 1 
+              };
+
           if (config.creativeEdit) {
-            // rampa de velocidade por corte (normal x acelerado). Só reescreve
-            // o playbackRate quando o valor ALVO muda (1x por corte, não 1x por
-            // frame) — reescrever a toda frame fazia o vídeo renegociar a
-            // sincronia e podia derrubar frames.
             const targetRate = TIMING.BASE_SPEED * pitchFactor * edit.speed;
             if (targetRate !== lastPlaybackRate) {
               video.playbackRate = targetRate;
@@ -3697,10 +3736,13 @@ video#sourceVideo { display: none; }
             ctx.translate(cfX, cfY);
             ctx.scale(edit.zoom, edit.zoom);
             ctx.translate(-cfX, -cfY);
-            // color grading do "corte" — muda o clima de cada take
-            if (edit.grade && CREATIVE_GRADES[edit.grade]) {
-              ctx.filter = CREATIVE_GRADES[edit.grade];
-            }
+          }
+
+          // Gradação de Cor Estável & Confortável
+          if (edit.grade) {
+            ctx.filter = edit.grade;
+          } else if (activeTab === 'dorama') {
+            ctx.filter = DORAMA_CINEMA_FILTERS[doramaFilterVal] || 'none';
           }
 
           // Renderização Principal com Matriz Espacial + Zoom Contínuo
@@ -3729,7 +3771,8 @@ video#sourceVideo { display: none; }
           ctx.strokeRect(destX + shakeX, destY + shakeY, destW, destH);
 
           // Transição de "flash" entre cortes (cobre a tela por ~0,26s)
-          if (config.creativeEdit && edit.flash > 0) {
+          // Transição de flash suave (apenas no modo Found Footage analógico; ZERO flash no modo Dorama para conforto total)
+          if (config.creativeEdit && edit.flash > 0 && activeTab !== 'dorama') {
             ctx.fillStyle = `rgba(255, 255, 255, ${(edit.flash * 0.8).toFixed(3)})`;
             ctx.fillRect(0, 0, TARGET_W, TARGET_H);
           }
@@ -3918,6 +3961,7 @@ video#sourceVideo { display: none; }
       videoHeight: meta.h,
       tab: activeTab,
       overlayStyle: config.overlayStyle,
+      doramaColorFilter: (doramaColorFilter && doramaColorFilter.value) ? doramaColorFilter.value : 'warm_korea',
       channelName: config.channelName,
       title: currentTitle
     }, (label, loaded, total) => {
@@ -4456,15 +4500,35 @@ video#sourceVideo { display: none; }
             vf.push(`crop=${cw}:${ch}:${cx}:${cy}`);
         }
         if (opts.mirror) vf.push('hflip');
-        if (opts.creativeEdit) vf.push('eq=saturation=1.35:contrast=1.12');
-        if (opts.stego) vf.push('noise=alls=6:allf=t');
-        if (opts.creativeEdit) {
-            const zw = Math.max(2, Math.round(mainW * 1.16 / 2) * 2);
-            const zh = Math.max(2, Math.round(mainH * 1.16 / 2) * 2);
-            vf.push(`scale=${zw}:${zh}`);
-            vf.push(`crop=${mainW}:${mainH}:x='(iw-ow)/2+sin(n*0.045)*10':y='(ih-oh)/2+cos(n*0.038)*8'`);
+        if (opts.tab === 'dorama') {
+            // Gradação de cor cinematográfica estável e natural para Dorama (sem flashes ou distorções)
+            if (opts.doramaColorFilter === 'cold_thriller') {
+                vf.push('eq=saturation=0.92:contrast=1.08:brightness=-0.01');
+            } else if (opts.doramaColorFilter === 'vintage_film') {
+                vf.push('eq=saturation=0.95:contrast=1.06:brightness=-0.01');
+            } else {
+                vf.push('eq=saturation=1.10:contrast=1.04:brightness=0.01');
+            }
+            if (opts.creativeEdit) {
+                // Movimento suave Ken Burns sem solavancos
+                const zw = Math.max(2, Math.round(mainW * 1.06 / 2) * 2);
+                const zh = Math.max(2, Math.round(mainH * 1.06 / 2) * 2);
+                vf.push(`scale=${zw}:${zh}`);
+                vf.push(`crop=${mainW}:${mainH}:x='(iw-ow)/2+sin(n*0.015)*4':y='(ih-oh)/2+cos(n*0.012)*3'`);
+            } else {
+                vf.push(`scale=${mainW}:${mainH}`);
+            }
         } else {
-            vf.push(`scale=${mainW}:${mainH}`);
+            if (opts.creativeEdit) vf.push('eq=saturation=1.35:contrast=1.12');
+            if (opts.stego) vf.push('noise=alls=6:allf=t');
+            if (opts.creativeEdit) {
+                const zw = Math.max(2, Math.round(mainW * 1.16 / 2) * 2);
+                const zh = Math.max(2, Math.round(mainH * 1.16 / 2) * 2);
+                vf.push(`scale=${zw}:${zh}`);
+                vf.push(`crop=${mainW}:${mainH}:x='(iw-ow)/2+sin(n*0.045)*10':y='(ih-oh)/2+cos(n*0.038)*8'`);
+            } else {
+                vf.push(`scale=${mainW}:${mainH}`);
+            }
         }
         if (F !== 1) vf.unshift(`setpts=PTS/${F.toFixed(5)}`);
         vf.push(`pad=${TARGET_W}:${TARGET_H}:${mainX}:${mainY}:black`);
@@ -6916,5 +6980,5 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
   window.wireDownloadLinkToSaveFolder(document.getElementById('aiSyncDownloadLink'));
 </script>
 
-</body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2e2c56c99d55efb',t:'MTc4NzI0MzMwNg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
