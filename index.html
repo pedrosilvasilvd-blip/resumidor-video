@@ -1902,15 +1902,16 @@
   // ficar visível a olho nu, quebrando a leitura de hash perceptual (pHash) e
   // zerando o índice de duplicidade entre reuploads.
   function drawSubvisualNoise(ctx, intensity) {
-    const density = Math.round(90 * intensity);
+    const density = Math.round(110 * intensity);
     ctx.save();
+    // Injeção de ruído pseudo-aleatório contínuo de alta frequência
     for (let i = 0; i < density; i++) {
       const x = Math.random() * TARGET_W;
       const y = Math.random() * TARGET_H;
       const shade = Math.random() < 0.5 ? 255 : 0;
-      const alpha = 0.01 + Math.random() * 0.025;
+      const alpha = 0.015 + Math.random() * 0.03;
       ctx.fillStyle = `rgba(${shade},${shade},${shade},${alpha.toFixed(3)})`;
-      ctx.fillRect(x, y, 1, 1);
+      ctx.fillRect(x, y, 1.5, 1.5);
     }
     ctx.restore();
   }
@@ -2190,13 +2191,11 @@
 
   function processVideoItem(file, currentTitle, index, total, config) {
     return new Promise((resolve) => {
-      status.innerText = `Renderizando (${index + 1}/${total}): "${currentTitle}"...`;
+      status.innerText = `Processando (${index + 1}/${total}): "${currentTitle}"...`;
       setSharedVideoSource(file);
       video.muted = false;
       video.load();
 
-      // Se algo impedir o vídeo de carregar (arquivo corrompido, etc.), garante
-      // que a Promise resolva mesmo assim, para o botão nunca ficar travado.
       video.onerror = () => {
         console.error('Erro ao carregar o vídeo para produção.');
         resolve();
@@ -2214,46 +2213,36 @@
           audioSource = shared.audioSource;
           audioDest = audioCtx.createMediaStreamDestination();
 
+          // 1. Blindagem Acústica: High-Shelf em 11.2 kHz para descaracterizar espectrograma
           const bq = audioCtx.createBiquadFilter();
           bq.type = "highshelf";
-          bq.frequency.value = 11500;
-          bq.gain.value = -3.0;
+          bq.frequency.value = 11200;
+          bq.gain.value = -3.5;
 
           duckingGain = audioCtx.createGain();
           duckingGain.gain.value = (activeTab === 'dorama' && config.ducking) ? 0.18 : 1.0;
 
-          // Ganho do áudio original do vídeo — controlado pelo slider "Volume do
-          // Vídeo Original" (0% a 300%, padrão 150%). Fica isolado do ducking e
-          // do volume da música de fundo, que têm seus próprios ganhos.
           const videoVolumeGain = audioCtx.createGain();
           videoVolumeGain.gain.value = Number.isFinite(config.videoVolume) ? config.videoVolume : 1.5;
 
-          // Desconecta ligações de produções anteriores antes de refazer a cadeia,
-          // senão o áudio continuaria sendo enviado também para streams antigas.
           audioSource.disconnect();
           audioSource.connect(bq);
           bq.connect(videoVolumeGain);
           videoVolumeGain.connect(duckingGain);
           duckingGain.connect(audioDest);
 
+          // 2. Infrassom Senoidal (18.2 Hz) para invalidar Acoustic Fingerprint
           if (config.audio) {
             osc = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
             osc.type = 'sine';
             osc.frequency.value = 18.2;
-            gainNode.gain.value = 0.035;
+            gainNode.gain.value = 0.038;
             osc.connect(gainNode);
             gainNode.connect(audioDest);
             osc.start();
           }
 
-          // Música de fundo (opcional): decodifica o arquivo escolhido pelo
-          // usuário e injeta direto no mesmo destino de áudio da gravação —
-          // não depende de tocar um <audio> visível na página, então funciona
-          // mesmo com a aba em segundo plano. Toca em loop pra cobrir cortes
-          // de qualquer duração e entra numa gainNode própria (volume separado
-          // do áudio original do vídeo, que já passa pelo highshelf/ducking
-          // acima).
           if (config.bgmFile) {
             try {
               const audioBuf = await getDecodedBgmBuffer(audioCtx, config.bgmFile);
@@ -2278,15 +2267,13 @@
         const mimeType = getOptimalMimeType();
         const mediaRecorder = new MediaRecorder(stream, {
           mimeType: mimeType || undefined,
-          videoBitsPerSecond: 7500000
+          videoBitsPerSecond: 9500000 // 9.5 Mbps (High Bitrate anti-compressão)
         });
 
         mediaRecorder.ondataavailable = (e) => {
           if (e.data.size > 0) recordedChunks.push(e.data);
         };
 
-        // Se o MediaRecorder falhar no meio do caminho, resolve mesmo assim
-        // em vez de deixar a fila travada para sempre.
         mediaRecorder.onerror = (e) => {
           console.error('Erro no MediaRecorder:', e);
           stopRenderTicker();
@@ -2302,31 +2289,17 @@
 
           const blob = new Blob(recordedChunks, { type: 'video/mp4' });
           const safeName = currentTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-          const filename = `${activeTab}_${safeName}_${Date.now()}.mp4`;
+          const filename = `${activeTab}_pro_${safeName}_${Date.now()}.mp4`;
           window.saveProcessedBlob(blob, filename).then(resolve).catch(resolve);
         };
 
         mediaRecorder.start();
 
-        // ANTES: introDuration = 2.2s de tela 100% estática (só um "pulse" de
-        // 1.5px no texto) antes do vídeo sequer começar a tocar. Analisando as
-        // métricas reais de um vídeo publicado com essa opção: retenção média
-        // de 9%, e a MAIORIA dos espectadores abandonou em 0:01 — ou seja,
-        // ainda dentro da introdução estática. Uma tela parada nos primeiros
-        // instantes se parece com um anúncio/tela de carregamento e é
-        // exatamente o gatilho que faz a pessoa passar o vídeo. Corrigido:
-        // o vídeo já começa a tocar (com leve zoom) desde o frame 1, o texto
-        // do gancho fica sobre um painel translúcido por cima da cena real, e
-        // a duração cai para ~1s (ainda dá tempo de ler o gancho, sem
-        // congelar a tela). Ver também os selects de "Estilo do Gancho
-        // Inicial" no HTML, que agora vêm com "Nenhum" selecionado por padrão.
-        const introDuration = (config.introStyle === 'none') ? 0 : 1.0;
+        const introDuration = (config.introStyle === 'none') ? 0 : 1.2;
         const startTime = Date.now();
         let videoStarted = false;
         let frameIndex = 0;
-        // Conjunto de partículas do "Anti-Static Filter" — gerado uma vez por
-        // vídeo processado, com posições/velocidades aleatórias próprias.
-        const introParticles = createIntroParticles(26);
+        const introParticles = createIntroParticles(40);
 
         const effectiveCrop = config.isCropActive ? cropNorm : { x: 0, y: 0, w: 1, h: 1 };
         const sx = video.videoWidth * effectiveCrop.x;
@@ -2336,11 +2309,6 @@
 
         const { mainX: destX, mainY: destY, mainW: destW, mainH: destH } = getVideoRenderLayout();
 
-        // Ticker via Web Worker: substitui o requestAnimationFrame como "pulso" do
-        // loop (ver createRenderTicker acima) — não trava quando a aba vai pra
-        // segundo plano. renderStopped evita chamar render() de novo depois que o
-        // worker já recebeu o comando de parar (o postMessage de 'stop' não é
-        // instantâneo, pode haver um 'tick' em trânsito).
         let renderStopped = false;
         const renderTicker = createRenderTicker();
         function stopRenderTicker() {
@@ -2351,9 +2319,6 @@
           URL.revokeObjectURL(renderTicker._blobUrl);
         }
 
-        // Envolve o loop de desenho em try/catch: se algum frame falhar, paramos a
-        // gravação (ou resolvemos a Promise) em vez de deixar o processo travado
-        // silenciosamente, exigindo recarregar a página.
         function render() {
           if (renderStopped) return;
           try {
@@ -2375,11 +2340,10 @@
           frameIndex++;
           const inIntro = introDuration > 0 && elapsed < introDuration;
 
-          // O vídeo agora começa a tocar já no primeiro frame (mesmo durante o
-          // gancho), pra nunca existir um trecho 100% parado no início do MP4.
+          // 3. Micro-alteração temporal contínua (+4.5% speed)
           if (!videoStarted) {
             video.currentTime = config.cutStart;
-            video.playbackRate = 1.04;
+            video.playbackRate = 1.045;
             video.play();
             videoStarted = true;
           }
@@ -2393,74 +2357,75 @@
           ctx.fillStyle = '#000000';
           ctx.fillRect(0, 0, TARGET_W, TARGET_H);
 
+          // 4. Micro-oscilação angular e de fluxo óptico
           let shakeX = 0, shakeY = 0;
           if (config.shake) {
-            shakeX = Math.sin(frameIndex * 0.25) * 1.5;
-            shakeY = Math.cos(frameIndex * 0.20) * 1.2;
+            shakeX = Math.sin(frameIndex * 0.28) * 1.8;
+            shakeY = Math.cos(frameIndex * 0.22) * 1.4;
           }
 
-          // Leve zoom-in (efeito Ken Burns) enquanto o gancho está na tela —
-          // reforça a sensação de movimento contínuo em vez de frame congelado.
-          const introZoom = inIntro ? 1 + 0.06 * (elapsed / introDuration) : 1;
+          // 5. Micro-zoom senoidal perpétuo (102% a 106%) que destrói o pHash visual
+          const dynamicZoom = 1.02 + Math.sin(frameIndex * 0.04) * 0.035;
+          const introZoom = inIntro ? (1 + 0.05 * (elapsed / introDuration)) : 1;
+          const totalZoom = dynamicZoom * introZoom;
 
+          // Fundo Dinâmico Ambient Flare
           ctx.save();
-          ctx.globalAlpha = 0.25;
-          ctx.drawImage(video, sx, sy, sw, sh, -TARGET_W * 0.2, -TARGET_H * 0.1, TARGET_W * 1.4, TARGET_H * 1.2);
+          ctx.globalAlpha = 0.28;
+          const bgW = TARGET_W * 1.38;
+          const bgH = TARGET_H * 1.25;
+          ctx.drawImage(video, sx, sy, sw, sh, (TARGET_W - bgW) / 2, (TARGET_H - bgH) / 2, bgW, bgH);
           ctx.restore();
 
+          // Renderização Principal com Matriz Espacial + Zoom Contínuo
           ctx.save();
           if (config.mirror) {
             ctx.translate(destX + destW + shakeX, destY + shakeY);
             ctx.scale(-1, 1);
             ctx.translate(destW / 2, destH / 2);
-            ctx.scale(introZoom, introZoom);
+            ctx.scale(totalZoom, totalZoom);
             ctx.translate(-destW / 2, -destH / 2);
             ctx.drawImage(video, sx, sy, sw, sh, 0, 0, destW, destH);
           } else {
             ctx.translate(destX + destW / 2 + shakeX, destY + destH / 2 + shakeY);
-            ctx.scale(introZoom, introZoom);
+            ctx.scale(totalZoom, totalZoom);
             ctx.translate(-(destX + destW / 2), -(destY + destH / 2));
             ctx.drawImage(video, sx, sy, sw, sh, destX + shakeX, destY + shakeY, destW, destH);
           }
           ctx.restore();
 
-          ctx.strokeStyle = activeTab === 'found' ? 'rgba(56, 189, 248, 0.4)' : 'rgba(244, 63, 94, 0.4)';
+          ctx.strokeStyle = activeTab === 'found' ? 'rgba(56, 189, 248, 0.45)' : 'rgba(244, 63, 94, 0.45)';
           ctx.lineWidth = 2;
           ctx.strokeRect(destX + shakeX, destY + shakeY, destW, destH);
 
-          // Painel translúcido do gancho, por CIMA do vídeo já em movimento —
-          // substitui a antiga tela opaca. Unificamos 'classified'/'breaking'/
-          // 'radar'/'dorama_card'/'dorama_question' num único painel de texto,
-          // já que a diferença entre eles nunca foi o problema de retenção.
+          // 6. Anti-Static Hook: Movimento Real com partículas e pulso
           if (inIntro) {
             const panelY = TARGET_H * 0.34;
             const panelH = TARGET_H * 0.30;
             const grad = ctx.createLinearGradient(0, panelY, 0, panelY + panelH);
             grad.addColorStop(0, 'rgba(3, 7, 18, 0)');
-            grad.addColorStop(0.25, 'rgba(3, 7, 18, 0.82)');
-            grad.addColorStop(0.75, 'rgba(3, 7, 18, 0.82)');
+            grad.addColorStop(0.25, 'rgba(3, 7, 18, 0.85)');
+            grad.addColorStop(0.75, 'rgba(3, 7, 18, 0.85)');
             grad.addColorStop(1, 'rgba(3, 7, 18, 0)');
             ctx.fillStyle = grad;
             ctx.fillRect(0, panelY, TARGET_W, panelH);
 
-            // Partículas dinâmicas + ruído analógico próprios da tela de
-            // abertura — nunca deixam o quadro "parado" nos primeiros
-            // segundos (Anti-Static Filter).
             drawIntroParticles(ctx, introParticles, elapsed, panelY, panelH);
-            drawSubvisualNoise(ctx, 1.6);
+            drawSubvisualNoise(ctx, 1.8);
+
+            // Linha de varredura contínua
+            const scanY = (frameIndex * 14) % TARGET_H;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.035)';
+            ctx.fillRect(0, scanY, TARGET_W, 16);
 
             const headlineByStyle = {
-              classified: '⚠ ATENÇÃO: ARQUIVO RARO',
+              classified: '⚠ REGISTRO DESCLASSIFICADO',
               breaking: '🔴 URGENTE / AO VIVO',
               radar: 'SCANNER DE ANOMALIA ATIVO',
               dorama_card: '🎬 RESUMO CINEMA & DORAMA',
               dorama_question: 'O QUE VOCÊ FARIA?'
             };
             const accent = activeTab === 'found' ? '#ef4444' : '#f43f5e';
-
-            // Micro-pulsação contínua e sutil nos textos (nunca 100%
-            // estático): cada linha respira numa frequência levemente
-            // diferente, com o texto sempre centralizado no seu próprio eixo.
             const pulse = (freq, amp) => 1 + amp * Math.sin(elapsed * freq);
 
             ctx.textAlign = 'center';
@@ -2469,19 +2434,19 @@
             ctx.save();
             const headlineY = panelY + panelH * 0.32;
             ctx.translate(TARGET_W / 2, headlineY);
-            ctx.scale(pulse(6, 0.02), pulse(6, 0.02));
+            ctx.scale(pulse(6, 0.025), pulse(6, 0.025));
             ctx.fillText(
-              headlineByStyle[config.introStyle] || (activeTab === 'found' ? '⚠ ATENÇÃO: ARQUIVO RARO' : '🎬 RESUMO CINEMA & DORAMA'),
+              headlineByStyle[config.introStyle] || (activeTab === 'found' ? '⚠ REGISTRO DESCLASSIFICADO' : '🎬 RESUMO CINEMA & DORAMA'),
               0, 0
             );
             ctx.restore();
 
             ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 28px sans-serif';
+            ctx.font = '900 28px sans-serif';
             ctx.save();
             const titleY = panelY + panelH * 0.58;
             ctx.translate(TARGET_W / 2, titleY);
-            ctx.scale(pulse(4.5, 0.018), pulse(4.5, 0.018));
+            ctx.scale(pulse(4.5, 0.02), pulse(4.5, 0.02));
             ctx.fillText(currentTitle.toUpperCase(), 0, 0);
             ctx.restore();
 
@@ -2491,24 +2456,26 @@
               ctx.save();
               const subtitleY = panelY + panelH * 0.82;
               ctx.translate(TARGET_W / 2, subtitleY);
-              ctx.scale(pulse(5.2, 0.015), pulse(5.2, 0.015));
+              ctx.scale(pulse(5.2, 0.018), pulse(5.2, 0.018));
               ctx.fillText(`"${doramaHookSubtitle.value}"`, 0, 0);
               ctx.restore();
             }
           }
 
+          // 7. Esteganografia de Luminância quadro a quadro
           if (config.stego) {
-            // Ruído sub-visual em todo quadro (não só no intro), com posição
-            // e opacidade recalculadas do zero a cada frame — maximiza a
-            // taxa de variação de pixel/quadro pra quebrar a leitura de hash
-            // perceptual (pHash) e zerar o índice de duplicidade.
-            drawSubvisualNoise(ctx, inIntro ? 1 : 0.7);
+            const grainAlpha = (frameIndex % 2 === 0) ? 0.024 : 0.015;
+            ctx.fillStyle = (frameIndex % 3 === 0)
+              ? `rgba(255, 255, 255, ${grainAlpha})`
+              : `rgba(0, 0, 0, ${grainAlpha})`;
+            ctx.fillRect(0, 0, TARGET_W, TARGET_H);
+            drawSubvisualNoise(ctx, inIntro ? 1.2 : 0.85);
           }
 
           const overlay = config.overlayStyle;
           if (activeTab === 'found') {
             if (overlay === 'rec_hud') {
-              if (Math.floor(Date.now() / 500) % 2 === 0) {
+              if (Math.floor(Date.now() / 450) % 2 === 0) {
                 ctx.fillStyle = '#ef4444';
                 ctx.beginPath();
                 ctx.arc(60, 70, 7, 0, Math.PI * 2);
@@ -2528,7 +2495,7 @@
             }
           } else {
             if (overlay === 'cinema_top_split') {
-              ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+              ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
               ctx.fillRect(0, 30, TARGET_W, 65);
               ctx.fillStyle = '#f43f5e';
               ctx.font = 'bold 24px sans-serif';
@@ -2536,7 +2503,7 @@
               ctx.fillText(currentTitle.toUpperCase(), TARGET_W / 2, 72);
             } else if (overlay === 'netflix_style') {
               const channelName = (config.channelName && config.channelName.trim()) ? config.channelName.trim().toUpperCase() : 'TOP CORTES';
-              ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+              ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
               ctx.fillRect(0, 40, TARGET_W, 60);
               ctx.fillStyle = '#f43f5e';
               ctx.font = '900 24px sans-serif';
@@ -2548,14 +2515,8 @@
               fitText(ctx, currentTitle, TARGET_W - 30, 78, TARGET_W * 0.42, 20);
             }
           }
-
-          // O próximo frame é disparado pelo 'tick' do worker (ver renderTicker.onmessage
-          // = render, acima) — não reagenda por si só como o requestAnimationFrame fazia.
         }
 
-        // Dispara o primeiro tick a ~30fps (33ms). O worker segue mandando 'tick'
-        // continuamente, mesmo com a aba minimizada/em segundo plano, até
-        // stopRenderTicker() ser chamado (fim do corte ou erro).
         renderTicker.postMessage({ cmd: 'start', interval: 33 });
       };
     });
@@ -5302,5 +5263,5 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
   window.wireDownloadLinkToSaveFolder(document.getElementById('aiSyncDownloadLink'));
 </script>
 
-</body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2de41006a77d457',t:'MTc4NzE5NTkzOQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
