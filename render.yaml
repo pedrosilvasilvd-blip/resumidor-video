@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: blind-engine-social-backend
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerContext: ./backend
+    dockerfilePath: ./backend/Dockerfile
+    healthCheckPath: /
+    maxShutdownDelaySeconds: 30
+    envVars:
+      - key: CORS_WILDCARD
+        value: "1"
+      - key: RATELIMIT_WINDOW
+        value: "60"
+      - key: RATELIMIT_MAX
+        value: "15"
+      - key: TUNNEL_RATELIMIT_WINDOW
+        value: "60"
+      - key: TUNNEL_RATELIMIT_MAX
+        value: "30"
+      - key: TUNNEL_LIFESPAN
+        value: "180"
+      - key: DURATION_LIMIT
+        value: "10800"
