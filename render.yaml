@@ -7,7 +7,6 @@ services:
     dockerContext: ./backend
     dockerfilePath: ./backend/Dockerfile
     healthCheckPath: /
-    maxShutdownDelaySeconds: 30
     envVars:
       - key: CORS_WILDCARD
         value: "1"
