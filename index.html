@@ -339,6 +339,22 @@
     .crop-toggle-box label { margin: 0; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; gap: 8px; }
     .crop-toggle-box input[type="checkbox"] { width: 17px; height: 17px; cursor: pointer; }
 
+    .approval-box {
+      background: #06140f;
+      border: 1px solid var(--accent-emerald);
+      border-radius: 10px;
+      padding: 12px;
+      margin-top: 12px;
+    }
+    .approval-box .approval-btn {
+      background: var(--accent-emerald);
+      border: none;
+      color: #04150d;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .approval-box .approval-btn:hover { filter: brightness(1.12); }
+
     .control-box {
       background: var(--card-bg);
       border: 1px solid #334155;
@@ -909,6 +925,12 @@
           <h2>Módulo Found Footage & Anomalias</h2>
           <p class="desc">Layout analógico com HUD de segurança, interferência VHS, esteganografia e legendas virais sincronizadas.</p>
 
+          <div class="approval-box">
+            <div class="control-title" style="color:#10b981;">🛡️ Modo Aprovação (anti-flag)</div>
+            <p style="font-size:0.74rem;color:var(--text-muted);margin:0 0 8px;line-height:1.4;">Aplica de uma vez a configuração contra <strong>não original + baixa qualidade + QR code</strong>: gancho desligado, edição criativa, desfoque de marca/QR, espelhamento, desafino leve e sem marca de canal.</p>
+            <button type="button" class="approval-btn">⚡ Aplicar Modo Aprovação</button>
+          </div>
+
           <label>Selecione os Vídeos:</label>
           <input type="file" class="video-input" accept="video/*" multiple>
 
@@ -1036,6 +1058,12 @@
         <div class="tab-content" id="tabDoramaContent">
           <h2>Módulo Cinema Narrado & Doramas</h2>
           <p class="desc">Formatação otimizada para resumos de novelas coreanas, séries e filmes cinematográficos.</p>
+
+          <div class="approval-box">
+            <div class="control-title" style="color:#10b981;">🛡️ Modo Aprovação (anti-flag)</div>
+            <p style="font-size:0.74rem;color:var(--text-muted);margin:0 0 8px;line-height:1.4;">Aplica de uma vez a configuração contra <strong>não original + baixa qualidade + QR code</strong>: gancho desligado, edição criativa, desfoque de marca/QR, desafino leve e sem marca de canal.</p>
+            <button type="button" class="approval-btn">⚡ Aplicar Modo Aprovação</button>
+          </div>
 
           <label>Selecione os Cortes do Filme / Dorama:</label>
           <input type="file" class="video-input" accept="video/*" multiple>
@@ -1725,6 +1753,34 @@
         blurBox.style.display = 'none';
       }
       renderInteractivePreview();
+    });
+  });
+
+  // --- Modo Aprovação (1 clique) -------------------------------------------
+  // Configura o app contra os 3 motivos do flag do TikTok: "não original",
+  // "baixa qualidade" e "QR code". Aplica de uma vez todas as opções
+  // recomendadas, sem precisar caçar cada checkbox/select pela interface.
+  function applyApprovalMode(container) {
+    const set = (sel, val) => { const el = container.querySelector(sel); if (el) el.value = val; };
+    const check = (sel) => { const el = container.querySelector(sel); if (el) el.checked = true; };
+    set('.intro-style-select', 'none');   // abertura com movimento real (nunca estática)
+    check('.creative-chk');               // re-enquadramento + corte duro + cor
+    check('.blur-chk');                   // esconde QR code / logo / marca d'água
+    check('.mirror-chk');                 // espelhamento anti duplicidade
+    check('.shake-chk');                  // micro-oscilação
+    check('.stego-chk');                  // ruído sub-visual
+    set('.pitch-select', '1');            // desafino +1 semitom (anti Content ID)
+    set('.channel-name-input', '');       // sem marca de canal (anti "logotipo")
+    if (video.videoWidth && currentPreviewMode === 'overlay' && container.querySelector('.blur-chk')) {
+      setupBlurBox();
+    }
+    renderInteractivePreview();
+    status.innerText = '🛡️ Modo Aprovação aplicado! Arraste o quadrado amarelo sobre o QR/logo. Se o início do vídeo de origem for letreiro/tela parada, aumente o "Cortar Início".';
+  }
+
+  document.querySelectorAll('.approval-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      applyApprovalMode(btn.closest('.tab-content'));
     });
   });
 
@@ -5670,5 +5726,5 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
   window.wireDownloadLinkToSaveFolder(document.getElementById('aiSyncDownloadLink'));
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2dea43babd913de',t:'MTc4NzIwMDAwNA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2deb1993975d833',t:'MTc4NzIwMDU1MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
