@@ -2225,7 +2225,17 @@
     return new Promise((resolve) => {
       status.innerText = `Renderizando (${index + 1}/${total}): "${currentTitle}"...`;
       setSharedVideoSource(file);
-      video.muted = false;
+      // Silenciado de propósito: o áudio real já é capturado à parte pelo
+      // MediaElementAudioSourceNode (ver getSharedAudioSource), que roteia o
+      // som direto pro gráfico do Web Audio independente do "muted" do
+      // elemento — então isso NÃO tira áudio nenhum do vídeo final. Em troca,
+      // garante que o autoplay do <video> nunca seja bloqueado pela política
+      // de autoplay do navegador (que barra playback COM som fora de uma
+      // interação direta do usuário). Isso é o que causava a tela preta:
+      // video.play() era chamado depois de vários "await" — cruzando a
+      // janela de ativação do usuário — e falhava silenciosamente, deixando
+      // o vídeo pausado/sem frame decodificado durante toda a gravação.
+      video.muted = true;
       video.load();
 
       // Se algo impedir o vídeo de carregar (arquivo corrompido, etc.), garante
@@ -2275,7 +2285,18 @@
           setTimeout(finish, 800);
         });
         video.playbackRate = 1.04;
-        try { await video.play(); } catch (_) {}
+        try {
+          await video.play();
+        } catch (playErr) {
+          console.warn('video.play() falhou mesmo mutado — tentando de novo:', playErr);
+        }
+        // Segunda tentativa + pequena espera, só por segurança: se por algum
+        // motivo o play() ainda não "pegou", não queremos começar a gravar
+        // com o vídeo parado (senão volta o problema do frame congelado).
+        if (video.paused) {
+          try { await video.play(); } catch (_) {}
+          await new Promise(r => setTimeout(r, 120));
+        }
 
         try {
           const shared = getSharedAudioSource();
