@@ -2241,6 +2241,42 @@
         const stream = canvas.captureStream(30);
         const stopTime = Math.max(config.cutStart + 0.5, video.duration - config.cutEnd);
 
+        // Espera o vídeo estar de fato posicionado e com um frame DECODIFICADO
+        // pronto pra desenhar antes de começar a gravar. ANTES, o
+        // "video.currentTime = ...; video.play()" rodava dentro do loop de
+        // render, no mesmo instante em que o MediaRecorder já estava
+        // gravando — como o seek é assíncrono, os primeiros frames
+        // capturados (bem na janela do gancho, ~1s) saíam com o vídeo ainda
+        // preto/sem imagem por trás do texto. É essa a causa raiz do "vídeo
+        // preto" atrás do gancho que o TikTok sinalizou como baixa
+        // qualidade — não a animação do texto em si.
+        await new Promise((resolveReady) => {
+          let settled = false;
+          const finish = () => {
+            if (settled) return;
+            settled = true;
+            video.removeEventListener('seeked', onSeeked);
+            resolveReady();
+          };
+          const onSeeked = () => {
+            // "seeked" às vezes dispara um pouco antes do frame estar
+            // realmente pintável — dá mais um respiro (frame de vídeo real,
+            // quando disponível; senão dois rAF) antes de liberar.
+            if (typeof video.requestVideoFrameCallback === 'function') {
+              video.requestVideoFrameCallback(() => finish());
+            } else {
+              requestAnimationFrame(() => requestAnimationFrame(finish));
+            }
+          };
+          video.addEventListener('seeked', onSeeked);
+          video.currentTime = config.cutStart;
+          // Watchdog: nunca deixa travado esperando pra sempre se 'seeked'
+          // não disparar por algum motivo (ex.: arquivo problemático).
+          setTimeout(finish, 800);
+        });
+        video.playbackRate = 1.04;
+        try { await video.play(); } catch (_) {}
+
         try {
           const shared = getSharedAudioSource();
           audioCtx = shared.audioCtx;
@@ -2355,7 +2391,6 @@
         // Inicial" no HTML, que agora vêm com "Nenhum" selecionado por padrão.
         const introDuration = (config.introStyle === 'none') ? 0 : 1.0;
         const startTime = Date.now();
-        let videoStarted = false;
         let frameIndex = 0;
 
         const effectiveCrop = config.isCropActive ? cropNorm : { x: 0, y: 0, w: 1, h: 1 };
@@ -2404,15 +2439,6 @@
           const elapsed = (Date.now() - startTime) / 1000;
           frameIndex++;
           const inIntro = introDuration > 0 && elapsed < introDuration;
-
-          // O vídeo agora começa a tocar já no primeiro frame (mesmo durante o
-          // gancho), pra nunca existir um trecho 100% parado no início do MP4.
-          if (!videoStarted) {
-            video.currentTime = config.cutStart;
-            video.playbackRate = 1.04;
-            video.play();
-            videoStarted = true;
-          }
 
           if (!inIntro && (video.paused || video.ended || video.currentTime >= stopTime)) {
             stopRenderTicker();
