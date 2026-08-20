@@ -937,12 +937,6 @@
             <option value="breaking">2. Plantão Urgente / Breaking News</option>
             <option value="radar">3. Radar Militar / Scanning de Criatura</option>
           </select>
-
-          <label>Animação do Texto do Gancho:</label>
-          <select class="hook-anim-select">
-            <option value="pop" selected>1. Pop + Respiração (zoom de entrada + pulso contínuo)</option>
-            <option value="typewriter">2. Máquina de Escrever (letras aparecendo uma a uma)</option>
-          </select>
           <p class="intro-retention-hint" style="font-size:0.75rem;color:var(--text-muted);margin:4px 0 0;">⚠ Cartões de gancho agora tocam o vídeo (com zoom leve) por trás do texto e duram só ~1s — mas "Nenhum" continua sendo o mais seguro pra retenção: qualquer tela sem movimento real nos primeiros instantes é o principal motivo de o espectador abandonar o vídeo em 0:01.</p>
 
           <label>Estilo do Overlay (Durante o Vídeo):</label>
@@ -1029,12 +1023,6 @@
             <option value="none" selected>0. Nenhum (Iniciar direto) — recomendado</option>
             <option value="dorama_card">1. Cartão de Novela / Cinema Card</option>
             <option value="dorama_question">2. Pergunta de Retenção ("O que você faria?")</option>
-          </select>
-
-          <label>Animação do Texto do Gancho:</label>
-          <select class="hook-anim-select">
-            <option value="pop" selected>1. Pop + Respiração (zoom de entrada + pulso contínuo)</option>
-            <option value="typewriter">2. Máquina de Escrever (letras aparecendo uma a uma)</option>
           </select>
           <p class="intro-retention-hint" style="font-size:0.75rem;color:var(--text-muted);margin:4px 0 0;">⚠ O card de gancho era uma tela 100% estática por 2.2s — analisamos um vídeo real da conta com essa opção e a retenção despencou (maioria dos espectadores parou em 0:01, 9% de retenção média). Corrigido: agora o vídeo já toca com leve zoom por trás do texto e o card dura só ~1s. Ainda assim, "Nenhum" é a opção mais segura — comece direto na cena mais forte.</p>
 
@@ -1574,7 +1562,6 @@
       captionStyle: container.querySelector('.caption-style-select'),
       captionText: container.querySelector('.caption-text-input'),
       introStyle: container.querySelector('.intro-style-select'),
-      hookAnim: container.querySelector('.hook-anim-select'),
       overlayStyle: container.querySelector('.overlay-style-select'),
       channelName: container.querySelector('.channel-name-input'),
       shake: container.querySelector('.shake-chk'),
@@ -1618,7 +1605,7 @@
     renderInteractivePreview();
   });
 
-  document.querySelectorAll('.hook-text-input, .caption-style-select, .caption-text-input, .intro-style-select, .hook-anim-select, .overlay-style-select, .channel-name-input, #doramaHookSubtitle, #doramaColorFilter').forEach(el => {
+  document.querySelectorAll('.hook-text-input, .caption-style-select, .caption-text-input, .intro-style-select, .overlay-style-select, .channel-name-input, #doramaHookSubtitle, #doramaColorFilter').forEach(el => {
     el.addEventListener('input', renderInteractivePreview);
     el.addEventListener('change', renderInteractivePreview);
   });
@@ -1857,92 +1844,6 @@
     ctx.fillText(text, x, y);
   }
 
-  // Desenha o headline/título/subtítulo do painel de gancho de forma ANIMADA
-  // (nunca um frame parado) — usada tanto no preview interativo quanto no
-  // loop real de exportação (renderFrame). "elapsed" é o tempo (em segundos)
-  // desde o início do gancho e "introDuration" a duração total dele.
-  // animStyle: 'pop' (zoom de entrada com respiração contínua) ou
-  // 'typewriter' (letras do título aparecendo uma a uma, com cursor piscando).
-  function drawAnimatedHookText(ctx, { TARGET_W, panelY, panelH, headline, title, subtitle, accent, elapsed, introDuration, animStyle }) {
-    ctx.textAlign = 'center';
-    const dur = Math.max(introDuration, 0.001);
-
-    if (animStyle === 'typewriter') {
-      // Headline: fade + leve deslize de cima pra baixo, rápido.
-      const headlineT = Math.min(elapsed / 0.25, 1);
-      const headlineEase = 1 - Math.pow(1 - headlineT, 3);
-      ctx.save();
-      ctx.globalAlpha = headlineEase;
-      ctx.fillStyle = accent;
-      ctx.font = 'bold 20px sans-serif';
-      ctx.fillText(headline, TARGET_W / 2, panelY + panelH * 0.32 - (1 - headlineEase) * 10);
-      ctx.restore();
-
-      // Título: revela caractere por caractere, com cursor piscando enquanto digita.
-      const revealStart = 0.15;
-      const revealEnd = Math.max(dur * 0.8, revealStart + 0.2);
-      const revealT = Math.max(0, Math.min((elapsed - revealStart) / (revealEnd - revealStart), 1));
-      const chars = Math.round(title.length * revealT);
-      const shown = title.slice(0, chars);
-      const typing = revealT < 1;
-      const cursor = typing ? (Math.floor(elapsed * 6) % 2 === 0 ? '|' : ' ') : '';
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 28px sans-serif';
-      ctx.fillText(shown + cursor, TARGET_W / 2, panelY + panelH * 0.58);
-
-      if (subtitle) {
-        const subT = Math.max(0, Math.min((elapsed - revealEnd) / 0.3, 1));
-        ctx.save();
-        ctx.globalAlpha = subT;
-        ctx.fillStyle = '#fbcfe8';
-        ctx.font = 'italic 18px sans-serif';
-        ctx.fillText(`"${subtitle}"`, TARGET_W / 2, panelY + panelH * 0.82);
-        ctx.restore();
-      }
-      return;
-    }
-
-    // 'pop' (padrão): entrada com zoom "overshoot" (efeito mola) + uma
-    // respiração/pulso contínua e sutil enquanto o gancho fica na tela, pra
-    // nunca existir um instante 100% parado.
-    const entranceDur = 0.35;
-    const et = Math.min(elapsed / entranceDur, 1);
-    const c1 = 1.70158, c3 = c1 + 1;
-    const eased = 1 + c3 * Math.pow(et - 1, 3) + c1 * Math.pow(et - 1, 2);
-    const entranceScale = 0.55 + 0.45 * eased;
-    const breathe = 1 + 0.02 * Math.sin(elapsed * 5);
-    const scale = (et < 1 ? entranceScale : 1) * breathe;
-    const alpha = Math.min(elapsed / 0.2, 1);
-
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.fillStyle = accent;
-    ctx.font = 'bold 20px sans-serif';
-    ctx.fillText(headline, TARGET_W / 2, panelY + panelH * 0.32);
-    ctx.restore();
-
-    const titleCx = TARGET_W / 2, titleCy = panelY + panelH * 0.58;
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.translate(titleCx, titleCy);
-    ctx.scale(scale, scale);
-    ctx.translate(-titleCx, -titleCy);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 28px sans-serif';
-    ctx.fillText(title, titleCx, titleCy);
-    ctx.restore();
-
-    if (subtitle) {
-      const subAlpha = Math.min(Math.max(elapsed - 0.15, 0) / 0.25, 1);
-      ctx.save();
-      ctx.globalAlpha = subAlpha;
-      ctx.fillStyle = '#fbcfe8';
-      ctx.font = 'italic 18px sans-serif';
-      ctx.fillText(`"${subtitle}"`, TARGET_W / 2, panelY + panelH * 0.82);
-      ctx.restore();
-    }
-  }
-
   function renderInteractivePreview() {
     if (!video.videoWidth || activeTab === 'ai' || activeTab === 'downloader') return;
     const ctrl = getActiveControls();
@@ -1984,31 +1885,26 @@
       ctx.fillStyle = grad;
       ctx.fillRect(0, panelY, TARGET_W, panelH);
 
-      // Preview mostra o gancho já "assentado" (fim da animação de entrada),
-      // já que aqui é uma imagem parada, não um vídeo tocando — a animação de
-      // verdade acontece no vídeo exportado. O estilo escolhido no seletor
-      // "Animação do Texto do Gancho" ainda é aplicado no arquivo final.
-      const introDuration = 1.0; // mesma duração usada no export real
-      const previewAnim = ctrl.hookAnim ? ctrl.hookAnim.value : 'pop';
-      const previewElapsed = previewAnim === 'typewriter' ? Math.max(introDuration - 0.05, 0) : introDuration;
+      ctx.textAlign = 'center';
       if (activeTab === 'found') {
-        drawAnimatedHookText(ctx, {
-          TARGET_W, panelY, panelH,
-          headline: '⚠ ATENÇÃO: ARQUIVO RARO',
-          title: currentTitle.toUpperCase(),
-          subtitle: null,
-          accent: '#ef4444',
-          elapsed: previewElapsed, introDuration, animStyle: previewAnim
-        });
+        ctx.fillStyle = '#ef4444';
+        ctx.font = 'bold 20px sans-serif';
+        ctx.fillText('⚠ ATENÇÃO: ARQUIVO RARO', TARGET_W / 2, panelY + panelH * 0.32);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 28px sans-serif';
+        ctx.fillText(currentTitle.toUpperCase(), TARGET_W / 2, panelY + panelH * 0.58);
       } else {
-        drawAnimatedHookText(ctx, {
-          TARGET_W, panelY, panelH,
-          headline: introStyle === 'dorama_question' ? 'O QUE VOCÊ FARIA?' : '🎬 RESUMO CINEMA & DORAMA',
-          title: currentTitle.toUpperCase(),
-          subtitle: doramaHookSubtitle.value || null,
-          accent: '#f43f5e',
-          elapsed: previewElapsed, introDuration, animStyle: previewAnim
-        });
+        ctx.fillStyle = '#f43f5e';
+        ctx.font = 'bold 20px sans-serif';
+        ctx.fillText(introStyle === 'dorama_question' ? 'O QUE VOCÊ FARIA?' : '🎬 RESUMO CINEMA & DORAMA', TARGET_W / 2, panelY + panelH * 0.32);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 28px sans-serif';
+        ctx.fillText(currentTitle.toUpperCase(), TARGET_W / 2, panelY + panelH * 0.58);
+        if (doramaHookSubtitle.value) {
+          ctx.fillStyle = '#fbcfe8';
+          ctx.font = 'italic 18px sans-serif';
+          ctx.fillText(`"${doramaHookSubtitle.value}"`, TARGET_W / 2, panelY + panelH * 0.82);
+        }
       }
       return;
     }
@@ -2225,17 +2121,7 @@
     return new Promise((resolve) => {
       status.innerText = `Renderizando (${index + 1}/${total}): "${currentTitle}"...`;
       setSharedVideoSource(file);
-      // Silenciado de propósito: o áudio real já é capturado à parte pelo
-      // MediaElementAudioSourceNode (ver getSharedAudioSource), que roteia o
-      // som direto pro gráfico do Web Audio independente do "muted" do
-      // elemento — então isso NÃO tira áudio nenhum do vídeo final. Em troca,
-      // garante que o autoplay do <video> nunca seja bloqueado pela política
-      // de autoplay do navegador (que barra playback COM som fora de uma
-      // interação direta do usuário). Isso é o que causava a tela preta:
-      // video.play() era chamado depois de vários "await" — cruzando a
-      // janela de ativação do usuário — e falhava silenciosamente, deixando
-      // o vídeo pausado/sem frame decodificado durante toda a gravação.
-      video.muted = true;
+      video.muted = false;
       video.load();
 
       // Se algo impedir o vídeo de carregar (arquivo corrompido, etc.), garante
@@ -2250,53 +2136,6 @@
         let audioCtx, audioSource, audioDest, osc, duckingGain, bgmSource;
         const stream = canvas.captureStream(30);
         const stopTime = Math.max(config.cutStart + 0.5, video.duration - config.cutEnd);
-
-        // Espera o vídeo estar de fato posicionado e com um frame DECODIFICADO
-        // pronto pra desenhar antes de começar a gravar. ANTES, o
-        // "video.currentTime = ...; video.play()" rodava dentro do loop de
-        // render, no mesmo instante em que o MediaRecorder já estava
-        // gravando — como o seek é assíncrono, os primeiros frames
-        // capturados (bem na janela do gancho, ~1s) saíam com o vídeo ainda
-        // preto/sem imagem por trás do texto. É essa a causa raiz do "vídeo
-        // preto" atrás do gancho que o TikTok sinalizou como baixa
-        // qualidade — não a animação do texto em si.
-        await new Promise((resolveReady) => {
-          let settled = false;
-          const finish = () => {
-            if (settled) return;
-            settled = true;
-            video.removeEventListener('seeked', onSeeked);
-            resolveReady();
-          };
-          const onSeeked = () => {
-            // "seeked" às vezes dispara um pouco antes do frame estar
-            // realmente pintável — dá mais um respiro (frame de vídeo real,
-            // quando disponível; senão dois rAF) antes de liberar.
-            if (typeof video.requestVideoFrameCallback === 'function') {
-              video.requestVideoFrameCallback(() => finish());
-            } else {
-              requestAnimationFrame(() => requestAnimationFrame(finish));
-            }
-          };
-          video.addEventListener('seeked', onSeeked);
-          video.currentTime = config.cutStart;
-          // Watchdog: nunca deixa travado esperando pra sempre se 'seeked'
-          // não disparar por algum motivo (ex.: arquivo problemático).
-          setTimeout(finish, 800);
-        });
-        video.playbackRate = 1.04;
-        try {
-          await video.play();
-        } catch (playErr) {
-          console.warn('video.play() falhou mesmo mutado — tentando de novo:', playErr);
-        }
-        // Segunda tentativa + pequena espera, só por segurança: se por algum
-        // motivo o play() ainda não "pegou", não queremos começar a gravar
-        // com o vídeo parado (senão volta o problema do frame congelado).
-        if (video.paused) {
-          try { await video.play(); } catch (_) {}
-          await new Promise(r => setTimeout(r, 120));
-        }
 
         try {
           const shared = getSharedAudioSource();
@@ -2412,6 +2251,7 @@
         // Inicial" no HTML, que agora vêm com "Nenhum" selecionado por padrão.
         const introDuration = (config.introStyle === 'none') ? 0 : 1.0;
         const startTime = Date.now();
+        let videoStarted = false;
         let frameIndex = 0;
 
         const effectiveCrop = config.isCropActive ? cropNorm : { x: 0, y: 0, w: 1, h: 1 };
@@ -2460,6 +2300,15 @@
           const elapsed = (Date.now() - startTime) / 1000;
           frameIndex++;
           const inIntro = introDuration > 0 && elapsed < introDuration;
+
+          // O vídeo agora começa a tocar já no primeiro frame (mesmo durante o
+          // gancho), pra nunca existir um trecho 100% parado no início do MP4.
+          if (!videoStarted) {
+            video.currentTime = config.cutStart;
+            video.playbackRate = 1.04;
+            video.play();
+            videoStarted = true;
+          }
 
           if (!inIntro && (video.paused || video.ended || video.currentTime >= stopTime)) {
             stopRenderTicker();
@@ -2514,20 +2363,21 @@
               dorama_question: 'O QUE VOCÊ FARIA?'
             };
             const accent = activeTab === 'found' ? '#ef4444' : '#f43f5e';
-            // Texto do gancho agora é sempre ANIMADO (nunca um frame parado):
-            // "pop" = zoom de entrada + respiração contínua; "typewriter" =
-            // título aparecendo letra por letra. Escolhido no seletor
-            // "Animação do Texto do Gancho".
-            drawAnimatedHookText(ctx, {
-              TARGET_W, panelY, panelH,
-              headline: headlineByStyle[config.introStyle] || (activeTab === 'found' ? '⚠ ATENÇÃO: ARQUIVO RARO' : '🎬 RESUMO CINEMA & DORAMA'),
-              title: currentTitle.toUpperCase(),
-              subtitle: (activeTab === 'dorama' && doramaHookSubtitle.value) ? doramaHookSubtitle.value : null,
-              accent,
-              elapsed,
-              introDuration,
-              animStyle: config.hookAnim || 'pop'
-            });
+            ctx.textAlign = 'center';
+            ctx.fillStyle = accent;
+            ctx.font = 'bold 20px sans-serif';
+            ctx.fillText(
+              headlineByStyle[config.introStyle] || (activeTab === 'found' ? '⚠ ATENÇÃO: ARQUIVO RARO' : '🎬 RESUMO CINEMA & DORAMA'),
+              TARGET_W / 2, panelY + panelH * 0.32
+            );
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 28px sans-serif';
+            ctx.fillText(currentTitle.toUpperCase(), TARGET_W / 2, panelY + panelH * 0.58);
+            if (activeTab === 'dorama' && doramaHookSubtitle.value) {
+              ctx.fillStyle = '#fbcfe8';
+              ctx.font = 'italic 18px sans-serif';
+              ctx.fillText(`"${doramaHookSubtitle.value}"`, TARGET_W / 2, panelY + panelH * 0.82);
+            }
           }
 
           if (config.stego) {
@@ -2611,7 +2461,6 @@
         captionStyle: ctrl.captionStyle ? ctrl.captionStyle.value : 'none',
         captionText: ctrl.captionText ? ctrl.captionText.value : '',
         introStyle: ctrl.introStyle.value,
-        hookAnim: ctrl.hookAnim ? ctrl.hookAnim.value : 'pop',
         overlayStyle: ctrl.overlayStyle.value,
         channelName: ctrl.channelName ? ctrl.channelName.value : '',
         shake: ctrl.shake.checked,
