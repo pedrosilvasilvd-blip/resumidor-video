@@ -929,6 +929,10 @@
             <div class="control-title" style="color:#10b981;">🛡️ Modo Aprovação (anti-flag)</div>
             <p style="font-size:0.74rem;color:var(--text-muted);margin:0 0 8px;line-height:1.4;">Aplica de uma vez a configuração contra <strong>não original + baixa qualidade + QR code</strong>: gancho desligado, edição criativa, desfoque de marca/QR, espelhamento, desafino leve e sem marca de canal.</p>
             <button type="button" class="approval-btn">⚡ Aplicar Modo Aprovação</button>
+            <label class="checkbox-item" style="margin-top:8px;">
+              <input type="checkbox" class="fast-chk">
+              <span><strong>⚡ Render Rápido (ffmpeg)</strong> — processa mais rápido que tempo real, mantendo a qualidade. Desligado, usa o motor normal (canvas).</span>
+            </label>
           </div>
 
           <label>Selecione os Vídeos:</label>
@@ -1073,6 +1077,10 @@
             <div class="control-title" style="color:#10b981;">🛡️ Modo Aprovação (anti-flag)</div>
             <p style="font-size:0.74rem;color:var(--text-muted);margin:0 0 8px;line-height:1.4;">Aplica de uma vez a configuração contra <strong>não original + baixa qualidade + QR code</strong>: gancho desligado, edição criativa, desfoque de marca/QR, desafino leve e sem marca de canal.</p>
             <button type="button" class="approval-btn">⚡ Aplicar Modo Aprovação</button>
+            <label class="checkbox-item" style="margin-top:8px;">
+              <input type="checkbox" class="fast-chk">
+              <span><strong>⚡ Render Rápido (ffmpeg)</strong> — processa mais rápido que tempo real, mantendo a qualidade. Desligado, usa o motor normal (canvas).</span>
+            </label>
           </div>
 
           <label>Selecione os Cortes do Filme / Dorama:</label>
@@ -1687,6 +1695,7 @@
       enableCrop: container.querySelector('.enable-crop-chk'),
       blur: container.querySelector('.blur-chk'),
       creative: container.querySelector('.creative-chk'),
+      fast: container.querySelector('.fast-chk'),
       trimStart: container.querySelector('.trim-start-range'),
       trimEnd: container.querySelector('.trim-end-range'),
       trimStartVal: container.querySelector('.trim-start-val'),
@@ -2138,18 +2147,45 @@
   // A CADA quadro. Isso maximiza a taxa de variação de pixel por quadro sem
   // ficar visível a olho nu, quebrando a leitura de hash perceptual (pHash) e
   // zerando o índice de duplicidade entre reuploads.
-  function drawSubvisualNoise(ctx, intensity) {
-    const density = Math.round(110 * intensity);
-    ctx.save();
-    // Injeção de ruído pseudo-aleatório contínuo de alta frequência
-    for (let i = 0; i < density; i++) {
-      const x = Math.random() * TARGET_W;
-      const y = Math.random() * TARGET_H;
-      const shade = Math.random() < 0.5 ? 255 : 0;
-      const alpha = 0.015 + Math.random() * 0.03;
-      ctx.fillStyle = `rgba(${shade},${shade},${shade},${alpha.toFixed(3)})`;
-      ctx.fillRect(x, y, 1.5, 1.5);
+  // Pool de ruído pré-computado: antes, a CADA ponto de CADA frame eram feitas
+  // ~3 chamadas de Math.random() e montada uma string `rgba(...)` (que o canvas
+  // precisa reparsear como cor) — ~130x por frame. Era o maior custo de CPU do
+  // loop. Agora posições/opacidades vêm de um pool fixo lido com offset por
+  // frame (frameSeed), mantendo a variação quadro a quadro SEM alocar nada por
+  // frame. O fillStyle é setado 1x por passe e só o globalAlpha (número) muda.
+  const NOISE_POOL = (() => {
+    const arr = [];
+    for (let i = 0; i < 900; i++) {
+      arr.push({
+        x: Math.random(),
+        y: Math.random(),
+        w: Math.random() < 0.5,
+        a: 0.015 + Math.random() * 0.03,
+      });
     }
+    return arr;
+  })();
+  function drawSubvisualNoise(ctx, intensity, frameSeed) {
+    const density = Math.round(110 * intensity);
+    const off = ((frameSeed || 0) * 37) % NOISE_POOL.length;
+    ctx.save();
+    // pontos claros
+    ctx.fillStyle = '#ffffff';
+    for (let i = 0; i < density; i++) {
+      const s = NOISE_POOL[(off + i) % NOISE_POOL.length];
+      if (!s.w) continue;
+      ctx.globalAlpha = s.a;
+      ctx.fillRect(s.x * TARGET_W, s.y * TARGET_H, 1.5, 1.5);
+    }
+    // pontos escuros
+    ctx.fillStyle = '#000000';
+    for (let i = 0; i < density; i++) {
+      const s = NOISE_POOL[(off + i) % NOISE_POOL.length];
+      if (s.w) continue;
+      ctx.globalAlpha = s.a;
+      ctx.fillRect(s.x * TARGET_W, s.y * TARGET_H, 1.5, 1.5);
+    }
+    ctx.globalAlpha = 1;
     ctx.restore();
   }
 
@@ -2757,6 +2793,7 @@
         const startTime = Date.now();
         let videoStarted = false;
         let frameIndex = 0;
+        let lastPlaybackRate = null;
         const introParticles = createIntroParticles(40);
 
         let renderStopped = false;
@@ -2840,10 +2877,15 @@
           // transform é identidade (nenhuma mudança no comportamento atual).
           const edit = config.creativeEdit ? getCreativeEditState(elapsed, inIntro) : { zoom: 1, fx: 0.5, fy: 0.5, grade: '', flash: 0, speed: 1 };
           if (config.creativeEdit) {
-            // rampa de velocidade por corte (normal x acelerado) — muda o ritmo
-            // como um editor real; o áudio acompanha (pitch preservado quando
-            // não há desafino).
-            video.playbackRate = 1.045 * pitchFactor * edit.speed;
+            // rampa de velocidade por corte (normal x acelerado). Só reescreve
+            // o playbackRate quando o valor ALVO muda (1x por corte, não 1x por
+            // frame) — reescrever a toda frame fazia o vídeo renegociar a
+            // sincronia e podia derrubar frames.
+            const targetRate = 1.045 * pitchFactor * edit.speed;
+            if (targetRate !== lastPlaybackRate) {
+              video.playbackRate = targetRate;
+              lastPlaybackRate = targetRate;
+            }
           }
 
           ctx.save();
@@ -2903,7 +2945,7 @@
             ctx.fillRect(0, panelY, TARGET_W, panelH);
 
             drawIntroParticles(ctx, introParticles, elapsed, panelY, panelH);
-            drawSubvisualNoise(ctx, 1.8);
+            drawSubvisualNoise(ctx, 1.8, frameIndex);
 
             // Linha de varredura contínua
             const scanY = (frameIndex * 14) % TARGET_H;
@@ -2961,7 +3003,7 @@
               ? `rgba(255, 255, 255, ${grainAlpha})`
               : `rgba(0, 0, 0, ${grainAlpha})`;
             ctx.fillRect(0, 0, TARGET_W, TARGET_H);
-            drawSubvisualNoise(ctx, inIntro ? 1.2 : 0.85);
+            drawSubvisualNoise(ctx, inIntro ? 1.2 : 0.85, frameIndex);
           }
 
           const overlay = config.overlayStyle;
@@ -3053,6 +3095,77 @@
     return { warnings, notes };
   }
 
+  // --- Motor Rápido (ffmpeg) nas Abas 1/2 -----------------------------------
+  // Descobre resolução e duração de um arquivo (sem ffprobe) — o motor rápido
+  // precisa da largura/altura pra montar o layout 9:16 e da duração pra cortar.
+  function probeVideoMeta(file) {
+    return new Promise((resolve) => {
+      const v = document.createElement('video');
+      v.preload = 'metadata';
+      const url = URL.createObjectURL(file);
+      let done = false;
+      const finish = (r) => { if (!done) { done = true; URL.revokeObjectURL(url); resolve(r); } };
+      const to = setTimeout(() => finish({ w: null, h: null, d: null }), 6000);
+      v.onloadedmetadata = () => {
+        clearTimeout(to);
+        finish({ w: v.videoWidth || null, h: v.videoHeight || null, d: isFinite(v.duration) ? v.duration : null });
+      };
+      v.onerror = () => { clearTimeout(to); finish({ w: null, h: null, d: null }); };
+      v.src = url;
+    });
+  }
+
+  // Efeitos que o motor rápido ainda NÃO reproduz fielmente → cai no canvas.
+  function needsCanvasFallback(config) {
+    if (config.shake) return true;                                   // shake senoidal
+    if (config.introStyle && config.introStyle !== 'none') return true; // gancho animado
+    if (config.captionStyle && config.captionStyle !== 'none' && config.captionText) return true; // legendas palavra-a-palavra
+    const o = config.overlayStyle;
+    if (o === 'cinema_top_split' || o === 'cinema_letterbox' || o === 'cyber_grid' || o === 'podcast_banner') return true;
+    return false;
+  }
+
+  async function processVideoItemFast(file, currentTitle, index, total, config) {
+    status.innerText = `⚡ Processando (${index + 1}/${total}): "${currentTitle}" (motor rápido)...`;
+    const meta = await probeVideoMeta(file);
+    if (!meta.w || !meta.h || !meta.d) {
+      throw new Error('não consegui ler resolução/duração deste vídeo');
+    }
+    const blob = await window.renderFastFFmpeg({
+      file,
+      cutStart: config.cutStart,
+      cutEnd: config.cutEnd,
+      duration: meta.d,
+      isCropActive: config.isCropActive,
+      cropNorm: cropNorm,
+      mirror: config.mirror,
+      pitchSemitones: config.pitchSemitones,
+      creativeEdit: config.creativeEdit,
+      stego: config.stego,
+      blur: config.blur,
+      blurNorm: blurNorm,
+      narrationFile: config.narrationFile || null,
+      bgmFile: config.bgmFile || null,
+      bgmVolume: config.bgmVolume,
+      videoVolume: config.videoVolume,
+      ducking: config.ducking,
+      videoWidth: meta.w,
+      videoHeight: meta.h,
+      tab: activeTab,
+      overlayStyle: config.overlayStyle,
+      channelName: config.channelName,
+      title: currentTitle
+    }, (label, loaded, total) => {
+      if (label) {
+        const mb = loaded ? (loaded / 1048576).toFixed(1) : '0';
+        status.innerText = `⚡ Baixando motor (${label}): ${mb} MB`;
+      }
+    });
+    const safeName = currentTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    const filename = `${activeTab}_pro_${safeName}_${Date.now()}.mp4`;
+    await window.saveProcessedBlob(blob, filename);
+  }
+
   document.querySelectorAll('#tabFoundContent .process-btn, #tabDoramaContent .process-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       const queue = getCurrentQueue();
@@ -3071,6 +3184,7 @@
         isCropActive: ctrl.enableCrop.checked,
         blur: ctrl.blur ? ctrl.blur.checked : false,
         creativeEdit: ctrl.creative ? ctrl.creative.checked : false,
+        fastRender: ctrl.fast ? ctrl.fast.checked : false,
         captionStyle: ctrl.captionStyle ? ctrl.captionStyle.value : 'none',
         captionText: ctrl.captionText ? ctrl.captionText.value : '',
         narrationText: ctrl.narrationText ? ctrl.narrationText.value : '',
@@ -3134,8 +3248,19 @@
 
         for (let i = 0; i < queue.length; i++) {
           const currentTitle = incrementText(baseTitle, i);
-          await processVideoItem(queue[i], currentTitle, i, queue.length, config);
-          await new Promise(r => setTimeout(r, 600));
+          const usarRapido = config.fastRender && window.renderFastFFmpeg && !needsCanvasFallback(config);
+          if (usarRapido) {
+            try {
+              await processVideoItemFast(queue[i], currentTitle, i, queue.length, config);
+            } catch (fastErr) {
+              console.warn('Motor rápido falhou, caindo pro motor normal:', fastErr);
+              status.innerText = `⚠️ Motor rápido falhou (${fastErr.message || fastErr}) — refazendo no modo normal...`;
+              await processVideoItem(queue[i], currentTitle, i, queue.length, config);
+            }
+          } else {
+            await processVideoItem(queue[i], currentTitle, i, queue.length, config);
+          }
+          await new Promise(r => setTimeout(r, 250));
         }
         status.innerText = `Processamento de ${queue.length} vídeo(s) concluído com sucesso!`;
       } catch (err) {
@@ -3514,6 +3639,168 @@
         );
         const wavBlob = pcmToWavBlob(pcmBytes);
         return new File([wavBlob], 'narracao_ia.wav', { type: 'audio/wav' });
+    };
+
+    // ===== Motor Rápido (ffmpeg.wasm) para as Abas 1/2 =======================
+    // Renderiza em lote (mais rápido que tempo real), reusando o mesmo ffmpeg
+    // da Aba 3. Cobre: corte, crop, espelhamento, desafino/velocidade, cor,
+    // ruído, máscara de desfoque (delogo), narração IA, música de fundo e o
+    // layout 9:16. Devolve um Blob mp4. Qualquer erro aqui é capturado pelo
+    // chamador, que cai de volta pro motor de canvas.
+    window.renderFastFFmpeg = async function (opts, onProgress) {
+        const ff = await getFFmpeg(logFFmpeg, (label, loaded, total) => {
+            if (onProgress) onProgress(label, loaded, total);
+        });
+
+        const ext = (opts.file.name.split('.').pop() || 'mp4').toLowerCase();
+        const inputName = `fast_input.${ext}`;
+        const inputBytes = await fetchFile(opts.file);
+        await ff.writeFile(inputName, inputBytes.slice());
+
+        const vw = opts.videoWidth || 1080;
+        const vh = opts.videoHeight || 1920;
+        const rawAspect = vw / vh;
+        const TARGET_W = 720, TARGET_H = 1280;
+
+        let mainW, mainH, mainX, mainY;
+        if (opts.tab === 'dorama') {
+            mainW = Math.round(TARGET_W * 0.94 / 2) * 2;
+            mainH = Math.round((mainW / rawAspect) / 2) * 2;
+            mainX = Math.round((TARGET_W - mainW) / 2 / 2) * 2;
+            mainY = opts.overlayStyle === 'cinema_top_split' ? 110 : Math.round((TARGET_H - mainH) / 2 / 2) * 2;
+        } else {
+            mainW = Math.round(TARGET_W * 0.92 / 2) * 2;
+            mainH = Math.round((mainW / rawAspect) / 2) * 2;
+            mainX = Math.round((TARGET_W - mainW) / 2 / 2) * 2;
+            mainY = Math.round((TARGET_H - mainH) / 2 / 2) * 2;
+        }
+        if (mainH < 2) mainH = 2;
+
+        const F = (opts.pitchSemitones && opts.pitchSemitones !== 0) ? Math.pow(2, opts.pitchSemitones / 12) : 1;
+
+        // ---- cadeia de vídeo (linear, nomeada [vout]) ----
+        const vf = [];
+        if (opts.isCropActive && opts.cropNorm) {
+            const c = opts.cropNorm;
+            const cw = Math.max(2, Math.round(vw * c.w / 2) * 2);
+            const ch = Math.max(2, Math.round(vh * c.h / 2) * 2);
+            const cx = Math.max(0, Math.min(vw - cw, Math.round(vw * c.x / 2) * 2));
+            const cy = Math.max(0, Math.min(vh - ch, Math.round(vh * c.y / 2) * 2));
+            vf.push(`crop=${cw}:${ch}:${cx}:${cy}`);
+        }
+        if (opts.mirror) vf.push('hflip');
+        if (opts.creativeEdit) vf.push('eq=saturation=1.35:contrast=1.12');
+        if (opts.stego) vf.push('noise=alls=6:allf=t');
+        if (opts.creativeEdit) {
+            const zw = Math.max(2, Math.round(mainW * 1.16 / 2) * 2);
+            const zh = Math.max(2, Math.round(mainH * 1.16 / 2) * 2);
+            vf.push(`scale=${zw}:${zh}`);
+            vf.push(`crop=${mainW}:${mainH}:x='(iw-ow)/2+sin(n*0.045)*10':y='(ih-oh)/2+cos(n*0.038)*8'`);
+        } else {
+            vf.push(`scale=${mainW}:${mainH}`);
+        }
+        if (F !== 1) vf.unshift(`setpts=PTS/${F.toFixed(5)}`);
+        vf.push(`pad=${TARGET_W}:${TARGET_H}:${mainX}:${mainY}:black`);
+        if (opts.blur && opts.blurNorm) {
+            const b = opts.blurNorm;
+            const bw = Math.max(2, Math.round(mainW * b.w / 2) * 2);
+            const bh = Math.max(2, Math.round(mainH * b.h / 2) * 2);
+            const bx = Math.max(0, mainX + Math.round(mainW * b.x));
+            const by = Math.max(0, mainY + Math.round(mainH * b.y));
+            vf.push(`delogo=x=${bx}:y=${by}:w=${bw}:h=${bh}`);
+        }
+
+        // ---- overlays de texto (drawtext) — igual à Aba 3 (textfile) ----
+        const needText = (opts.tab === 'found' && opts.overlayStyle === 'rec_hud')
+            || (opts.tab === 'dorama' && opts.overlayStyle === 'netflix_style');
+        if (needText) {
+            await ensureCaptionFont(ff);
+            const font = CAPTION_FONT_NAME;
+            if (opts.tab === 'found') {
+                vf.push(`drawbox=x=60:y=63:w=14:h=14:color=#ef4444:t=fill`);
+                vf.push(`drawtext=fontfile=${font}:text='REC':x=76:y=68:fontsize=18:fontcolor=white`);
+                if (opts.title) {
+                    const tf = 'fast_title.txt';
+                    await ff.writeFile(tf, String(opts.title));
+                    vf.push(`drawtext=fontfile=${font}:textfile=${tf}:x=(w-text_w)/2:y=118:fontsize=22:fontcolor=#38bdf8`);
+                }
+            } else {
+                const chName = (opts.channelName && opts.channelName.trim()) ? opts.channelName.trim().toUpperCase() : '';
+                if (chName) {
+                    const cf = 'fast_channel.txt';
+                    await ff.writeFile(cf, chName);
+                    vf.push(`drawbox=x=0:y=40:w=${TARGET_W}:h=60:color=black@0.7:t=fill`);
+                    vf.push(`drawtext=fontfile=${font}:textfile=${cf}:x=30:y=70:fontsize=24:fontcolor=#f43f5e`);
+                }
+                if (opts.title) {
+                    const tf = 'fast_title.txt';
+                    await ff.writeFile(tf, String(opts.title));
+                    vf.push(`drawtext=fontfile=${font}:textfile=${tf}:x=(w-text_w-30):y=70:fontsize=20:fontcolor=white`);
+                }
+            }
+        }
+
+        const videoGraph = `[0:v]${vf.join(',')}[vout]`;
+
+        // ---- áudio (índices de input calculados dinamicamente) ----
+        const audioParts = [];
+        const mixInputs = [];
+        let a0 = 'volume=' + (Number.isFinite(opts.videoVolume) ? opts.videoVolume : 1.5)
+            + (opts.ducking || opts.narrationFile ? '*0.22' : '');
+        if (F !== 1) a0 += `,asetrate=${Math.round(48000 * F)},aresample=48000`;
+        audioParts.push(`[0:a]${a0}[a0]`);
+        mixInputs.push('[a0]');
+
+        // bgm ocupa o input 1 (se presente); narração vem depois (índice 1 ou 2).
+        let nextAudioInput = 1;
+        if (opts.bgmFile) {
+            const bgmName = 'fast_bgm.' + (opts.bgmFile.name.split('.').pop() || 'mp3');
+            await ff.writeFile(bgmName, (await fetchFile(opts.bgmFile)).slice());
+            const bv = Number.isFinite(opts.bgmVolume) ? opts.bgmVolume : 0.35;
+            audioParts.push(`[${nextAudioInput}:a]volume=${bv}[a${nextAudioInput}]`);
+            mixInputs.push(`[a${nextAudioInput}]`);
+            nextAudioInput++;
+        }
+        if (opts.narrationFile) {
+            const narrName = 'fast_narr.wav';
+            await ff.writeFile(narrName, (await fetchFile(opts.narrationFile)).slice());
+            const nChain = F !== 1 ? `asetrate=${Math.round(48000 * F)},aresample=48000,volume=1.0` : 'volume=1.0';
+            audioParts.push(`[${nextAudioInput}:a]${nChain}[a${nextAudioInput}]`);
+            mixInputs.push(`[a${nextAudioInput}]`);
+            nextAudioInput++;
+        }
+
+        // Sempre termina no rótulo [aout], independente do número de entradas.
+        let audioGraph;
+        if (mixInputs.length === 1) {
+            audioGraph = audioParts[0].replace(/\[a0\]$/, '[aout]');
+        } else {
+            audioGraph = audioParts.join(';') + `;${mixInputs.join('')}amix=inputs=${mixInputs.length}:duration=first:normalize=0[aout]`;
+        }
+
+        const fc = videoGraph + ';' + audioGraph;
+
+        const duration = Math.max(0.1, (opts.duration || 60) - (opts.cutStart || 0) - (opts.cutEnd || 0));
+
+        const args = ['-ss', String(opts.cutStart || 0), '-i', inputName];
+        if (opts.bgmFile) args.push('-stream_loop', '-1', '-i', 'fast_bgm.' + (opts.bgmFile.name.split('.').pop() || 'mp3'));
+        if (opts.narrationFile) args.push('-i', 'fast_narr.wav');
+        args.push(
+            '-t', String(duration),
+            '-filter_complex', fc,
+            '-map', '[vout]', '-map', '[aout]',
+            '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20',
+            '-c:a', 'aac', '-b:a', '160k',
+            '-movflags', '+faststart',
+            'fast_output.mp4'
+        );
+
+        await ff.exec(args);
+
+        const data = await ff.readFile('fast_output.mp4');
+        await safeDeleteFile(ff, inputName);
+        await safeDeleteFile(ff, 'fast_output.mp4');
+        return new Blob([data.buffer], { type: 'video/mp4' });
     };
 
     // Se o navegador soltou o lock sozinho (ex: minimizar o app e voltar) mas
@@ -5862,5 +6149,5 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
   window.wireDownloadLinkToSaveFolder(document.getElementById('aiSyncDownloadLink'));
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2dec17b5beef19b',t:'MTc4NzIwMTIwMg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2e25167db1bbc64',t:'MTc4NzIzODU1NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
