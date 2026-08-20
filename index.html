@@ -1001,6 +1001,10 @@
               <input type="checkbox" class="blur-chk">
               <span><strong>Desfocar Região (QR Code / Logotipo):</strong> Arraste o quadrado amarelo sobre marcas d'água, logotipos ou QR codes para escondê-los com desfoque.</span>
             </label>
+            <label class="checkbox-item">
+              <input type="checkbox" class="creative-chk">
+              <span><strong>🎬 Edição Criativa Automática:</strong> re-enquadramento com zoom focal (simula cortes de câmera), transições de flash entre cortes e leve variação de velocidade — transformação real anti "não original", aplicada sozinha na exportação.</span>
+            </label>
           </div>
 
           <div class="feature-list" style="border-color:#f59e0b;">
@@ -1110,6 +1114,10 @@
             <label class="checkbox-item">
               <input type="checkbox" class="blur-chk">
               <span><strong>Desfocar Região (QR Code / Logotipo):</strong> Arraste o quadrado amarelo sobre marcas d'água, logotipos ou QR codes para escondê-los com desfoque.</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" class="creative-chk">
+              <span><strong>🎬 Edição Criativa Automática:</strong> re-enquadramento com zoom focal (simula cortes de câmera), transições de flash entre cortes e leve variação de velocidade — transformação real anti "não original", aplicada sozinha na exportação.</span>
             </label>
           </div>
 
@@ -1606,6 +1614,7 @@
       videoInput: container.querySelector('.video-input'),
       enableCrop: container.querySelector('.enable-crop-chk'),
       blur: container.querySelector('.blur-chk'),
+      creative: container.querySelector('.creative-chk'),
       trimStart: container.querySelector('.trim-start-range'),
       trimEnd: container.querySelector('.trim-end-range'),
       trimStartVal: container.querySelector('.trim-start-val'),
@@ -2039,6 +2048,40 @@
       ctx.fillRect(x, y, 1.5, 1.5);
     }
     ctx.restore();
+  }
+
+  // --- Edição Criativa Automática (anti "conteúdo não original") -----------
+  // O TikTok segura vídeos "importados/copiados sem edição criativa". Espelhar,
+  // zoomar ou injetar ruído NÃO conta como transformação — é só perturbação de
+  // pixel. Este módulo aplica, sozinho e a cada poucos segundos, transformações
+  // visíveis de verdade: (1) punch-in com re-enquadramento em focos diferentes
+  // (centro, topo, base, laterais) que simulam cortes de câmera; (2) transição
+  // de "flash" entre um corte e outro; (3) leve variação de velocidade. O
+  // resultado parece editado em vários takes, não um vídeo passado inteiro.
+  const CREATIVE_FRAMINGS = [
+    { z: 1.00, fx: 0.50, fy: 0.50 },
+    { z: 1.22, fx: 0.50, fy: 0.30 },
+    { z: 1.30, fx: 0.50, fy: 0.74 },
+    { z: 1.18, fx: 0.32, fy: 0.52 },
+    { z: 1.25, fx: 0.70, fy: 0.52 },
+    { z: 1.14, fx: 0.50, fy: 0.58 },
+  ];
+  function getCreativeEditState(elapsed, inIntro) {
+    const clipDur = 3.0;            // segundos por "corte"
+    const idx = Math.max(0, Math.floor(elapsed / clipDur));
+    const t = elapsed - idx * clipDur;
+    const cur = CREATIVE_FRAMINGS[idx % CREATIVE_FRAMINGS.length];
+    const prev = CREATIVE_FRAMINGS[Math.max(0, idx - 1) % CREATIVE_FRAMINGS.length];
+    const k = Math.min(1, t / 0.55);
+    const smooth = k * k * (3 - 2 * k); // smoothstep: transição suave entre focos
+    const zoom = prev.z + (cur.z - prev.z) * smooth;
+    const fx = prev.fx + (cur.fx - prev.fx) * smooth;
+    const fy = prev.fy + (cur.fy - prev.fy) * smooth;
+    let flash = 0;
+    if (!inIntro && idx > 0 && t < 0.26) {
+      flash = Math.max(0, 1 - t / 0.26);
+    }
+    return { zoom, fx, fy, flash };
   }
 
   function renderInteractivePreview() {
@@ -2559,6 +2602,24 @@
           ctx.drawImage(video, sx, sy, sw, sh, (TARGET_W - bgW) / 2, (TARGET_H - bgH) / 2, bgW, bgH);
           ctx.restore();
 
+          // 5b. Edição Criativa Automática: punch-in focal + flash, simulando
+          // cortes e re-enquadramento reais. Com o recurso desligado, o
+          // transform é identidade (nenhuma mudança no comportamento atual).
+          const edit = config.creativeEdit ? getCreativeEditState(elapsed, inIntro) : { zoom: 1, fx: 0.5, fy: 0.5, flash: 0 };
+          if (config.creativeEdit) {
+            // leve variação de velocidade contínua (acelera/desacelera ~±4%)
+            video.playbackRate = 1.045 * (0.96 + 0.07 * (0.5 + 0.5 * Math.sin(elapsed * 0.8)));
+          }
+
+          ctx.save();
+          if (config.creativeEdit) {
+            const cfX = destX + edit.fx * destW;
+            const cfY = destY + edit.fy * destH;
+            ctx.translate(cfX, cfY);
+            ctx.scale(edit.zoom, edit.zoom);
+            ctx.translate(-cfX, -cfY);
+          }
+
           // Renderização Principal com Matriz Espacial + Zoom Contínuo
           ctx.save();
           if (config.mirror) {
@@ -2578,9 +2639,17 @@
 
           drawBlurMask(config.blur, sx, sy, sw, sh, destX, destY, destW, destH);
 
+          ctx.restore(); // fim da Edição Criativa (zoom focal)
+
           ctx.strokeStyle = activeTab === 'found' ? 'rgba(56, 189, 248, 0.45)' : 'rgba(244, 63, 94, 0.45)';
           ctx.lineWidth = 2;
           ctx.strokeRect(destX + shakeX, destY + shakeY, destW, destH);
+
+          // Transição de "flash" entre cortes (cobre a tela por ~0,26s)
+          if (config.creativeEdit && edit.flash > 0) {
+            ctx.fillStyle = `rgba(255, 255, 255, ${(edit.flash * 0.8).toFixed(3)})`;
+            ctx.fillRect(0, 0, TARGET_W, TARGET_H);
+          }
 
           // 6. Anti-Static Hook: Movimento Real com partículas e pulso
           if (inIntro) {
@@ -2728,6 +2797,7 @@
         cutEnd: parseFloat(ctrl.trimEnd.value) || 0,
         isCropActive: ctrl.enableCrop.checked,
         blur: ctrl.blur ? ctrl.blur.checked : false,
+        creativeEdit: ctrl.creative ? ctrl.creative.checked : false,
         captionStyle: ctrl.captionStyle ? ctrl.captionStyle.value : 'none',
         captionText: ctrl.captionText ? ctrl.captionText.value : '',
         introStyle: ctrl.introStyle.value,
@@ -5455,5 +5525,5 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
   window.wireDownloadLinkToSaveFolder(document.getElementById('aiSyncDownloadLink'));
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2de5ee56cfc9506',t:'MTc4NzE5NzE2NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2de70c63f71d973',t:'MTc4NzE5Nzg5Ng=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
