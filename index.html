@@ -955,6 +955,16 @@
           </div>
 
           <div class="control-box">
+            <div class="control-title">🎙️ Narração IA (voz própria — anti "não original")</div>
+            <label style="margin-top:0;">Texto da Narração (o que a voz IA vai falar por cima do vídeo):</label>
+            <textarea class="narration-text-input" placeholder="Ex: O que apareceu no topo do mastro deixou todo mundo sem explicação. Olha só o que a câmera capturou..."></textarea>
+            <label class="checkbox-item" style="margin-top:8px;">
+              <input type="checkbox" class="narration-chk">
+              <span><strong>Ativar narração IA</strong> — gera a voz e mistura no vídeo durante a exportação (usa a Chave de API da aba Roteirista IA).</span>
+            </label>
+          </div>
+
+          <div class="control-box">
             <div class="control-title">⏱ Corte de Tempo (Início / Fim)</div>
             <div class="control-row">
               <span>Cortar Início:</span>
@@ -1094,6 +1104,16 @@
 
           <label>Frase de Curiosidade / Gancho Emocional:</label>
           <input type="text" id="doramaHookSubtitle" value="Ela escondeu seu rosto de toda a escola...">
+
+          <div class="control-box">
+            <div class="control-title">🎙️ Narração IA (voz própria — anti "não original")</div>
+            <label style="margin-top:0;">Texto da Narração (o que a voz IA vai falar por cima do vídeo):</label>
+            <textarea class="narration-text-input" placeholder="Ex: Ela escondeu o rosto de toda a escola, mas um segredo estava prestes a mudar tudo..."></textarea>
+            <label class="checkbox-item" style="margin-top:8px;">
+              <input type="checkbox" class="narration-chk">
+              <span><strong>Ativar narração IA</strong> — gera a voz e mistura no vídeo durante a exportação (usa a Chave de API da aba Roteirista IA).</span>
+            </label>
+          </div>
 
           <label>Estilo do Gancho Inicial (~1s, vídeo já em movimento por trás):</label>
           <select class="intro-style-select">
@@ -1674,6 +1694,8 @@
       hookText: container.querySelector('.hook-text-input'),
       captionStyle: container.querySelector('.caption-style-select'),
       captionText: container.querySelector('.caption-text-input'),
+      narrationText: container.querySelector('.narration-text-input'),
+      narration: container.querySelector('.narration-chk'),
       introStyle: container.querySelector('.intro-style-select'),
       overlayStyle: container.querySelector('.overlay-style-select'),
       channelName: container.querySelector('.channel-name-input'),
@@ -2518,7 +2540,7 @@
 
       video.onloadedmetadata = async () => {
         let recordedChunks = [];
-        let audioCtx, audioSource, audioDest, osc, duckingGain, bgmSource;
+        let audioCtx, audioSource, audioDest, osc, duckingGain, bgmSource, narrSource;
         const stream = canvas.captureStream(30);
         const stopTime = Math.max(config.cutStart + 0.5, video.duration - config.cutEnd);
 
@@ -2544,7 +2566,7 @@
           bq.gain.value = -3.5;
 
           duckingGain = audioCtx.createGain();
-          duckingGain.gain.value = (activeTab === 'dorama' && config.ducking) ? 0.18 : 1.0;
+          duckingGain.gain.value = ((activeTab === 'dorama' && config.ducking) || config.narrationFile) ? 0.22 : 1.0;
 
           const videoVolumeGain = audioCtx.createGain();
           videoVolumeGain.gain.value = Number.isFinite(config.videoVolume) ? config.videoVolume : 1.5;
@@ -2583,6 +2605,26 @@
             }
           }
 
+          // Narração IA (voz própria): misturada por cima do áudio do vídeo,
+          // com o vídeo "duckado" (volume abaixado) pra voz ficar em evidência.
+          // playbackRate acompanha o desafino/pitch pra manter a sincronia.
+          if (config.narrationFile) {
+            try {
+              const narrBuf = await getDecodedBgmBuffer(audioCtx, config.narrationFile);
+              narrSource = audioCtx.createBufferSource();
+              narrSource.buffer = narrBuf;
+              narrSource.loop = false;
+              narrSource.playbackRate.value = pitchFactor;
+              const narrGain = audioCtx.createGain();
+              narrGain.gain.value = 1.0; // voz em primeiro plano
+              narrSource.connect(narrGain);
+              narrGain.connect(audioDest);
+              narrSource.start();
+            } catch (narrErr) {
+              console.warn('Não foi possível decodificar a narração IA:', narrErr);
+            }
+          }
+
           audioDest.stream.getAudioTracks().forEach(track => stream.addTrack(track));
         } catch (err) {
           console.warn("Pipeline de áudio:", err);
@@ -2603,6 +2645,7 @@
           stopRenderTicker();
           if (osc) { try { osc.stop(); } catch (_) {} }
           if (bgmSource) { try { bgmSource.stop(); } catch (_) {} }
+          if (narrSource) { try { narrSource.stop(); } catch (_) {} }
           resolve();
         };
 
@@ -2610,6 +2653,7 @@
           stopRenderTicker();
           if (osc) { try { osc.stop(); } catch (_) {} }
           if (bgmSource) { try { bgmSource.stop(); } catch (_) {} }
+          if (narrSource) { try { narrSource.stop(); } catch (_) {} }
 
           const blob = new Blob(recordedChunks, { type: 'video/mp4' });
           const safeName = currentTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase();
@@ -2646,6 +2690,47 @@
           // Se o frame já está decodificado (ex.: cutStart = 0 e o vídeo já
           // carregou), resolve na hora em vez de esperar o fallback de 2s.
           if (video.readyState >= 2) finish();
+        });
+
+        // Spin-up anti "imagem estática": dá play e espera o tempo realmente
+        // AVANÇAR (evento timeupdate), provando que o decoder está entregando
+        // frames novos em tempo real. Sem isso, o começo da gravação ficava
+        // com um frame primado PARADO por alguns instantes — exatamente o que
+        // o TikTok lê como "imagem estática".
+        await new Promise((resolve) => {
+          let done = false;
+          let to = null;
+          function finish() {
+            if (done) return;
+            done = true;
+            clearTimeout(to);
+            video.removeEventListener('timeupdate', onUpdate);
+            resolve();
+          }
+          const onUpdate = () => finish();
+          to = setTimeout(finish, 600); // fallback de segurança
+          video.addEventListener('timeupdate', onUpdate);
+          video.play().catch(() => {});
+        });
+
+        // O spin-up avançou alguns frames — volta ao início exato pra gravar
+        // do ponto certo (o decoder já está quente, então o play seguinte
+        // entrega frames na hora).
+        await new Promise((resolve) => {
+          let done = false;
+          let to = null;
+          function finish() {
+            if (done) return;
+            done = true;
+            clearTimeout(to);
+            video.removeEventListener('seeked', onSeeked);
+            resolve();
+          }
+          const onSeeked = () => finish();
+          to = setTimeout(finish, 1000);
+          video.addEventListener('seeked', onSeeked);
+          video.currentTime = config.cutStart;
+          video.pause();
         });
 
         // Prepara as coordenadas de corte/layout ANTES de gravar e já pinta o
@@ -2732,7 +2817,13 @@
           // 5. Micro-zoom senoidal perpétuo (102% a 106%) que destrói o pHash visual
           const dynamicZoom = 1.02 + Math.sin(frameIndex * 0.04) * 0.035;
           const introZoom = inIntro ? (1 + 0.05 * (elapsed / introDuration)) : 1;
-          const totalZoom = dynamicZoom * introZoom;
+          // Abertura sempre em movimento (Ken Burns): nos primeiros ~0.9s o
+          // zoom "puxa" de 1.20x até 1.0x. Mesmo que o frame de origem seja
+          // um letreiro/logo parado, o início fica claramente se movendo —
+          // nunca é lido como "imagem estática".
+          const leadInK = Math.max(0, 1 - elapsed / 0.9);
+          const leadInZoom = 1 + 0.20 * leadInK * leadInK;
+          const totalZoom = dynamicZoom * introZoom * leadInZoom;
 
           // Fundo Dinâmico Ambient Flare — com edição criativa, vira um
           // preenchimento de fundo mais forte pra cobrir os cantos que o
@@ -2956,6 +3047,9 @@
     if (queueLength > 1) {
       notes.push('📦 Fila com ' + queueLength + ' vídeos — processa em sequência; confira o checklist no primeiro.');
     }
+    if (!config.narration) {
+      notes.push('🎙️ Narração IA desativada — uma voz própria por cima do vídeo é o sinal mais forte de conteúdo original (preencha o texto e ative na caixa "Narração IA").');
+    }
     return { warnings, notes };
   }
 
@@ -2979,6 +3073,8 @@
         creativeEdit: ctrl.creative ? ctrl.creative.checked : false,
         captionStyle: ctrl.captionStyle ? ctrl.captionStyle.value : 'none',
         captionText: ctrl.captionText ? ctrl.captionText.value : '',
+        narrationText: ctrl.narrationText ? ctrl.narrationText.value : '',
+        narration: ctrl.narration ? ctrl.narration.checked : false,
         introStyle: ctrl.introStyle.value,
         overlayStyle: ctrl.overlayStyle.value,
         channelName: ctrl.channelName ? ctrl.channelName.value : '',
@@ -3019,6 +3115,23 @@
         // 3 e 4 — ver acquireWakeLock/releaseWakeLock), pra tela não apagar/dormir
         // no meio de uma exportação longa.
         await acquireWakeLock();
+
+        // Narração IA: gera a voz UMA vez (reaproveitando o texto do campo) e
+        // guarda o arquivo no config, pra ser misturado no áudio de cada vídeo.
+        if (config.narration && window.generateVoiceoverAudio) {
+          status.innerText = '🎙️ Gerando narração IA...';
+          try {
+            config.narrationFile = await window.generateVoiceoverAudio(config.narrationText, (msg) => {
+              status.innerText = msg;
+            });
+            status.innerText = '✅ Narração IA gerada! Processando vídeo...';
+          } catch (narrErr) {
+            console.warn('Falha ao gerar narração IA:', narrErr);
+            status.innerText = '⚠️ Não consegui gerar a narração IA (' + (narrErr.message || narrErr) + ') — processando sem narração.';
+            config.narrationFile = null;
+          }
+        }
+
         for (let i = 0; i < queue.length; i++) {
           const currentTitle = incrementText(baseTitle, i);
           await processVideoItem(queue[i], currentTitle, i, queue.length, config);
@@ -3379,6 +3492,29 @@
     // lock).
     window.acquireWakeLock = acquireWakeLock;
     window.releaseWakeLock = releaseWakeLock;
+
+    // Integração com as Abas 1/2: gera uma narração (voz IA) a partir de um
+    // texto, usando o MESMO TTS do pipeline principal. Devolve um File WAV
+    // pronto pra ser misturado no áudio do vídeo durante a exportação — a voz
+    // própria é o sinal mais forte de "conteúdo original" pro TikTok.
+    window.generateVoiceoverAudio = async function (text, onProgress) {
+        if (!text || !text.trim()) throw new Error('Texto de narração vazio.');
+        const apiKey = document.getElementById('aiApiKey').value.trim();
+        if (!apiKey) throw new Error('Preencha a Chave de API do Gemini (aba "Roteirista & Resumo IA") antes de narrar.');
+        const ai = new GoogleGenAI({ apiKey });
+        const tone = 'dinâmico, envolvente e direto ao ponto';
+        const voiceName = 'Puck'; // animada/empolgante — boa pra cortes
+        const { pcmBytes } = await generateNarrationAudioWithRetry(
+            ai, text.trim(), voiceName, tone,
+            (attempt, attempts, waitMs, isQuota) => {
+                if (onProgress) onProgress(isQuota
+                    ? `⏳ Cota atingida — aguardando ${Math.round(waitMs / 1000)}s (tentativa ${attempt}/${attempts})...`
+                    : `Tentando de novo a narração em ${Math.round(waitMs / 1000)}s (tentativa ${attempt}/${attempts})...`);
+            }
+        );
+        const wavBlob = pcmToWavBlob(pcmBytes);
+        return new File([wavBlob], 'narracao_ia.wav', { type: 'audio/wav' });
+    };
 
     // Se o navegador soltou o lock sozinho (ex: minimizar o app e voltar) mas
     // ainda temos processamento em andamento (refCount > 0), tenta pedir de
@@ -5726,5 +5862,5 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
   window.wireDownloadLinkToSaveFolder(document.getElementById('aiSyncDownloadLink'));
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2deb1993975d833',t:'MTc4NzIwMDU1MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2dec17b5beef19b',t:'MTc4NzIwMTIwMg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
