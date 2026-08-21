@@ -48,7 +48,7 @@ Na Aba 4 existe a opção **Enviar automaticamente para edição**. Escolha a Ab
 1. o vídeo é baixado;
 2. o arquivo entra na fila da aba escolhida;
 3. o preset interno força edição criativa, espelhamento, micro-oscilação, ruído esteganográfico e blindagem acústica diretamente na configuração de exportação; **Desfocar Região permanece desligado** no envio automático;
-4. no Render Rápido, a Edição Criativa aplica zoom, re-enquadramento com troca seca de foco, flash periódico e nitidez; áudio e vídeo têm timestamps zerados, vídeo normalizado em 30 fps e áudio corrigido por ressincronização assíncrona; a prévia continua em movimento durante a carga; se o motor não iniciar em até 2min30s ou algum filtro falhar, o Worker é encerrado e o app cai automaticamente para o Canvas mantendo as camadas;
+4. no envio automático usa sempre o motor Canvas confiável, com prévia em movimento, progresso em porcentagem e todas as camadas. O FFmpeg WebAssembly rápido fica desativado nesse fluxo para não travar no download/compilação de 31 MB;
 5. o processamento começa automaticamente.
 
 O desfoque de região não é ativado automaticamente porque a máscara manual poderia cair sobre uma parte aleatória da cena. Ative-o apenas quando puder posicionar o quadrado amarelo sobre um logotipo ou QR code. Uma detecção automática exata de logotipos, legendas e QR codes exigiria rastreamento visual dedicado e não é simulada por uma posição fixa.
@@ -59,7 +59,7 @@ Para vários vídeos, marque os itens e use **Enviar selecionados para edição*
 
 ## Observações
 
-- No plano gratuito, o serviço pode adormecer. O primeiro teste depois de um período sem uso pode levar até cerca de um minuto.
+- No plano gratuito, o serviço pode adormecer. O app agora tenta acordá-lo ao abrir a página e envia um ping leve a cada 8 minutos; mesmo assim, o primeiro acesso após abrir o site pode levar até cerca de um minuto.
 - Use links públicos. Conteúdo privado, removido, com login obrigatório ou bloqueado por região não poderá ser processado.
 - Serviços como YouTube e Instagram podem limitar endereços de datacenter. Se o YouTube mostrar `error.api.youtube.login` ou `Sign in to confirm you’re not a bot`, siga o arquivo **YOUTUBE-COOKIES.md** e adicione `youtube-cookies.txt` em **Render > Environment > Secret Files**.
 - Nunca envie cookies para o GitHub; use apenas Secret Files e, de preferência, uma conta secundária.
