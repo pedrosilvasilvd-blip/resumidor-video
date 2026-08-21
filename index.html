@@ -3961,31 +3961,16 @@ video#sourceVideo { display: none; }
         let videoStarted = false;
         let frameIndex = 0;
         let lastPlaybackRate = null;
-        // No fluxo automático, velocidade constante: os saltos 1.0x/1.13x da
-        // edição criativa pareciam pequenas travadas e podiam afetar o áudio.
-        const basePlaybackRate = config.autoApprovalPreset ? 1.0 : TIMING.BASE_SPEED;
         const introParticles = createIntroParticles(VISUAL.INTRO_PARTICLES);
 
         let renderStopped = false;
-        let renderTicker = null;
-        let videoFrameCallbackId = null;
-        let videoFrameWatchdog = null;
-        let lastVideoFrameAt = performance.now();
-        let lastRenderedMediaTime = -Infinity;
-
+        const renderTicker = createRenderTicker();
         function stopRenderTicker() {
           if (renderStopped) return;
           renderStopped = true;
-          if (videoFrameCallbackId != null && typeof video.cancelVideoFrameCallback === 'function') {
-            try { video.cancelVideoFrameCallback(videoFrameCallbackId); } catch (_) {}
-          }
-          if (videoFrameWatchdog) clearInterval(videoFrameWatchdog);
-          if (renderTicker) {
-            renderTicker.postMessage({ cmd: 'stop' });
-            renderTicker.terminate();
-            URL.revokeObjectURL(renderTicker._blobUrl);
-            renderTicker = null;
-          }
+          renderTicker.postMessage({ cmd: 'stop' });
+          renderTicker.terminate();
+          URL.revokeObjectURL(renderTicker._blobUrl);
         }
 
         function render() {
@@ -4002,42 +3987,7 @@ video#sourceVideo { display: none; }
             }
           }
         }
-
-        // requestVideoFrameCallback desenha exatamente quando o navegador
-        // decodifica um frame novo. Isso evita rajadas de setInterval desenhando
-        // o mesmo frame várias vezes, causa das pequenas travadas no MP4.
-        function onDecodedVideoFrame(now, metadata) {
-          if (renderStopped) return;
-          lastVideoFrameAt = performance.now();
-          const mediaTime = Number.isFinite(metadata?.mediaTime) ? metadata.mediaTime : video.currentTime;
-          // Fontes 60fps são reduzidas de forma uniforme para os 30fps do
-          // canvas, em vez de sobrecarregar a thread desenhando quadros que o
-          // MediaRecorder descartaria.
-          if (mediaTime - lastRenderedMediaTime >= (1 / 30) - 0.002) {
-            lastRenderedMediaTime = mediaTime;
-            render();
-          }
-          if (!renderStopped) videoFrameCallbackId = video.requestVideoFrameCallback(onDecodedVideoFrame);
-        }
-
-        function startRenderScheduler() {
-          render(); // primeiro tick: inicia o play do <video>
-          if (renderStopped) return;
-          if (typeof video.requestVideoFrameCallback === 'function') {
-            videoFrameCallbackId = video.requestVideoFrameCallback(onDecodedVideoFrame);
-            // Watchdog só verifica término/trava do decoder; não desenha em
-            // paralelo enquanto os frames normais estão chegando.
-            videoFrameWatchdog = setInterval(() => {
-              if (!renderStopped && performance.now() - lastVideoFrameAt > 350) render();
-            }, 180);
-          } else {
-            // Navegadores antigos continuam com o Worker, mas o render() agora
-            // recebe no máximo um tick por evento da fila principal.
-            renderTicker = createRenderTicker();
-            renderTicker.onmessage = render;
-            renderTicker.postMessage({ cmd: 'start', interval: TIMING.RENDER_INTERVAL_MS });
-          }
-        }
+        renderTicker.onmessage = render;
 
         function renderFrame() {
           const elapsed = (Date.now() - startTime) / 1000;
@@ -4050,19 +4000,15 @@ video#sourceVideo { display: none; }
             status.innerText = `🎬 Canvas processando (${index + 1}/${total}) — ${percent}% • ${processedSeconds.toFixed(1)}s / ${totalSeconds.toFixed(1)}s`;
           }
 
-          // 3. Inicia a reprodução. No preset automático a velocidade é 1.0x.
-          let justStarted = false;
+          // 3. Micro-alteração temporal contínua (+4.5% speed)
           if (!videoStarted) {
             video.currentTime = config.cutStart;
-            video.playbackRate = basePlaybackRate * pitchFactor;
-            video.play().catch(error => {
-              console.warn('O navegador bloqueou o play automático do processamento:', error);
-            });
+            video.playbackRate = TIMING.BASE_SPEED * pitchFactor;
+            video.play();
             videoStarted = true;
-            justStarted = true;
           }
 
-          if (!inIntro && !justStarted && (video.paused || video.ended || video.currentTime >= stopTime)) {
+          if (!inIntro && (video.paused || video.ended || video.currentTime >= stopTime)) {
             stopRenderTicker();
             if (mediaRecorder.state === "recording") mediaRecorder.stop();
             return;
@@ -4109,8 +4055,7 @@ video#sourceVideo { display: none; }
             // o playbackRate quando o valor ALVO muda (1x por corte, não 1x por
             // frame) — reescrever a toda frame fazia o vídeo renegociar a
             // sincronia e podia derrubar frames.
-            const creativeSpeed = config.autoApprovalPreset ? 1.0 : edit.speed;
-            const targetRate = basePlaybackRate * pitchFactor * creativeSpeed;
+            const targetRate = TIMING.BASE_SPEED * pitchFactor * edit.speed;
             if (targetRate !== lastPlaybackRate) {
               video.playbackRate = targetRate;
               lastPlaybackRate = targetRate;
@@ -4251,7 +4196,7 @@ video#sourceVideo { display: none; }
           }
         }
 
-        startRenderScheduler();
+        renderTicker.postMessage({ cmd: 'start', interval: TIMING.RENDER_INTERVAL_MS });
       };
     });
   }
