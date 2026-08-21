@@ -4259,14 +4259,73 @@ video#sourceVideo { display: none; }
     return false;
   }
 
+  function startFastRenderPreview(file) {
+    let stopped = false;
+    let rafId = null;
+    try {
+      setSharedVideoSource(file);
+      video.load();
+      video.muted = true;
+      video.loop = true;
+      video.playbackRate = 1;
+      video.play().catch(() => {});
+
+      const tick = () => {
+        if (stopped) return;
+        if (video.videoWidth) renderInteractivePreview();
+        rafId = requestAnimationFrame(tick);
+      };
+      tick();
+    } catch (error) {
+      console.warn('Não foi possível animar a prévia do render rápido:', error);
+    }
+    return () => {
+      stopped = true;
+      if (rafId != null) cancelAnimationFrame(rafId);
+      try { video.pause(); } catch (_) {}
+      video.loop = false;
+      video.muted = false;
+    };
+  }
+
+  function createFastStartupGuard(timeoutMs, message) {
+    let timer = null;
+    let ready = false;
+    const promise = new Promise((_, reject) => {
+      timer = setTimeout(() => {
+        if (!ready) reject(new Error(message));
+      }, timeoutMs);
+    });
+    return {
+      promise,
+      markReady() {
+        ready = true;
+        if (timer) clearTimeout(timer);
+        timer = null;
+      },
+      clear() {
+        if (timer) clearTimeout(timer);
+        timer = null;
+      }
+    };
+  }
+
   async function processVideoItemFast(file, currentTitle, index, total, config) {
     status.innerText = `⚡ Processando (${index + 1}/${total}): "${currentTitle}" (motor rápido)...`;
     const meta = await probeVideoMeta(file);
     if (!meta.w || !meta.h || !meta.d) {
       throw new Error('não consegui ler resolução/duração deste vídeo');
     }
-    const blob = await window.renderFastFFmpeg({
+    const stopFastPreview = startFastRenderPreview(file);
+    const fastCancelToken = { cancelled: false };
+    const startupGuard = createFastStartupGuard(
+      150000,
+      'O motor rápido não terminou de iniciar em 2 minutos e 30 segundos. Mudando para o motor normal...'
+    );
+    try {
+      const renderPromise = window.renderFastFFmpeg({
       file,
+      cancelToken: fastCancelToken,
       cutStart: config.cutStart,
       cutEnd: config.cutEnd,
       duration: meta.d,
@@ -4293,15 +4352,28 @@ video#sourceVideo { display: none; }
       colorFilter: config.colorFilter,
       channelName: config.channelName,
       title: currentTitle
-    }, (label, loaded, total) => {
-      if (label) {
-        const mb = loaded ? (loaded / 1048576).toFixed(1) : '0';
-        status.innerText = `⚡ Baixando motor (${label}): ${mb} MB`;
+    }, (label, loaded, assetTotal) => {
+      if (!label || fastCancelToken.cancelled) return;
+      if (label === 'processando') {
+        startupGuard.markReady();
+        status.innerText = `⚡ Motor rápido ativo. Processando (${index + 1}/${total}): "${currentTitle}"...`;
+        return;
       }
+      const mb = loaded ? (loaded / 1048576).toFixed(1) : '0';
+      status.innerText = label === 'inicializando'
+        ? '⚡ Inicializando o motor rápido... A prévia continuará em movimento.'
+        : `⚡ Baixando motor (${label}): ${mb} MB`;
     });
-    const safeName = currentTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-    const filename = `${activeTab}_pro_${safeName}_${Date.now()}.mp4`;
-    await window.saveProcessedBlob(blob, filename);
+      const blob = await Promise.race([renderPromise, startupGuard.promise])
+        .finally(() => startupGuard.clear());
+      const safeName = currentTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      const filename = `${activeTab}_pro_${safeName}_${Date.now()}.mp4`;
+      await window.saveProcessedBlob(blob, filename);
+    } finally {
+      fastCancelToken.cancelled = true;
+      startupGuard.clear();
+      stopFastPreview();
+    }
   }
 
   document.querySelectorAll('#tabFoundContent .process-btn, #tabDoramaContent .process-btn').forEach(btn => {
@@ -4405,7 +4477,10 @@ video#sourceVideo { display: none; }
               await processVideoItemFast(queue[i], currentTitle, i, queue.length, config);
             } catch (fastErr) {
               console.warn('Motor rápido falhou, caindo pro motor normal:', fastErr);
-              status.innerText = `⚠️ Motor rápido falhou (${fastErr.message || fastErr}) — refazendo no modo normal...`;
+              status.innerText = `⚠️ Motor rápido falhou (${fastErr.message || fastErr}) — liberando o motor e refazendo no modo normal...`;
+              if (window.resetFastRenderEngine) {
+                try { await window.resetFastRenderEngine(); } catch (_) {}
+              }
               await processVideoItem(queue[i], currentTitle, i, queue.length, config);
             }
           } else {
@@ -4805,10 +4880,18 @@ video#sourceVideo { display: none; }
         const ff = await getFFmpeg(logFFmpeg, (label, loaded, total) => {
             if (onProgress) onProgress(label, loaded, total);
         });
+        if (opts.cancelToken?.cancelled) {
+            try { ff.terminate(); } catch (_) {}
+            ffmpeg = null;
+            captionFontLoaded = false;
+            throw new Error('Render rápido cancelado antes de iniciar.');
+        }
+        if (onProgress) onProgress('processando', 0, 0);
 
         const ext = (opts.file.name.split('.').pop() || 'mp4').toLowerCase();
         const inputName = `fast_input.${ext}`;
         const inputBytes = await fetchFile(opts.file);
+        if (opts.cancelToken?.cancelled) throw new Error('Render rápido cancelado durante a preparação do arquivo.');
         await ff.writeFile(inputName, inputBytes.slice());
 
         const vw = opts.videoWidth || 1080;
@@ -4994,7 +5077,9 @@ video#sourceVideo { display: none; }
             'fast_output.mp4'
         );
 
+        if (opts.cancelToken?.cancelled) throw new Error('Render rápido cancelado antes da codificação.');
         await ff.exec(args);
+        if (opts.cancelToken?.cancelled) throw new Error('Render rápido cancelado durante a codificação.');
 
         const data = await ff.readFile('fast_output.mp4');
         await safeDeleteFile(ff, inputName);
@@ -6354,24 +6439,27 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
             );
             const classWorkerURL = embeddedWorkerBlobURL();
 
-            const loadTimeoutMs = 30000;
+            const loadTimeoutMs = 60000;
             let loadTimer;
             const loadTimeout = new Promise((_, reject) => {
                 loadTimer = setTimeout(() => reject(new Error(
-                    'O motor de edição (ffmpeg) não respondeu em 30s após o download. ' +
+                    'O motor de edição (ffmpeg) não respondeu em 60s após o download. ' +
                     'Isso costuma ser bloqueador de anúncios/extensão de privacidade impedindo a criação do Web Worker. ' +
                     'Tente desativar extensões para esta página e recarregar.'
                 )), loadTimeoutMs);
             });
 
             try {
+                if (onProgress) onProgress('inicializando', 0, 0);
                 await Promise.race([instance.load({ coreURL, wasmURL, classWorkerURL }), loadTimeout]);
             } finally {
                 clearTimeout(loadTimer);
+                URL.revokeObjectURL(classWorkerURL);
             }
         } catch (err) {
             // Não guarda uma instância meio-carregada: se ficar em cache, um "tentar
             // de novo" do usuário só devolveria essa mesma instância quebrada.
+            try { instance.terminate(); } catch (_) {}
             ffmpeg = null;
             throw err;
         }
@@ -6401,6 +6489,17 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
         captionFontLoaded = false; // nova instância = MEMFS vazio, a fonte precisa ser reescrita
         return await getFFmpeg(onLog, onProgress);
     }
+
+    // Usado pelas Abas 1/2 quando o carregamento rápido excede o limite. Não
+    // inicia outra instância aqui; apenas elimina Worker/MEMFS travados para o
+    // fallback Canvas começar com memória limpa.
+    window.resetFastRenderEngine = async function resetFastRenderEngine() {
+        if (ffmpeg) {
+            try { ffmpeg.terminate(); } catch (_) {}
+        }
+        ffmpeg = null;
+        captionFontLoaded = false;
+    };
 
     // Deleta um arquivo do sistema de arquivos virtual do ffmpeg, ignorando
     // erro se ele não existir (ex: uma cena que falhou antes de chegar a
