@@ -2415,7 +2415,7 @@ video#sourceVideo { display: none; }
             <div class="social-transfer-card">
               <label class="checkbox-item" style="margin:0;">
                 <input type="checkbox" id="socialSendToEditorChk">
-                <span><strong>⚡ Enviar automaticamente para edição</strong><br><small>Envia para a aba escolhida e força Edição Criativa, espelhamento, micro-oscilação, ruído e proteção de áudio. O desfoque manual fica desligado. Depois ativa o Render Rápido e inicia.</small></span>
+                <span><strong>⚡ Enviar automaticamente para edição</strong><br><small>Envia para a aba escolhida e força Edição Criativa, espelhamento, micro-oscilação, ruído e proteção de áudio. O desfoque manual e o Render Rápido ficam desligados para evitar travamentos.</small></span>
               </label>
               <div id="socialEditorTargetWrap" style="display:none;">
                 <label for="socialEditorTarget">Enviar para:</label>
@@ -2426,6 +2426,10 @@ video#sourceVideo { display: none; }
                 <label class="checkbox-item social-save-original-option">
                   <input type="checkbox" id="socialSaveOriginalChk">
                   <span><strong>Salvar também o vídeo original</strong><br><small>Desligado: o original fica apenas na memória temporária e somente o vídeo final processado será baixado.</small></span>
+                </label>
+                <label class="checkbox-item social-save-original-option">
+                  <input type="checkbox" id="socialUseFastRenderChk" disabled>
+                  <span><strong>Render Rápido desativado no envio automático</strong><br><small>O fluxo usa sempre o Canvas confiável: não baixa o ffmpeg-core.wasm de 31 MB, mantém a prévia em movimento e evita o travamento mostrado na tela.</small></span>
                 </label>
                 <p>Para vários vídeos: marque todos na lista e clique em <strong>Enviar selecionados para edição</strong>. Eles serão enviados juntos e permanecerão na mesma fila de processamento.</p>
               </div>
@@ -3989,6 +3993,12 @@ video#sourceVideo { display: none; }
           const elapsed = (Date.now() - startTime) / 1000;
           frameIndex++;
           const inIntro = introDuration > 0 && elapsed < introDuration;
+          if (frameIndex % 15 === 0) {
+            const processedSeconds = Math.max(0, (video.currentTime || config.cutStart) - config.cutStart);
+            const totalSeconds = Math.max(0.1, stopTime - config.cutStart);
+            const percent = Math.min(100, Math.round((processedSeconds / totalSeconds) * 100));
+            status.innerText = `🎬 Canvas processando (${index + 1}/${total}) — ${percent}% • ${processedSeconds.toFixed(1)}s / ${totalSeconds.toFixed(1)}s`;
+          }
 
           // 3. Micro-alteração temporal contínua (+4.5% speed)
           if (!videoStarted) {
@@ -4389,7 +4399,11 @@ video#sourceVideo { display: none; }
       const ctrl = getActiveControls();
       const processingContainer = btn.closest('.tab-content');
       const autoApprovalPreset = processingContainer?.dataset.autoApprovalPreset === '1';
-      if (processingContainer) delete processingContainer.dataset.autoApprovalPreset;
+      const autoUseFastRender = processingContainer?.dataset.autoUseFastRender === '1';
+      if (processingContainer) {
+        delete processingContainer.dataset.autoApprovalPreset;
+        delete processingContainer.dataset.autoUseFastRender;
+      }
       const baseTitle = ctrl.hookText.value.trim();
       const config = {
         cutStart: parseFloat(ctrl.trimStart.value) || 0,
@@ -4397,7 +4411,7 @@ video#sourceVideo { display: none; }
         isCropActive: autoApprovalPreset ? true : ctrl.enableCrop.checked,
         blur: autoApprovalPreset ? false : (ctrl.blur ? ctrl.blur.checked : false),
         creativeEdit: autoApprovalPreset ? true : (ctrl.creative ? ctrl.creative.checked : false),
-        fastRender: autoApprovalPreset ? true : (ctrl.fast ? ctrl.fast.checked : false),
+        fastRender: autoApprovalPreset ? false : (ctrl.fast ? ctrl.fast.checked : false),
         captionStyle: autoApprovalPreset ? 'none' : (ctrl.captionStyle ? ctrl.captionStyle.value : 'none'),
         captionText: ctrl.captionText ? ctrl.captionText.value : '',
         narrationText: ctrl.narrationText ? ctrl.narrationText.value : '',
@@ -7244,6 +7258,7 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
   const socialEditorTargetWrap = document.getElementById('socialEditorTargetWrap');
   const socialEditorTarget = document.getElementById('socialEditorTarget');
   const socialSaveOriginalChk = document.getElementById('socialSaveOriginalChk');
+  const socialUseFastRenderChk = document.getElementById('socialUseFastRenderChk');
   const cobaltApiUrl = document.getElementById('cobaltApiUrl');
   const testCobaltBtn = document.getElementById('testCobaltBtn');
   const cobaltTestStatus = document.getElementById('cobaltTestStatus');
@@ -8075,20 +8090,25 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
     const autoPitch = container.querySelector('.pitch-select');
     if (autoPitch) autoPitch.value = '0';
 
-    // O fast render é ligado explicitamente. Na Aba 1, desativamos a legenda
-    // dinâmica automática somente neste fluxo para não obrigar o motor canvas.
+    // No envio automático o FFmpeg WASM fica SEMPRE desligado. O navegador do
+    // usuário travou repetidamente ao carregar/compilar os 31 MB do core; o
+    // Canvas é mais previsível e mantém a prévia em movimento.
+    const useFastRender = false;
+    socialUseFastRenderChk.checked = false;
     const fast = container.querySelector('.fast-chk');
-    if (fast) fast.checked = true;
+    if (fast) fast.checked = useFastRender;
     const caption = container.querySelector('.caption-style-select');
     if (caption) caption.value = 'none';
 
     const processBtn = container.querySelector('.process-btn');
     if (processBtn) processBtn.disabled = false;
-    // Sinal interno consumido pelo botão de processamento. O preset automático
-    // força as camadas no objeto de configuração, sem depender apenas do estado
-    // visual dos checkboxes.
+    // Sinais internos consumidos pelo botão de processamento. O preset força
+    // as camadas, mas respeita a escolha independente do motor de render.
     container.dataset.autoApprovalPreset = '1';
-    status.innerText = `⚡ ${videos.length} vídeo(s) na fila. Blindagem automática forçada, desfoque desligado, áudio sincronizado em 0 semitons e Render Rápido ativado. Iniciando...`;
+    container.dataset.autoUseFastRender = useFastRender ? '1' : '0';
+    status.innerText = useFastRender
+      ? `⚡ ${videos.length} vídeo(s) na fila. Blindagem forçada e Render Rápido experimental selecionado. Iniciando...`
+      : `⚡ ${videos.length} vídeo(s) na fila. Blindagem forçada e motor Canvas confiável selecionado. A prévia ficará em movimento.`;
     window.showToast(`${videos.length} vídeo(s) enviado(s) para ${target === 'found' ? 'Aba 1' : 'Aba 2'}.`, 'success');
 
     // Dá tempo para o primeiro Blob montar os metadados/preview antes do clique.
@@ -8341,8 +8361,10 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
   try {
     socialSendToEditorChk.checked = localStorage.getItem('blind_social_send_editor') === '1';
     socialEditorTarget.value = localStorage.getItem('blind_social_editor_target') || 'found';
-    // Padrão desligado: não salva o original, apenas o resultado processado.
+    // Padrões desligados: não salva o original e sempre usa Canvas confiável.
     socialSaveOriginalChk.checked = localStorage.getItem('blind_social_save_original') === '1';
+    socialUseFastRenderChk.checked = false;
+    localStorage.removeItem('blind_social_use_fast_render');
   } catch (_) {}
   socialSendToEditorChk.addEventListener('change', () => {
     refreshSocialEditorTransferUI();
@@ -8358,6 +8380,10 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
     try { localStorage.setItem('blind_social_save_original', socialSaveOriginalChk.checked ? '1' : '0'); }
     catch (_) {}
   });
+  socialUseFastRenderChk.addEventListener('change', () => {
+    try { localStorage.setItem('blind_social_use_fast_render', socialUseFastRenderChk.checked ? '1' : '0'); }
+    catch (_) {}
+  });
   refreshSocialEditorTransferUI();
 
   // A URL do backend próprio pode persistir; não existe chave de API.
@@ -8371,6 +8397,31 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
     try { localStorage.setItem('blind_social_backend_url', cobaltApiUrl.value.trim()); }
     catch (_) {}
   });
+
+  // A instância gratuita do Render adormece por inatividade. Acordamos o
+  // backend quando a página abre/entra na Aba 4 e mantemos um ping leve a cada
+  // 8 minutos enquanto a página estiver aberta. Isso evita somar ~50s ao fluxo
+  // de um vídeo curto.
+  async function wakeSocialBackend(showMessage = false) {
+    const endpoint = cobaltApiUrl.value.trim().replace(/\/+$/, '');
+    if (!endpoint) return false;
+    if (showMessage) setSocialMessage(cobaltTestStatus, 'Acordando o backend gratuito...');
+    try {
+      const response = await fetchWithTimeout(`${endpoint}/profile-health`, {
+        headers: { 'Accept': 'application/json' },
+        cache: 'no-store'
+      }, 90000);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      if (showMessage) setSocialMessage(cobaltTestStatus, '✅ Backend acordado e pronto.');
+      return true;
+    } catch (error) {
+      if (showMessage) setSocialMessage(cobaltTestStatus, `Backend ainda não respondeu: ${error.message || error}`, true);
+      return false;
+    }
+  }
+  setTimeout(() => wakeSocialBackend(false), 600);
+  setInterval(() => wakeSocialBackend(false), 8 * 60 * 1000);
+  tabBtnDownloader.addEventListener('click', () => wakeSocialBackend(false));
 
   testCobaltBtn.addEventListener('click', async () => {
     testCobaltBtn.disabled = true;
