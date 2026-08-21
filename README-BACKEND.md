@@ -48,7 +48,7 @@ Na Aba 4 existe a opção **Enviar automaticamente para edição**. Escolha a Ab
 1. o vídeo é baixado;
 2. o arquivo entra na fila da aba escolhida;
 3. o preset interno força edição criativa, espelhamento, micro-oscilação, ruído esteganográfico e blindagem acústica diretamente na configuração de exportação; **Desfocar Região permanece desligado** no envio automático;
-4. no envio automático usa sempre o motor Canvas confiável, com prévia em movimento, progresso em porcentagem e todas as camadas. O FFmpeg WebAssembly rápido fica desativado nesse fluxo para não travar no download/compilação de 31 MB;
+4. no envio automático usa sempre o motor Canvas confiável, com prévia em movimento, progresso em porcentagem e todas as camadas. O loop possui backpressure (não acumula ticks), velocidade nativa contínua e efeitos sincronizados ao relógio real do vídeo para eliminar microtravadas. O FFmpeg WebAssembly rápido fica desativado nesse fluxo;
 5. o processamento começa automaticamente.
 
 O desfoque de região não é ativado automaticamente porque a máscara manual poderia cair sobre uma parte aleatória da cena. Ative-o apenas quando puder posicionar o quadrado amarelo sobre um logotipo ou QR code. Uma detecção automática exata de logotipos, legendas e QR codes exigiria rastreamento visual dedicado e não é simulada por uma posição fixa.

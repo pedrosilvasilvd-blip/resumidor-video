@@ -1972,7 +1972,7 @@ video#sourceVideo { display: none; }
             </label>
             <label class="checkbox-item">
               <input type="checkbox" class="creative-chk">
-              <span><strong>🎬 Edição Criativa Automática:</strong> re-enquadramento com zoom focal (simula cortes de câmera), transições de flash entre cortes e leve variação de velocidade — transformação real anti "não original", aplicada sozinha na exportação.</span>
+              <span><strong>🎬 Edição Criativa Automática:</strong> re-enquadramento com zoom focal (simula cortes de câmera) e transições de flash entre cortes, mantendo a velocidade contínua para evitar travadinhas — transformação real aplicada na exportação.</span>
             </label>
           </div>
 
@@ -2138,7 +2138,7 @@ video#sourceVideo { display: none; }
             </label>
             <label class="checkbox-item">
               <input type="checkbox" class="creative-chk">
-              <span><strong>🎬 Edição Criativa Automática:</strong> re-enquadramento com zoom focal (simula cortes de câmera), flash cinematográfico espaçado a cada <strong>10–15 segundos</strong> e leve variação de velocidade. A <strong>cor cinematográfica escolhida fica fixa</strong> do início ao fim — sem alternar entre quente, fria, vívida ou vintage a cada corte.</span>
+              <span><strong>🎬 Edição Criativa Automática:</strong> re-enquadramento com zoom focal (simula cortes de câmera) e flash cinematográfico espaçado a cada <strong>10–15 segundos</strong>, mantendo a velocidade contínua para evitar travadinhas. A <strong>cor cinematográfica escolhida fica fixa</strong> do início ao fim.</span>
             </label>
           </div>
 
@@ -2658,7 +2658,9 @@ video#sourceVideo { display: none; }
   const cropBox = document.getElementById('cropBox');
   const blurBox = document.getElementById('blurBox');
   const canvas = document.getElementById('previewCanvas');
-  const ctx = canvas.getContext('2d', { alpha: false });
+  const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
   const video = document.getElementById('sourceVideo');
   const status = document.getElementById('status');
   const btnPreviewOverlay = document.getElementById('btnPreviewOverlay');
@@ -2674,7 +2676,7 @@ video#sourceVideo { display: none; }
   // facilitar ajuste sem caçar números soltos.
   const TIMING = {
     RENDER_INTERVAL_MS: 33,   // ~30fps
-    BASE_SPEED: 1.045,        // micro-aceleração base (+4.5%)
+    BASE_SPEED: 1.0,          // velocidade nativa: evita descarte periódico de frames
     LEAD_IN_SECONDS: 0.9,     // duração do Ken Burns de abertura
     LEAD_IN_STRENGTH: 0.20,   // zoom máximo da abertura (1.20x)
   };
@@ -3308,8 +3310,8 @@ video#sourceVideo { display: none; }
   // pixel. Este módulo aplica, sozinho e a cada poucos segundos, transformações
   // visíveis de verdade: (1) punch-in com re-enquadramento em focos diferentes
   // (centro, topo, base, laterais) que simulam cortes de câmera; (2) transição
-  // de "flash" entre um corte e outro; (3) leve variação de velocidade. O
-  // resultado parece editado em vários takes, não um vídeo passado inteiro.
+  // de "flash" entre um corte e outro. A velocidade permanece contínua para
+  // evitar renegociação do decoder e microtravadas no MP4 final.
   // Cada "corte" tem zoom forte (1.2x a 1.5x), um foco diferente (topo, base,
   // laterais) e um color grading próprio (quente, frio, vívido, vintage). A
   // troca é SECA (corte duro), não um morph suave — é isso que faz o vídeo
@@ -3378,8 +3380,10 @@ video#sourceVideo { display: none; }
         ? getDoramaCreativeFlash(elapsed)
         : (idx > 0 && t < 0.18 ? Math.max(0, 1 - t / 0.18) : 0);
     }
-    // Rampa de velocidade alternada (normal x acelerado) por corte.
-    const speed = (idx % 2 === 0) ? 1.0 : 1.13;
+    // Velocidade contínua: os saltos 1.00x ↔ 1.13x a cada corte faziam o
+    // decoder renegociar o fluxo e geravam pequenas travadas. A criatividade
+    // continua nos cortes de foco, zoom e flash, sem mexer no relógio do vídeo.
+    const speed = 1.0;
     return { zoom: clip.z, fx: clip.fx, fy: clip.fy, grade: clip.grade, flash, speed };
   }
 
@@ -3696,13 +3700,25 @@ video#sourceVideo { display: none; }
   function createRenderTicker() {
     const workerCode = `
       let timer = null;
+      let waitingAck = false;
       self.onmessage = (e) => {
         const msg = e.data || {};
         if (msg.cmd === 'start') {
           if (timer) clearInterval(timer);
-          timer = setInterval(() => self.postMessage('tick'), msg.interval || 33);
+          waitingAck = false;
+          timer = setInterval(() => {
+            // Backpressure: nunca empilha centenas de ticks quando o Canvas ou
+            // o encoder estão ocupados. Só envia o próximo após o ACK.
+            if (!waitingAck) {
+              waitingAck = true;
+              self.postMessage('tick');
+            }
+          }, msg.interval || 33);
+        } else if (msg.cmd === 'ack') {
+          waitingAck = false;
         } else if (msg.cmd === 'stop') {
           if (timer) { clearInterval(timer); timer = null; }
+          waitingAck = false;
         }
       };
     `;
@@ -3985,6 +4001,10 @@ video#sourceVideo { display: none; }
             } else {
               resolve();
             }
+          } finally {
+            // Libera o próximo tick somente depois que este frame terminou.
+            // Isso evita backlog/bursts que apareciam no MP4 como travadinhas.
+            if (!renderStopped) renderTicker.postMessage({ cmd: 'ack' });
           }
         }
         renderTicker.onmessage = render;
@@ -3993,6 +4013,7 @@ video#sourceVideo { display: none; }
           const elapsed = (Date.now() - startTime) / 1000;
           frameIndex++;
           const inIntro = introDuration > 0 && elapsed < introDuration;
+          const mediaTimeline = Math.max(0, (video.currentTime || config.cutStart) - config.cutStart);
           if (frameIndex % 15 === 0) {
             const processedSeconds = Math.max(0, (video.currentTime || config.cutStart) - config.cutStart);
             const totalSeconds = Math.max(0.1, stopTime - config.cutStart);
@@ -4000,7 +4021,7 @@ video#sourceVideo { display: none; }
             status.innerText = `🎬 Canvas processando (${index + 1}/${total}) — ${percent}% • ${processedSeconds.toFixed(1)}s / ${totalSeconds.toFixed(1)}s`;
           }
 
-          // 3. Micro-alteração temporal contínua (+4.5% speed)
+          // 3. Reprodução em velocidade nativa para preservar a cadência dos frames
           if (!videoStarted) {
             video.currentTime = config.cutStart;
             video.playbackRate = TIMING.BASE_SPEED * pitchFactor;
@@ -4020,12 +4041,12 @@ video#sourceVideo { display: none; }
           // 4. Micro-oscilação angular e de fluxo óptico
           let shakeX = 0, shakeY = 0;
           if (config.shake) {
-            shakeX = Math.sin(frameIndex * VISUAL.SHAKE_FREQ_X) * VISUAL.SHAKE_AMP_X;
-            shakeY = Math.cos(frameIndex * VISUAL.SHAKE_FREQ_Y) * VISUAL.SHAKE_AMP_Y;
+            shakeX = Math.sin(mediaTimeline * 30 * VISUAL.SHAKE_FREQ_X) * VISUAL.SHAKE_AMP_X;
+            shakeY = Math.cos(mediaTimeline * 30 * VISUAL.SHAKE_FREQ_Y) * VISUAL.SHAKE_AMP_Y;
           }
 
-          // 5. Micro-zoom senoidal perpétuo (102% a 106%) que destrói o pHash visual
-          const dynamicZoom = VISUAL.DYNAMIC_ZOOM_BASE + Math.sin(frameIndex * VISUAL.DYNAMIC_ZOOM_FREQ) * VISUAL.DYNAMIC_ZOOM_AMP;
+          // 5. Micro-zoom baseado no tempo real da mídia, não no número de ticks.
+          const dynamicZoom = VISUAL.DYNAMIC_ZOOM_BASE + Math.sin(mediaTimeline * 30 * VISUAL.DYNAMIC_ZOOM_FREQ) * VISUAL.DYNAMIC_ZOOM_AMP;
           const introZoom = inIntro ? (1 + 0.05 * (elapsed / introDuration)) : 1;
           // Abertura sempre em movimento (Ken Burns): nos primeiros ~0.9s o
           // zoom "puxa" de 1.20x até 1.0x. Mesmo que o frame de origem seja
@@ -4049,7 +4070,10 @@ video#sourceVideo { display: none; }
           // 5b. Edição Criativa Automática: punch-in focal + flash, simulando
           // cortes e re-enquadramento reais. Com o recurso desligado, o
           // transform é identidade (nenhuma mudança no comportamento atual).
-          const edit = config.creativeEdit ? getCreativeEditState(elapsed, inIntro) : { zoom: 1, fx: 0.5, fy: 0.5, grade: '', flash: 0, speed: 1 };
+          // Efeitos seguem o relógio real do vídeo, não o relógio da CPU. Se um
+          // frame demorar mais para desenhar, o próximo não executa uma rajada
+          // de estados atrasados — evita os pequenos engasgos visuais.
+          const edit = config.creativeEdit ? getCreativeEditState(mediaTimeline, inIntro) : { zoom: 1, fx: 0.5, fy: 0.5, grade: '', flash: 0, speed: 1 };
           if (config.creativeEdit) {
             // rampa de velocidade por corte (normal x acelerado). Só reescreve
             // o playbackRate quando o valor ALVO muda (1x por corte, não 1x por
