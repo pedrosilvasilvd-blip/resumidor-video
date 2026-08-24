@@ -1,0 +1,2275 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>O Narrador Sinistro — gerador de histórias virais de terror</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🩸</text></svg>">
+<style>
+  :root{
+    --bg:#07070c; --card:#0f0f16; --card2:#131018; --line:#2a1418;
+    --red:#e5222e; --red2:#ff4d55; --blood:#8a0f16;
+    --txt:#e8e4e0; --dim:#9a929b; --mono:#0d1117;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg); color:var(--txt);
+    font-family:"Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+    min-height:100vh;
+    background-image:
+      radial-gradient(ellipse 80% 40% at 50% -10%, rgba(229,34,46,.14), transparent 60%),
+      radial-gradient(ellipse 60% 30% at 90% 110%, rgba(138,15,22,.10), transparent 60%);
+  }
+  .wrap{max-width:1180px; margin:0 auto; padding:28px 18px 90px;}
+  header{text-align:center; margin-bottom:26px;}
+  .skull{font-size:34px; display:inline-block; animation:swing 4s ease-in-out infinite; transform-origin:top center;}
+  @keyframes swing{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
+  h1{
+    font-size:clamp(26px,4.5vw,44px); letter-spacing:.14em; text-transform:uppercase;
+    color:var(--red2); text-shadow:0 0 22px rgba(229,34,46,.45);
+    animation:flicker 6s infinite;
+  }
+  @keyframes flicker{
+    0%,86%,90%,94%,100%{opacity:1}
+    87%,91%{opacity:.35}
+    93%{opacity:.7}
+  }
+  .tagline{color:var(--dim); margin-top:8px; font-size:15px;}
+  .tagline b{color:var(--red2); font-weight:600;}
+
+  .layout{display:grid; grid-template-columns:340px 1fr; gap:20px; align-items:start;}
+  @media(max-width:900px){.layout{grid-template-columns:1fr;}}
+
+  .panel{
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:20px; box-shadow:0 10px 40px rgba(0,0,0,.5);
+  }
+  .panel h2{
+    font-size:13px; letter-spacing:.18em; text-transform:uppercase; color:var(--red2);
+    margin-bottom:14px; display:flex; align-items:center; gap:8px;
+  }
+  label{display:block; font-size:12.5px; color:var(--dim); margin:14px 0 6px; letter-spacing:.03em;}
+  label .dica{color:#6f6875; font-size:11px;}
+  input[type=text], select, textarea{
+    width:100%; background:#0a0a10; border:1px solid #26222b; color:var(--txt);
+    padding:11px 12px; border-radius:9px; font-size:14.5px; outline:none;
+    font-family:inherit; transition:border-color .15s, box-shadow .15s;
+  }
+  input:focus, select:focus{border-color:var(--red); box-shadow:0 0 0 3px rgba(229,34,46,.15);}
+  .row{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  input[type=range]{width:100%; accent-color:var(--red); margin-top:4px;}
+  .rangeval{color:var(--red2); font-weight:700;}
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    border:none; cursor:pointer; border-radius:10px; padding:13px 18px;
+    font-size:15px; font-weight:700; letter-spacing:.02em; font-family:inherit;
+    transition:transform .08s, box-shadow .15s, background .15s;
+  }
+  .btn:active{transform:scale(.97);}
+  .btn-primary{
+    width:100%; margin-top:20px; color:#fff;
+    background:linear-gradient(180deg,#ff3b46,#a3121c);
+    box-shadow:0 6px 24px rgba(229,34,46,.35);
+  }
+  .btn-primary:hover{box-shadow:0 6px 32px rgba(229,34,46,.55);}
+  .btn-ghost{
+    background:#161320; color:var(--txt); border:1px solid #2c2533; font-size:13.5px; padding:10px 14px;
+  }
+  .btn-ghost:hover{border-color:var(--red); color:var(--red2);}
+  .exemplo{font-size:12px; color:#6f6875; margin-top:8px; cursor:pointer; text-decoration:underline dotted;}
+  .exemplo:hover{color:var(--red2);}
+
+  #output{display:flex; flex-direction:column; gap:16px;}
+  .empty{
+    border:1px dashed #2c2533; border-radius:14px; padding:60px 24px; text-align:center;
+    color:var(--dim); font-size:15px; line-height:1.7;
+  }
+  .empty .big{font-size:44px; display:block; margin-bottom:12px; filter:grayscale(.3);}
+
+  .toolbar{display:flex; flex-wrap:wrap; gap:8px;}
+  .var-badge{
+    background:#1a1024; border:1px solid #3a2440; color:#c9a6ff; font-size:12px;
+    padding:8px 12px; border-radius:10px; letter-spacing:.05em;
+  }
+
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px 20px;
+    box-shadow:0 8px 30px rgba(0,0,0,.45);
+  }
+  .card h3{font-size:13px; letter-spacing:.16em; text-transform:uppercase; color:var(--red2); margin-bottom:12px;}
+  .tit-item{display:flex; gap:8px; align-items:flex-start; padding:7px 0; border-bottom:1px solid #1b1720;}
+  .tit-item:last-child{border-bottom:none;}
+  .tit-item span{flex:1; font-size:14.5px; line-height:1.45;}
+  .mini-info{color:var(--dim); font-size:13.5px; line-height:1.65;}
+  .mini-info b{color:var(--txt);}
+  .hashtags{color:#7ea6ff; font-size:13px; word-break:break-word; margin-top:8px;}
+  .anchor-box{
+    margin-top:10px; background:#141019; border:1px solid #2b2233; border-radius:10px;
+    padding:10px 12px; font-size:13.5px; color:#d8cfe6;
+  }
+  .anchor-box b{color:#c9a6ff;}
+  .creature-box{
+    margin-top:10px; background:#190d10; border:1px solid #46202a; border-radius:10px;
+    padding:10px 12px; font-size:13.5px; color:#ffd9dc;
+  }
+  .creature-box b{color:var(--red2);}
+
+  .scene{
+    background:var(--card2); border:1px solid var(--line); border-left:4px solid var(--red);
+    border-radius:12px; padding:16px 18px;
+  }
+  .scene-head{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .beat-label{
+    background:rgba(229,34,46,.14); color:var(--red2); border:1px solid rgba(229,34,46,.4);
+    font-size:11px; letter-spacing:.14em; padding:4px 10px; border-radius:999px; font-weight:700;
+  }
+  .scene-num{color:var(--dim); font-size:12.5px; letter-spacing:.08em;}
+  .scene-dur{color:#8fd0a0; font-size:12px; margin-left:auto;}
+  .narr{font-size:15.5px; line-height:1.65; color:#f2eee9;}
+  .retention{
+    margin-top:8px; font-size:13px; color:#ffb1b6; font-style:italic;
+    border-left:2px solid var(--blood); padding-left:10px;
+  }
+  .overlay-chip{
+    display:inline-block; margin-top:10px; background:#1c0f12; border:1px solid #46202a;
+    color:#ff8b93; font-size:12.5px; font-weight:700; letter-spacing:.06em;
+    padding:5px 10px; border-radius:7px; text-transform:uppercase;
+  }
+  .shot-pt{margin-top:10px; font-size:13px; color:var(--dim);}
+  .shot-pt b{color:#cfc8d4;}
+  .prompt-box{
+    margin-top:8px; background:var(--mono); border:1px solid #1f2630; border-radius:9px;
+    padding:11px 12px; font-family:ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-size:12.5px; line-height:1.55; color:#9ecbff; word-break:break-word;
+  }
+  .scene-actions{display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;}
+  .btn-sm{font-size:12.5px; padding:8px 12px; border-radius:8px;}
+  .tom{font-size:12px; color:#8b8494; margin-top:10px;}
+  .tom b{color:#b3abbd;}
+
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:#1c1420; color:var(--red2); border:1px solid var(--red);
+    padding:11px 22px; border-radius:999px; font-size:14px; font-weight:600;
+    opacity:0; pointer-events:none; transition:all .25s; z-index:50;
+    box-shadow:0 8px 30px rgba(229,34,46,.35);
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  footer{margin-top:34px; text-align:center; color:#5d5663; font-size:12px; line-height:1.6;}
+  .dicas-list{padding-left:18px; color:var(--dim); font-size:13.5px; line-height:1.9;}
+  .dicas-list li::marker{color:var(--red);}
+
+  /* estúdio de vídeo */
+  .img-thumb{width:46px; height:46px; object-fit:cover; border-radius:8px; border:1px solid var(--line); vertical-align:middle;}
+  .img-empty{display:inline-flex; align-items:center; justify-content:center; width:auto; padding:0 10px; height:46px;
+    font-size:10.5px; color:#6f6875; background:#0a0a10; border:1px dashed #2c2533; border-radius:8px;}
+  .progress{height:9px; background:#1a1520; border-radius:99px; overflow:hidden; border:1px solid #2c2533;}
+  .progress-fill{height:100%; width:0%; background:linear-gradient(90deg,#ff3b46,#8a0f16); transition:width .18s;}
+  .chk{display:flex; align-items:center; gap:9px; margin-top:9px; font-size:13.5px; color:var(--dim); cursor:pointer;}
+  .chk input{accent-color:var(--red); width:16px; height:16px; cursor:pointer;}
+  .studio-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:12px;}
+  @media(max-width:700px){.studio-grid{grid-template-columns:1fr;}}
+  #videoCanvas{max-height:430px; width:auto; border-radius:14px; border:1px solid var(--line); background:#000; box-shadow:0 12px 40px rgba(0,0,0,.6);}
+  .result-btn{display:inline-block; margin-top:6px; background:linear-gradient(180deg,#ff3b46,#a3121c); color:#fff;
+    font-weight:800; padding:14px 26px; border-radius:12px; text-decoration:none; font-size:16px; letter-spacing:.03em;
+    box-shadow:0 6px 26px rgba(229,34,46,.4);}
+  .narr-pill{background:#141019; border:1px solid #2b2233; border-radius:10px; padding:10px 12px; margin-top:10px; font-size:13px; color:#d8cfe6;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="skull">💀</div>
+    <h1>O Narrador Sinistro</h1>
+    <p class="tagline">Roteiros de terror <b>agressivos e impossíveis de pular</b>: gancho no primeiro segundo,<br>a criatura <b>aparecendo de verdade</b> e prompts de imagem sensacionalistas no formato 9:16.</p>
+  </header>
+
+  <div class="layout">
+    <!-- ===================== FORM ===================== -->
+    <div class="panel">
+      <h2>🩸 Sobre o que é o pesadelo?</h2>
+
+      <label>Tema da história *</label>
+      <input type="text" id="tema" placeholder="ex.: epidemia zumbi em Salvador">
+      <div class="exemplo" id="btnExemplo">usar exemplo: “epidemia zumbi”</div>
+
+      <label>Monstro / entidade <span class="dica">(opcional — detectamos sozinho)</span></label>
+      <input type="text" id="entidade" placeholder="ex.: zumbis, palhaços, estátuas...">
+
+      <label>Cidade</label>
+      <input type="text" id="cidade" value="Salvador">
+
+      <div class="row">
+        <div>
+          <label>Estilo visual</label>
+          <select id="estilo">
+            <option value="realista">🎬 Cinematográfico realista</option>
+            <option value="vhs">📼 Found footage / VHS</option>
+            <option value="absurdo">🤡 Horror absurdo</option>
+            <option value="cosmico">🌀 Cósmico surreal</option>
+          </select>
+        </div>
+        <div>
+          <label>Cenas: <span class="rangeval" id="cenasVal">7</span></label>
+          <input type="range" id="cenas" min="5" max="8" value="7">
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="btnGerar">🔪 GERAR OUTRA VARIAÇÃO</button>
+      <p style="margin-top:10px; font-size:12.5px; color:#8fd0a0;">⚡ Criação automática ligada: escreve ou muda qualquer opção e o roteiro se refaz sozinho. O botão só sorteia uma variação nova.</p>
+
+      <div style="margin-top:18px; border-top:1px solid #1d1822; padding-top:14px;">
+        <h2 style="margin-bottom:8px;">🔎 Pesquisa de histórias reais</h2>
+        <label class="chk"><input type="checkbox" id="chkPesquisa"> Pesquisar casos reais na internet (usa sua chave Gemini)</label>
+        <button class="btn btn-ghost" id="btnPesquisar" style="margin-top:10px">🔎 PESQUISAR NA INTERNET AGORA</button>
+        <p id="pesqStatus" style="font-size:12.5px; color:#8fd0a0; margin-top:8px; line-height:1.45;">Desligado — usando só os bancos locais.</p>
+        <p style="font-size:12px; color:var(--dim); margin-top:6px; line-height:1.45;">Com isso ligado, o app pesquisa lendas urbanas, casos misteriosos e lugares reais do seu tema — cada roteiro sorteia histórias diferentes da internet, nada de prompt repetido.</p>
+      </div>
+
+      <div style="margin-top:18px; border-top:1px solid #1d1822; padding-top:14px;">
+        <h2 style="margin-bottom:8px;">🎧 Regras de retenção</h2>
+        <ul class="dicas-list">
+          <li><b>Mostra a criatura cedo</b> (cena 2) e de corpo inteiro no caos — o público fica pelo monstro.</li>
+          <li>Corte a cada 1,5–3 segundos, sem respiro.</li>
+          <li>Texto gigante na tela com a frase do gancho.</li>
+          <li>Esconde a âncora visual em todas as cenas.</li>
+          <li>Nos sustos, fala <b>mais baixo</b>, não mais alto.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ===================== OUTPUT ===================== -->
+    <div id="output">
+      <div class="empty">
+        <span class="big">⚡</span>
+        Criação automática ligada — o roteiro se gera sozinho enquanto você digita.<br>
+        Se não aparecer nada, escreve um tema aí do lado. 😈
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Todas as histórias são ficção gerada proceduralmente. Qualquer semelhança com a realidade... é coincidência. 😈<br>
+    Prompts de imagem em inglês porque os geradores (Midjourney, Leonardo, Bing, Flux) entendem melhor.
+  </footer>
+</div>
+
+<div class="toast" id="toast">Copiado! 🩸</div>
+
+<script>
+/* =========================================================
+   O NARRADOR SINISTRO — motor de histórias procedurais v2
+   (mais agressivo: criatura visível, ganchos brutais)
+   ========================================================= */
+
+/* ---------- utilidades ---------- */
+function rnd(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function rndInt(a,b){ return a + Math.floor(Math.random()*(b-a+1)); }
+function shuffle(a){ const c=a.slice(); for(let i=c.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [c[i],c[j]]=[c[j],c[i]];} return c; }
+function pickN(arr,n){ return shuffle(arr).slice(0,n); }
+function fill(str, ctx){ return String(str).replace(/\{(\w+)\}/g,(m,k)=> ctx[k]!==undefined ? ctx[k] : m); }
+function slug(s){ return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,""); }
+
+/* ---------- dados: lugares ---------- */
+const LOC_SALVADOR = [
+  {nome:"Pelourinho", g:"m", en:"the historic colonial square of Pelourinho with colorful facades and cobblestones"},
+  {nome:"Elevador Lacerda", g:"m", en:"the Elevador Lacerda elevator towers overlooking the Bay of All Saints"},
+  {nome:"Farol da Barra", g:"m", en:"the Farol da Barra lighthouse at the tip of the peninsula"},
+  {nome:"Mercado Modelo", g:"m", en:"the old Mercado Modelo market building by the harbor"},
+  {nome:"praia de Itapuã", g:"f", en:"Itapuã beach at night, dark sand and old fishing boats"},
+  {nome:"Rio Vermelho", g:"m", en:"the bohemian streets of Rio Vermelho neighborhood"},
+  {nome:"Dique do Tororó", g:"m", en:"the Dique do Tororó lagoon with mysterious floating sculptures"},
+  {nome:"Igreja do Bonfim", g:"f", en:"the steps of the Igreja do Bonfim church"},
+  {nome:"Terminal da França", g:"m", en:"the abandoned freight terminal by the port"},
+  {nome:"Comércio", g:"m", en:"the old commercial district with shuttered shops"},
+  {nome:"Terreiro de Jesus", g:"m", en:"the Largo do Terreiro de Jesus plaza at night"},
+  {nome:"Periperi", g:"m", en:"the quiet suburban streets of Periperi"},
+  {nome:"Avenida Centenário", g:"f", en:"the empty Avenida Centenário under sodium streetlights"},
+];
+const LOC_GENERICO = [
+  {nome:"praça central", g:"f", en:"the central town square"},
+  {nome:"mercado municipal", g:"m", en:"the old municipal market hall"},
+  {nome:"terminal de ônibus", g:"m", en:"the bus terminal at night"},
+  {nome:"orla da praia", g:"f", en:"the beach boardwalk at night"},
+  {nome:"hospital municipal", g:"m", en:"the entrance of the municipal hospital"},
+  {nome:"rua mais antiga da cidade", g:"f", en:"the oldest street in town with crumbling colonial houses"},
+  {nome:"cemitério municipal", g:"m", en:"the iron gates of the old municipal cemetery"},
+  {nome:"viaduto", g:"m", en:"the concrete overpass at night"},
+];
+
+/* criaturas em ação: shots de impacto máximo pra injetar nas cenas */
+const CREATURE_ACTIONS = [
+  {en:"POV running through {locEn}, {entityEn} sprinting on all fours right behind with mouth wide open, {creatureVis}, flashlight shaking violently, motion blur, pure chase", pt:"CRIATURA EM AÇÃO: correndo de quatro LOGO ATRÁS de quem filma, boca aberta."},
+  {en:"{entityEn} mid-lunge straight at the camera in {locEn}, arms reaching forward, {creatureVis}, extreme motion blur, jump-scare energy", pt:"CRIATURA EM AÇÃO: avançando direto pra câmera, braços pra frente."},
+  {en:"{entityEn} dragging a motionless person across the ground of {locEn}, {creatureVis}, harsh single light source, terrifying", pt:"CRIATURA EM AÇÃO: arrastando uma pessoa desacordada pelo chão."},
+  {en:"{entityEn} standing over a fallen person in {locEn}, head tilted at an unnatural angle, {creatureVis}, backlit by emergency lights", pt:"CRIATURA EM AÇÃO: parada em cima de alguém caído, cabeça inclinada."},
+  {en:"{entityEn} climbing a wall with limbs bent the wrong way in {locEn}, {creatureVis}, vertigo low angle", pt:"CRIATURA EM AÇÃO: escalando a parede com membros virados ao contrário."},
+  {en:"{entityEn} sprinting across {locEn} toward the camera kicking debris, {creatureVis}, dramatic backlight, relentless chase", pt:"CRIATURA EM AÇÃO: correndo pela cena direto pra câmera, levantando destroços."},
+];
+/* ---------- dados: pessoas, datas ---------- */
+const NOMES = ["Marivaldo","Ceiça","Seu Anísio","Dona Zefa","Rui","Tainá","Jailson","Profª. Helena","Mãe Nice","Beto","Clarice","Sargento Rocha","Dr. Ivo","Nadinho","Lúcia","Vanessa","Tião","Ícaro"];
+const MESES = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+const HORAS = ["2:47","3:33","4:15","23:58","00:13","5:05","1:26"];
+
+/* ---------- aparência da criatura (PT/EN pareados) ---------- */
+const PELE = [
+  {pt:"pele pálida quase transparente, com veias negras visíveis", en:"pale translucent skin with black veins visible underneath"},
+  {pt:"pele cinzenta e úmida, descascando em tiras", en:"wet gray skin peeling away in strips"},
+  {pt:"pele esticada sobre os ossos, como se não houvesse carne", en:"skin stretched drum-tight over the bones"},
+  {pt:"pele rachada como barro seco, com algo brilhando por baixo", en:"cracked mud-dry skin with something faintly glowing underneath"},
+];
+const OLHOS = [
+  {pt:"olhos brancos leitosos, sem pupila", en:"milky white eyes with no pupils"},
+  {pt:"órbitas vazias que ainda seguem você", en:"empty eye sockets that still follow you"},
+  {pt:"olhos que refletem a luz como os de um bicho no escuro", en:"eyes reflecting light like an animal's in the dark"},
+  {pt:"olhos demais, agrupados onde devia existir um rosto", en:"too many eyes clustered where a face should be"},
+];
+const BOCA = [
+  {pt:"mandíbula pendurada num ângulo impossível", en:"jaw hanging open at an impossible angle"},
+  {pt:"boca cheia de dentes finos como agulhas", en:"a mouth full of thin needle teeth"},
+  {pt:"um sorriso largo demais pra qualquer rosto humano", en:"a smile too wide for any human face"},
+  {pt:"sem boca — só uma fenda vertical que respira", en:"no mouth, just a breathing vertical slit"},
+];
+const MOVER = [
+  {pt:"membros que dobram pro lado errado", en:"limbs bending the wrong way"},
+  {pt:"movimentos em solavancos, como vídeo travando", en:"moving in sudden jerky twitches like glitching video"},
+  {pt:"rastejando de quatro com a coluna arqueada pra cima", en:"crawling on all fours with the spine arched upward"},
+  {pt:"fica completamente parado — e na cena seguinte já está mais perto", en:"standing perfectly still, somehow closer in the next frame"},
+];
+
+/* ---------- pacotes: narração + 2 imagens alinhadas com ela ---------- */
+const PACKAGES = {
+hook: [
+  {
+    nar: "Se você mora em {cidade}: TRANCA a porta e assiste isso até o final. Eu não tô brincando.",
+    shots: [
+      {en:"POV through an apartment door peephole at night, fisheye view of a dark hallway with one flickering light, {entityEn} standing motionless at the far end, {creatureVis}", pt:"POV pelo olho mágico da porta: corredor escuro com a criatura parada lá no fundo."},
+      {en:"extreme close-up of trembling hands sliding a door chain lock into place, cold blue moonlight through the window, panic atmosphere", pt:"Close nas mãos tremendo pra trancar a porta com a corrente."},
+    ],
+  },
+  {
+    nar: "As câmeras {locP} gravaram TUDO. O que eu vou te mostrar agora quase me custou a vida.",
+    shots: [
+      {en:"dark security control room, wall of monitors all showing {locEn} from different angles, one monitor clearly showing {entityEn}, {creatureVis}", pt:"Sala de segurança cheia de monitores do local — um deles mostra a criatura."},
+      {en:"close-up of one grainy security monitor: {entityEn} turning its head directly toward that camera, glowing eyes, timestamp overlay, {creatureVis}", pt:"Close no monitor: a criatura vira a cabeça direto pra câmera."},
+    ],
+  },
+  {
+    nar: "No dia {data}, {cidade} sumiu do noticiário. Ninguém explica por quê. Eu vou explicar.",
+    shots: [
+      {en:"abandoned TV news studio, chairs overturned, coffee cups left behind, wall of screens showing only static, eerie silence", pt:"Estúdio de TV abandonado às pressas, telas só com chuvisco."},
+      {en:"aerial night view of {cityName}, entire neighborhoods completely dark with no lights at all, surrounded by normal lit areas", pt:"Vista aérea: bairros inteiros apagados, sem nenhuma luz."},
+    ],
+  },
+  {
+    nar: "Duvido você chegar no final desse vídeo sem pausar. Foi assim que tudo começou em {cidade}.",
+    shots: [
+      {en:"extreme close-up of the face of {entityEn} lunging straight at the camera, mouth wide open, {creatureVis}, motion blur, nightmare fuel", pt:"A cara da criatura avançando na câmera, boca escancarada."},
+      {en:"phone selfie angle at night: terrified face whispering, and behind in the dark corridor {entityEn} standing motionless, fully visible, {creatureVis}", pt:"Selfie no escuro — e a criatura parada no corredor atrás."},
+    ],
+  },
+],
+context: [
+  {
+    nar: "Era uma noite normal {locNo}. Gente rindo, som alto, vida acontecendo. E ninguém — NINGUÉM — viu o que já estava no meio deles.",
+    shots: [
+      {en:"busy lively night scene at {locEn}, people laughing and hanging out, warm street lights, food stalls, festive everyday atmosphere", pt:"A cena exata da narração: noite normal, {loc} cheio, gente rindo, luzes quentes."},
+      {en:"the same crowded night scene at {locEn}, zoomed on one figure standing completely still among the moving crowd, face partially visible, deeply unsettling, {creatureVis}", pt:"O MESMO lugar — mas agora vemos a criatura parada no meio da multidão."},
+    ],
+  },
+  {
+    nar: "O primeiro erro foi ignorar o aviso: {detalhe}. Se alguém tivesse levado a sério, {cidade} ainda existiria do jeito que a gente conhecia.",
+    use: "_detShots",
+    shots: [
+      {en:"night at {locEn}, groups of people on the street pointing at the sky confused, phones raised, something wrong happening above, uneasy atmosphere", pt:"Gente na rua apontando pro céu, confusa, celulares levantados."},
+      {en:"empty street near {locEn} with a streetlight flickering violently, moths circling, an unnatural stillness in the air, dread building", pt:"Rua vazia com o poste piscando forte — algo errado no ar."},
+    ],
+  },
+  {
+    nar: "{pessoa} viu primeiro. Trabalhava {locNo}. E até hoje se arrepende de não ter fugido na mesma hora.",
+    shots: [
+      {en:"a lone worker at night at {locEn}, frozen mid-task, staring at something off-frame with wide eyes, flashlight trembling in hand", pt:"Trabalhador solitário congelado no meio do serviço, encarando algo fora do quadro."},
+      {en:"over-the-shoulder shot of that worker: far across {locEn}, {entityEn} standing motionless watching back, barely lit, {creatureVis}", pt:"Por cima do ombro: lá no fundo, a criatura parada, olhando de volta."},
+    ],
+  },
+],
+sign: [
+  {
+    nar: "A primeira vítima foi {pessoa}. Acharam {pessoa} perto {locP}, às {hora}. Vivo — mas quem viu diz que era melhor não ter achado. Só repetia uma frase: '{frase}'.",
+    shots: [
+      {en:"night at {locEn}, ambulance red and blue lights washing over the scene, paramedics kneeling around a person sitting on the ground in shock, crowd filming with phones", pt:"Luzes de ambulância, socorristas em volta da vítima em choque, multidão filmando."},
+      {en:"extreme close-up of the survivor's face, thousand-yard stare, lips moving repeating the same word, sweat and tears, harsh flashlight beam", pt:"Close no rosto do sobrevivente: olhar perdido, boca repetindo a mesma frase."},
+    ],
+  },
+  {
+    nar: "A câmera de segurança {locP} não mente. Nas imagens, a coisa aparece de CORPO INTEIRO: {visPt}. E quando percebe que tá sendo filmada... ela PARA. E olha pra câmera.",
+    shots: [
+      {en:"grainy security camera footage of {locEn}, full body of {entityEn} walking through the frame, {creatureVis}, greenish night-vision tint, timestamp overlay", pt:"Câmera de segurança: a criatura de CORPO INTEIRO atravessando o quadro."},
+      {en:"same security camera footage, one second later: {entityEn} stopped mid-frame, head snapped directly into the camera lens, eyes glowing, {creatureVis}", pt:"Um segundo depois: ela PARA e olha direto pra câmera."},
+    ],
+  },
+  {
+    nar: "Foi {locNo}, às {hora}. {pessoa} ligou pro resgate gritando que ELE tinha entrado. A ligação dura 14 segundos. Depois só se ouve a respiração. De alguém mais.",
+    shots: [
+      {en:"phone screen glowing in a dark room showing an emergency call in progress at {hora}, in the background a door slightly open at {locEn}, tense atmosphere", pt:"Tela do celular com a ligação de emergência, porta entreaberta no fundo."},
+      {en:"shot from behind the half-open door: {entityEn} silhouette breathing slowly in the darkness, only the eyes catching a sliver of light, {creatureVis}", pt:"Atrás da porta entreaberta: a silhueta respirando no escuro, só os olhos visíveis."},
+    ],
+  },
+],
+escalation: [
+  {
+    nar: "Em 48 horas, {cidade} perdeu o controle. Os hospitais lotaram. A prefeitura disse que era {desculpa}. MENTIRA. Todo mundo sabia que era mentira.",
+    shots: [
+      {en:"hospital entrance at night in chaos, stretchers lined up outside, exhausted doctors running, red emergency lights, fog rolling in", pt:"Hospital lotado: macas do lado de fora, médicos correndo, luzes de emergência."},
+      {en:"close-up of a television screen showing a news broadcast about the crisis, aerial footage of crowded panicked streets playing on it, living room in darkness", pt:"Close na TV noticiando a crise, sala escura assistindo."},
+    ],
+  },
+  {
+    nar: "No terceiro dia, {artLoc} {loc} virou zona de guerra. Sem energia, sem sinal, sem saída. E no escuro... dava pra ouvir eles chegando.",
+    shots: [
+      {en:"{locEn} turned into a warzone: overturned stalls, broken glass, debris, flickering lights dying out, smoke drifting through", pt:"O local virado em zona de guerra: barracas viradas, vidro quebrado, fumaça."},
+      {en:"beyond the last flickering light, deep darkness filled with dozens of pairs of glowing eyes at different heights, all watching, {creatureVis}", pt:"No escuro além da última luz: dezenas de pares de olhos brilhando, observando."},
+    ],
+  },
+  {
+    nar: "Não era um. Nunca foi um. Quando perceberam, eram CENTENAS — e eles aprendiam. Cada noite, mais rápidos.",
+    shots: [
+      {en:"aerial night shot: hundreds of {entityEn} moving through the streets between the buildings of {cityName}, apocalyptic scale, red emergency lights, {creatureVis}", pt:"Aéreo: CENTENAS de criaturas se movendo entre os prédios."},
+      {en:"close-up of a concrete wall covered in hundreds of chalk tally marks, someone counting, the last mark still being drawn, chalk dust", pt:"Parede coberta de riscos de giz — alguém contando. O último risco ainda sendo feito."},
+    ],
+  },
+],
+chaos: [
+  {
+    nar: "A noite do caos: {eventoCaos}. Quem sobreviveu conta a mesma coisa. Eles não corriam. Eles MARCHAVAM.",
+    use: "_caosShots",
+    shots: [
+      {en:"entire street of {locEn} plunged into darkness, hundreds of silhouettes of {entityEn} marching slowly in perfect synchronization, red emergency lights behind them, {creatureVis}", pt:"Rua apagada: centenas de silhuetas MARCHANDO em sincronia perfeita."},
+      {en:"terrified faces of people hiding behind a bus stop glass, the marching silhouettes reflected on the glass surface, breath fogging", pt:"Rostos aterrorizados escondidos atrás do vidro do ponto de ônibus, reflexo da marcha."},
+    ],
+  },
+  {
+    nar: "As saídas de {cidade} foram fechadas. {locNo}, as pessoas gritavam pra sair. Foi quando eles apareceram no fim da rua. Todo mundo parou. Ninguém respirou.",
+    shots: [
+      {en:"desperate crowd pressing against a closed metal gate at {locEn}, hands reaching through the bars, terrified faces lit by phone screens, night", pt:"Multidão prensada no portão fechado, mãos passando pelas grades."},
+      {en:"the far end of the street: {entityEn} emerging from a wall of fog, backlit by a burning car, everyone frozen in the foreground, {creatureVis}", pt:"No fim da rua: a criatura surgindo da neblina. Todo mundo congelado."},
+    ],
+  },
+  {
+    nar: "A última transmissão ao vivo de {cidade} mostra 9 segundos de escuridão. No nono segundo, uma voz sussurra: '{frase}'.",
+    shots: [
+      {en:"livestream phone view: a person whispering to the camera in a dark room lit by a single candle, live icons on screen, fear in the eyes", pt:"Tela de live: pessoa sussurrando pra câmera à luz de vela."},
+      {en:"a frame of almost total darkness from that livestream, two faint reflective eyes barely visible in the far corner, found footage style", pt:"Frame quase todo escuro da mesma live — dois olhos fracos no canto."},
+    ],
+  },
+],
+revelation: [
+  {
+    nar: "{pessoa2} achou o padrão. Tudo começou depois {origem}. Restava uma chance: descer até a origem. Ninguém queria ir. Adivinha quem foi.",
+    use: "_origShots",
+    shots: [
+      {en:"investigation desk under a single bulb: city map covered in red string and pins, scattered printed photos, cold coffee, obsessive late-night work", pt:"Mesa de investigação: mapa com linha vermelha, fotos espalhadas, uma lâmpada só."},
+      {en:"extreme close-up of the city map: every red string converging into one single circled spot, a finger pressing on it", pt:"Close no mapa: todas as linhas vermelhas convergindo pro MESMO ponto."},
+    ],
+  },
+  {
+    nar: "Silêncio total. Dois dias sem ataques. A cidade comemorou. ERRARAM FEIO. Eles não tinham ido embora. Estavam ESPERANDO.",
+    shots: [
+      {en:"daylight street celebration at {locEn}, people hugging and laughing, flags and food stalls, warm hopeful tones, feeling of safety", pt:"A comemoração: dia claro, gente se abraçando, clima de segurança."},
+      {en:"under the celebration: a dark storm drain grate at street level, and inside the drain something pale with eyes watching the party above, barely visible, {creatureVis}", pt:"Debaixo da festa: no bueiro, algo pálido observa a comemoração."},
+    ],
+  },
+  {
+    nar: "Descobriram a regra: só atacava {regra}. Simples, né? Foi o que pensaram. Até a primeira pessoa quebrar a regra.",
+    shots: [
+      {en:"a family huddled together in a room carefully following a protective ritual, candles lit, curtains closed, tense but hopeful faces, warm candlelight", pt:"Família encolhida seguindo a regra de proteção: velas, janelas fechadas."},
+      {en:"the exact moment the rule breaks: a hand reaching for a light switch, and in the window reflection {entityEn} is already inside the room, {creatureVis}", pt:"O momento em que quebram a regra: mão no interruptor, reflexo da criatura JÁ DENTRO."},
+    ],
+  },
+],
+twist: [
+  {
+    nar: "Quando chegaram na origem... acharam {twist}. E aí caiu a ficha: eles não querem a cidade. Eles querem VOCÊ.",
+    use: "_twistShots",
+    shots: [
+      {en:"flashlight beam revealing a hidden underground chamber beneath {locEn}, shelves of personal belongings neatly stacked, dust floating in the light, dread", pt:"Lanterna revelando a câmara escondida cheia de pertences empilhados."},
+      {en:"close-up of the final object found in the chamber: a phone lying on the floor, screen glowing, playing this very video", pt:"Close no último objeto achado: um celular no chão passando ESSE vídeo."},
+    ],
+  },
+  {
+    nar: "A gravação recuperada mostra tudo. {pessoa2} sabia desde o primeiro dia. Sabia e ESCONDEU. E o motivo... é pior do que parece.",
+    shots: [
+      {en:"old VHS footage still: a person calmly filming the first appearance of {entityEn} from a window, not helping anyone, just filming, {creatureVis}", pt:"Imagem antiga: alguém filmando a criatura com calma, sem ajudar ninguém."},
+      {en:"the same person at night hiding a VHS tape under loose floorboards, face sweaty lit by a single flashlight, guilt and fear", pt:"A mesma pessoa escondendo a fita debaixo do assoalho, suando."},
+    ],
+  },
+  {
+    nar: "Recontaram os desaparecidos. O número triplicou. E os nomes novos... eram de quem estava PROCURANDO os desaparecidos.",
+    shots: [
+      {en:"wall completely covered in missing-person posters, camera slowly pulling back to reveal the wall is enormous and endless, dim institutional hallway", pt:"Parede GIGANTE coberta de cartazes de desaparecidos."},
+      {en:"extreme close-up of the newest poster on the wall: freshly printed, ink still wet, the photo shows a weathered generic investigator face — someone who was just searching", pt:"Close no cartaz mais novo: recém-impresso, tinta ainda molhada."},
+    ],
+  },
+],
+cliff: [
+  {
+    nar: "A parte 2 mostra o que encontraram embaixo {locP}. Segue AGORA, porque esse vídeo vai sair do ar. E comenta: você ficaria ou correria?",
+    shots: [
+      {en:"slow zoom into a dark opening in the ground beneath {locEn}, stone stairs descending into absolute blackness, flashlight beam being swallowed by the dark", pt:"Zoom na abertura no chão: escadas descendo pra escuridão total."},
+      {en:"final freeze frame: the face of {entityEn} centimeters from the lens, mid-lunge, {creatureVis}, motion blur and digital tearing", pt:"Último frame: a cara da criatura a centímetros da lente."},
+    ],
+  },
+  {
+    nar: "Eles voltaram na noite seguinte. Mais rápidos. Mais perto. A parte 2 é sobre a noite em que {eventoFuturo}. Segue pra não perder.",
+    use: "_futShots",
+    shots: [
+      {en:"night: {entityEn} sprinting straight toward the camera across {locEn}, {creatureVis}, motion blur, flashlight beam shaking violently, pure chase", pt:"A criatura correndo DIRETO pra câmera, perseguição pura."},
+      {en:"POV running and looking back over the shoulder: {entityEn} gaining fast, distance closing, streetlights streaking, horror chase", pt:"POV correndo e olhando pra trás: ela ganhando distância."},
+    ],
+  },
+  {
+    nar: "Assiste de novo. Olha o fundo de cada cena. ELE tá em todas. Quando achar, comenta quantas vezes apareceu. Eu espero.",
+    shots: [
+      {en:"2x2 grid of four grainy security camera views of {locEn} at different times, and in the background of EVERY view the same figure of {entityEn} is visible, {creatureVis}", pt:"Grade com 4 câmeras: a MESMA figura aparece no fundo de todas."},
+      {en:"extreme digital zoom crop of one footage corner: the figure's face looking straight into the lens, {creatureVis}, pixelated analog horror", pt:"Zoom digital no canto da imagem: o rosto dela olhando pra lente."},
+    ],
+  },
+],
+};
+
+/* cada detalhe da história carrega suas 2 imagens literais (narração = imagem) */
+const D_POMBOS = {pt:"os pombos começaram a cair do céu, todos ao mesmo tempo", shots:[
+  {en:"night street at {locEn}: dozens of pigeons falling from the sky onto the cobblestones, people stopping in shock, streetlights", pt:"Exatamente o dito: pombos caindo do céu na rua, gente parando em choque."},
+  {en:"close-up of the ground: fallen pigeons arranged in perfect unnatural alignment, all facing the same direction, dead silence", pt:"Close no chão: os pombos caídos alinhados perfeitamente, todos virados pro mesmo lado."},
+]};
+const D_ENERGIA = {pt:"a energia piscou três vezes, no mesmo minuto, em bairros diferentes", shots:[
+  {en:"city skyline at night captured at the exact moment half the lights go dark while the other half stays lit, split-second blackout", pt:"O skyline no instante exato: metade da cidade apaga, metade fica acesa."},
+  {en:"inside a house: lamps flickering violently, a family frozen looking up at the ceiling light, shadows jumping on the walls", pt:"Dentro de uma casa: lâmpadas piscando forte, família paralisada olhando pro teto."},
+]};
+const D_LIGACOES = {pt:"todas as ligações pro 190 caíam na mesma gravação", shots:[
+  {en:"close-up of a phone screen in a dark room showing an emergency call in progress, a distorted waveform repeating on the screen", pt:"Close na tela do celular: ligação pro 190 com uma forma de onda distorcida se repetindo."},
+  {en:"multiple phones side by side on a table, every screen showing the same call with the same eerie waveform, dim room", pt:"Vários celulares lado a lado, todos na mesma ligação com a mesma onda estranha."},
+]};
+const D_CACHORROS = {pt:"os cachorros de rua sumiram numa noite só", shots:[
+  {en:"empty dawn street where stray dogs usually gather, a single untouched food bowl on the sidewalk, low mist", pt:"Rua vazia ao amanhecer onde os cachorros ficavam, só um pote de comida intacto, neblina."},
+  {en:"close-up of an abandoned dog leash still tied to a pole on the sidewalk, pulled taut toward the dark street", pt:"Close na coleira abandonada amarrada no poste, esticada na direção da rua escura."},
+]};
+const D_MAR = {pt:"o mar recuou uns duzentos metros... e não voltou", shots:[
+  {en:"wide night shot of the beach: the ocean has retreated two hundred meters, exposing dark wet seabed, stranded tilted fishing boats, stunned people walking toward the exposed ground", pt:"Exatamente o dito: o mar recuou 200 metros, barcos encalhados tombados, gente andando no fundo exposto."},
+  {en:"close-up of the exposed seabed: fish flopping on the dark sand, and far on the horizon a wall of water standing perfectly still", pt:"Close no fundo exposto: peixes se debatendo, e no horizonte uma parede de água parada."},
+]};
+const D_ESTATICA = {pt:"a transmissão da TV local foi invadida por 13 segundos de estática", shots:[
+  {en:"living room at night: a family watching TV, the screen suddenly pure static, their faces lit only by the white noise glow", pt:"Sala à noite: família assistindo TV quando a vira estática pura, rostos iluminados pelo chuvisco."},
+  {en:"extreme close-up of the static TV screen with a barely visible dark silhouette standing inside the noise", pt:"Close na estática: uma silhueta escura quase invisível DENTRO do chuvisco."},
+]};
+const D_CAMERAS = {pt:"todas as câmeras de segurança da orla apagaram no mesmo minuto", shots:[
+  {en:"a row of security cameras on poles along the boardwalk at night, every red LED dying out at the same instant", pt:"A fileira de câmeras da orla apagando ao mesmo tempo, LEDs morrendo juntos."},
+  {en:"security control room: a wall of monitors all going black simultaneously, a guard standing up in shock", pt:"Sala de segurança: a parede de monitores apagando toda ao mesmo tempo, guarda levantando em choque."},
+]};
+const D_ACARAJE = {pt:"um vendedor de acarajé começou a rir... e não parou mais", shots:[
+  {en:"street acarajé food stall at night: the vendor laughing hysterically bent over the frying oil, customers frozen around, a crowd forming", pt:"Exatamente o dito: o vendedor de acarajé rindo sem parar na barraca, clientes congelados."},
+  {en:"extreme close-up of the vendor's laughing face: tears streaming, mouth locked open in a laugh that looks like screaming", pt:"Close no rosto dele: lágrimas escorrendo, boca travada num riso que parece grito."},
+]};
+const D_ESTATUA = {pt:"apareceu uma estátua {locNo} que ninguém tinha colocado lá", shots:[
+  {en:"daylight at {locEn}: a tall dark stone statue standing where nothing existed yesterday, people photographing it from a distance, no construction signs", pt:"Exatamente o dito: a estátua apareceu no local, gente fotografando de longe."},
+  {en:"close-up of the statue's face: eyes closed, expression of agony, fresh wet footprints circling its base", pt:"Close no rosto da estátua: olhos fechados, expressão de agonia, pegadas úmidas ao redor."},
+]};
+const D_RELOGIOS = {pt:"todos os relógios da cidade adiantaram 13 minutos", shots:[
+  {en:"montage of clocks — church tower clock, wristwatches, wall clocks, microwave display — all showing 3:33, wrong sickly light", pt:"Montagem de relógios — torre, pulso, parede — todos marcando 3:33."},
+  {en:"close-up of a phone lock screen showing 3:33, and in the dark reflection of the glass a face standing behind", pt:"Close na tela do celular marcando 3:33 — e no reflexo do vidro, um rosto atrás."},
+]};
+const D_PEIXE = {pt:"choveu peixe na orla, mas só do lado esquerdo da rua", shots:[
+  {en:"boardwalk after the rain: hundreds of fish covering exactly one half of the street, a razor-sharp line dividing the wet side from the dry side, people staring", pt:"Exatamente o dito: peixes cobrindo SÓ metade da rua, linha reta dividindo o seco do molhado."},
+  {en:"close-up of the fish on the asphalt: every single one facing the same direction, toward the sea", pt:"Close nos peixes no asfalto: todos virados pro mesmo lado — pro mar."},
+]};
+const D_LUZ = {pt:"uma luz ficou parada no céu, e nenhum satélite registrava", shots:[
+  {en:"night sky over {cityName}: one bright light standing perfectly still among the moving stars, seen from a street full of people pointing up", pt:"Exatamente o dito: a luz PARADA no céu entre as estrelas, gente na rua apontando."},
+  {en:"people standing on rooftops silhouetted against city lights, all staring up, the light reflected in their eyes", pt:"Silhuetas nos telhados encarando o céu, a luz refletida nos olhos."},
+]};
+const D_ESTRELAS = {pt:"as estrelas pareciam... fora do lugar", shots:[
+  {en:"night sky time-lapse feeling: stars subtly displaced forming almost-straight unnatural lines, vertigo atmosphere", pt:"O céu com as estrelas sutilmente deslocadas, formando linhas quase retas."},
+  {en:"an astronomer stepping back from a telescope in horror, star charts on the wall covered in red circles and question marks", pt:"Astrônomo recuando do telescópio em horror, mapas estelares cheios de círculos vermelhos."},
+]};
+const D_RADIO = {pt:"todos os rádios chiavam na mesma frequência, às 3:33", shots:[
+  {en:"a dark room full of radios — old and new — all lit and hissing at once, a clock on the wall showing exactly 3:33", pt:"Exatamente o dito: sala cheia de rádios chiando juntos, relógio marcando 3:33."},
+  {en:"close-up of a radio dial glowing in the dark, and in the frequency display letters forming inside the static", pt:"Close no mostrador do rádio: letras se formando na estática."},
+]};
+const DETALHES = {
+  realista:[D_POMBOS, D_ENERGIA, D_LIGACOES, D_CACHORROS, D_MAR],
+  vhs:[D_ESTATICA, D_CAMERAS, D_POMBOS, D_MAR],
+  absurdo:[D_ACARAJE, D_ESTATUA, D_RELOGIOS, D_PEIXE],
+  cosmico:[D_LUZ, D_ESTRELAS, D_RADIO, D_MAR],
+};
+
+/* origens com imagens literais */
+const O_NAVIO = {pt:"do navio que atracou sem tripulação", shots:[
+  {en:"huge cargo ship docked at the harbor at night, no lights, no crew on deck, gangway lowered, thick fog around the hull", pt:"Exatamente o dito: o navio atracado, sem luzes, sem ninguém no convés, neblina."},
+  {en:"inside the ship's bridge: abandoned coffee cups still warm, chairs overturned, a navigation map with one spot circled in red", pt:"Dentro da ponte do navio: xícaras ainda quentes, cadeiras viradas, mapa com um ponto circulado."},
+]};
+const O_TUNEL = {pt:"da reforma no túnel desativado", shots:[
+  {en:"entrance of a bricked-up tunnel with the brickwork broken open from the inside, abandoned construction equipment scattered", pt:"Exatamente o dito: a entrada do túnel lacrado — arrebentada DE DENTRO pra fora."},
+  {en:"dark tunnel interior: a single work light flickering, boot prints going in... and none coming out", pt:"Dentro do túnel: uma luz de obra piscando, pegadas entrando... nenhuma saindo."},
+]};
+const O_VAZAMENTO = {pt:"do vazamento no terminal de cargas", shots:[
+  {en:"freight terminal at night: greenish mist leaking from a cracked container, workers running away, hazard lights spinning", pt:"Exatamente o dito: névoa esverdeada vazando do container rachado, trabalhadores fugindo."},
+  {en:"close-up of the cracked container: glowing viscous liquid dripping slowly, torn warning labels", pt:"Close no container rachado: líquido viscoso brilhante pingando, rótulos de perigo rasgados."},
+]};
+const O_COVA = {pt:"da obra que abriu uma cova antiga {locNo}", shots:[
+  {en:"construction site at {locEn}: an ancient stone tomb exposed in the excavation pit, workers kneeling back from it in fear", pt:"Exatamente o dito: a cova antiga de pedra exposta na escavação, operários recuando."},
+  {en:"close-up of the tomb lid half open, deep scratch marks carved on the inside of the stone", pt:"Close na tampa entreaberta: marcas de arranhões POR DENTRO da pedra."},
+]};
+const O_FITA = {pt:"da fita que alguém achou {locNo}", shots:[
+  {en:"an old VHS tape lying in the middle of {locEn}, handwritten label in red ink, a circle of people around it, nobody daring to touch", pt:"Exatamente o dito: a fita VHS no chão do local, ninguém ousando tocar."},
+  {en:"the tape playing on a CRT TV: footage of that very same place dated 30 years ago, showing the same events happening", pt:"A fita na TV: imagens do MESMO lugar, 30 anos atrás, mostrando a MESMA coisa acontecendo."},
+]};
+const O_RISO = {pt:"do concurso de riso que saiu do controle", shots:[
+  {en:"outdoor laughter contest stage at night: contestants laughing hysterically on stage, audience laughing too, nobody able to stop, deeply wrong atmosphere", pt:"Exatamente o dito: concurso de riso fora de controle, todo mundo rindo sem conseguir parar."},
+  {en:"close-up of a contestant's laughing face: tears streaming, laughter twisted into despair, mouth locked open", pt:"Close no rosto do competidor: rindo até o desespero, boca travada aberta."},
+]};
+const O_SORVETE = {pt:"do carrinho de sorvete que tocava a música ao contrário", shots:[
+  {en:"empty street at dusk: an old ice cream cart standing alone in the middle of the road, speaker on, casting a shadow much too big for its size", pt:"Exatamente o dito: o carrinho sozinho no meio da rua, som ligado, sombra grande demais."},
+  {en:"close-up of the cart's speaker covered in frost, words scratched into the paint around it", pt:"Close no alto-falante do carrinho: coberto de gelo, palavras arranhadas na pintura."},
+]};
+const O_ECLIPSE = {pt:"do eclipse que durou 13 minutos", shots:[
+  {en:"total eclipse burning in the sky, corona flaring, the city below in unnatural twilight, tiny people staring up", pt:"Exatamente o dito: o eclipse no céu, cidade em crepúsculo anormal, gente olhando pra cima."},
+  {en:"clock tower showing 3:33 during the eclipse, crows circling the tower against the black sun", pt:"Torre do relógio marcando 3:33 durante o eclipse, corvos circulando o sol preto."},
+]};
+const O_SINAL = {pt:"do sinal que veio de baixo da terra", shots:[
+  {en:"seismograph observatory at night: needles going wild on the drums, papers falling, scientists frozen staring at the readings", pt:"Exatamente o dito: sismógrafos enlouquecendo, papéis caindo, cientistas paralisados."},
+  {en:"a crack opening slowly in the middle of the street, faint unnatural light glowing from within", pt:"Uma rachadeira se abrindo no meio da rua, luz fraca brilhando de dentro."},
+]};
+const O_SONHO = {pt:"do sonho que todo mundo teve na mesma noite", shots:[
+  {en:"dawn street: every resident standing outside their houses at the exact same time, all facing each other in total silence", pt:"Exatamente o dito: amanhecer, todos os moradores na rua ao mesmo tempo, em silêncio."},
+  {en:"dozens of people standing motionless in the morning fog, all facing the same direction, seen from above", pt:"Dezenas de pessoas imóveis na neblina da manhã, todas viradas pro mesmo lado, vistas de cima."},
+]};
+const ORIGENS = {
+  realista:[O_NAVIO, O_TUNEL, O_VAZAMENTO, O_COVA],
+  vhs:[O_NAVIO, O_TUNEL, O_FITA, O_COVA],
+  absurdo:[D_PEIXE, D_ESTATUA, O_RISO, O_SORVETE],
+  cosmico:[D_LUZ, O_ECLIPSE, O_SINAL, O_SONHO],
+};
+
+/* eventos do caos com imagens literais */
+const FRASES_ENIGMA = ["eles contam pelos olhos","não olha pra trás","tá embaixo da cidade","começou pelo mar","eu vi meu rosto neles","apaga a luz, apaga a luz","foi você que chamou","eles já estão dentro"];
+const REGRAS = ["no escuro total","quando ninguém estava olhando","perto de água parada","quando alguém pronunciava o nome","ao som daquela cantiga","depois das 3:33"];
+const DESCULPAS = ["um vírus comum","contaminação da água","histeria coletiva","fake news","um vazamento de gás"];
+const SONS = ["passos. milhares de passos","uma risada baixa, vindo de todos os lados","uma cantiga antiga, cada vez mais perto","um silêncio total — até o mar parou","uma contagem regressiva em sussurro"];
+const EVENTOS_CAOS = [
+  {pt:"todas as luzes da orla apagaram ao mesmo tempo e, no escuro, dava pra ouvir {som}", shots:[
+    {en:"aerial shot of the entire waterfront going pitch black in a single second, only red emergency lights remaining, city holding its breath", pt:"Exatamente o dito: a orla inteira apagando num único segundo, só luzes vermelhas sobrando."},
+    {en:"terrified faces of people hiding behind a bus stop glass, dark marching silhouettes reflected on the surface", pt:"Rostos escondidos atrás do vidro do ponto, silhuetas marchando refletidas."},
+  ]},
+  {pt:"o sinal de celular virou uma única mensagem repetida: VOLTE PRA CASA", shots:[
+    {en:"hundreds of phone screens glowing in the dark street, every single one showing the same message VOLTE PRA CASA, crowd staring down in silence", pt:"Exatamente o dito: centenas de telas mostrando a MESMA mensagem: VOLTE PRA CASA."},
+    {en:"close-up of one phone with the repeating message, and in the screen reflection a face slowly looking up", pt:"Close numa tela com a mensagem — e no reflexo, um rosto levantando o olhar."},
+  ]},
+  {pt:"os sinos de todas as igrejas tocaram sozinhos às 3:33", shots:[
+    {en:"night: church bells swinging violently with no one pulling them, the tower clock showing exactly 3:33, birds exploding from the bell tower", pt:"Exatamente o dito: sinos tocando sozinhos, relógio da torre em 3:33, pássaros explodindo da torre."},
+    {en:"people in the street covering their ears and looking up at the church towers, windows lighting up all around", pt:"Gente na rua tapando os ouvidos e olhando pras torres, janelas acendendo em volta."},
+  ]},
+  {pt:"todas as portas da cidade se trancaram por dentro, sozinhas", shots:[
+    {en:"residential street: every door slamming shut at the exact same instant, dust puffing from the frames, startled people left outside", pt:"Exatamente o dito: todas as portas batendo ao mesmo tempo, gente assustada pra fora."},
+    {en:"extreme close-up of a door lock turning by itself, the key spinning with no hand touching it", pt:"Close na fechadura girando SOZINHA, chave rodando sem nenhuma mão."},
+  ]},
+];
+
+/* reviravoltas com imagens literais */
+const TWISTS = [
+  {pt:"uma sala cheia de pertences de desaparecidos — incluindo coisas que sumiram ONTEM", shots:[
+    {en:"flashlight beam revealing a hidden underground chamber, shelves of personal belongings neatly stacked, dust floating in the light", pt:"Exatamente o dito: câmara escondida cheia de pertences empilhados, poeira na luz."},
+    {en:"close-up of one object from yesterday: a phone still receiving notifications, screen lighting up in the dark", pt:"Close num objeto sumido ONTEM: um celular ainda recebendo notificações, tela acendendo."},
+  ]},
+  {pt:"o mesmo símbolo repetido em todas as paredes, ainda fresco", shots:[
+    {en:"walls covered with the same black symbol repeated hundreds of times, paint still wet and dripping, flashlight grazing across", pt:"Exatamente o dito: o MESMO símbolo repetido em todas as paredes, tinta ainda molhada."},
+    {en:"extreme close-up of the fresh symbol, paint dripping, and a child's shoe lying on the floor beneath it", pt:"Close no símbolo fresco pingando — e um sapato de criança no chão embaixo."},
+  ]},
+  {pt:"um mapa da cidade com datas... datas FUTURAS", shots:[
+    {en:"city map pinned to a wall covered in dates written in red — every single one a future date, tomorrow's date circled", pt:"Exatamente o dito: mapa com datas futuras em vermelho, a de amanhã circulada."},
+    {en:"a trembling hand pointing at today's date on the map, right next to a black X mark", pt:"Mão trêmula apontando a data de HOJE no mapa, ao lado de um X preto."},
+  ]},
+  {pt:"um diário escrito com a letra de alguém que ainda não nasceu", shots:[
+    {en:"old diary open on a table, pages filled with frantic handwriting, dates decades in the future, candlelight", pt:"Exatamente o dito: diário antigo com datas décadas no futuro, à luz de vela."},
+    {en:"close-up of the diary's last page: tomorrow's date, and a sentence describing this exact moment", pt:"Close na última página: a data de amanhã descrevendo EXATAMENTE este momento."},
+  ]},
+];
+
+/* eventos futuros (gancho da parte 2) com imagens literais */
+const EVENTOS_FUTURO = [
+  {pt:"a cidade inteira sonhou a mesma coisa", shots:[
+    {en:"aerial dawn of the city: thousands of people standing motionless in the streets, all facing the same direction, mist", pt:"Exatamente o dito: milhares de pessoas imóveis nas ruas ao amanhecer, todas pro mesmo lado."},
+    {en:"close-up of a person waking up gasping, drawing the same symbol from the walls on the fogged window", pt:"Close em alguém acordando em pânico, desenhando o mesmo símbolo no vidro embaçado."},
+  ]},
+  {pt:"as estátuas se moveram", shots:[
+    {en:"plaza at dawn: stone statues standing in different positions than their pedestals suggest, heads turned", pt:"Exatamente o dito: estátuas em posições diferentes das dos pedestais, cabeças viradas."},
+    {en:"close-up of a statue's stone feet: dust on the ground forming fresh footprints leading away from the pedestal", pt:"Close nos pés de pedra: poeira formando pegadas saindo do pedestal."},
+  ]},
+  {pt:"o mar devolveu o que tinha levado", shots:[
+    {en:"beach at dawn: hundreds of personal belongings laid out in neat rows on the sand, placed by the waves, people kneeling", pt:"Exatamente o dito: o mar devolvendo os pertences em fileiras organizadas na areia."},
+    {en:"close-up of one object on the sand: a missing-person photo from the posters, perfectly dry, face up", pt:"Close num objeto na areia: a foto de um desaparecido dos cartazes, seca, virada pra cima."},
+  ]},
+  {pt:"todas as fotos da cidade mudaram", shots:[
+    {en:"living room: family portraits on the wall, every single photo now showing the same dark figure standing in the background", pt:"Exatamente o dito: todos os porta-retratos agora com a MESMA figura escura no fundo."},
+    {en:"close-up of one framed photo: the figure inside it has turned to face the camera", pt:"Close num porta-retrato: a figura na foto se virou pra câmera."},
+  ]},
+];
+
+const RETENCAO = [
+  "(E espera até a próxima cena. Você vai querer não ter esperado.)",
+  "(O que vem agora fez o câmera largar a câmera e correr.)",
+  "(Se tá com medo, para agora. Essa é a sua última chance.)",
+  "(Nos próximos segundos você vê ELE de perto. De MUITO perto.)",
+];
+const ANCORAS = [
+  {pt:"um relógio marcando 3:33 quase escondido num canto (só olhando 2 vezes pra achar)", en:"a tiny clock showing 3:33 barely visible in a shadowy corner of the frame, easy to miss"},
+  {pt:"um balão vermelho minúsculo preso bem no canto da imagem", en:"a tiny deflated red balloon tucked at the very edge of the frame, almost out of sight"},
+  {pt:"um símbolo rabiscado bem pequeno numa parede do fundo", en:"a small faint scratched symbol on a far background wall, barely noticeable"},
+  {pt:"uma silhueta distante quase engolida pela escuridão", en:"a distant silhouette almost swallowed by darkness deep in the background, nearly invisible"},
+  {pt:"o número 13 pichado minúsculo num muro longe", en:"the number 13 spray-painted very small on a distant wall, easy to overlook"},
+  {pt:"uma única janela acesa bem longe, quase um ponto de luz", en:"a single lit window extremely far away, just a speck of light in the background"},
+  {pt:"um sapato de criança esquecido num canto com sombra", en:"a forgotten child's shoe half-hidden in a shadowy corner, subtle background detail"},
+  {pt:"um fio vermelho amarrado discretamente em algum lugar da cena", en:"a thin red string tied discreetly somewhere in the scene, very subtle detail"},
+];
+const TITULOS = [
+  "NÃO ASSISTE SOZINHO: {tema} em {cidade}",
+  "A CRIATURA FOI FILMADA: o caso de {cidade}",
+  "IMAGENS QUE A TV DE {cidade} ESCONDEU",
+  "VAZA ANTES QUE APAGUEM: {tema}",
+  "Eu filmei ELE. Deus me perdoe. ({cidade})",
+  "3:33 EM {cidade}: não assiste depois dessa hora",
+];
+const HASHTAGS_BASE = ["#terror","#historiasdeterror","#relatosobrenatural","#lendasurbanas","#medo","#casosmisteriosos","#assustador","#flagra"];
+
+/* ---------- direção de voz + texto de tela por beat ---------- */
+const BEAT_INFO = {
+  hook:      {label:"GANCHO",          dur:4, txt:"⚠️ TRANCA A PORTA",        tom:"urgente, baixo e rápido — como quem avisa enquanto corre"},
+  context:   {label:"CONTEXTO",        dur:7, txt:"NINGUÉM VIU...",           tom:"casual, mas com um frio na espinha"},
+  sign:      {label:"PRIMEIRO SINAL",  dur:8, txt:"📹 A CÂMERA FLAGROU",      tom:"mais baixo, quase sussurrando — é assim que se dá susto"},
+  escalation:{label:"ESCALADA",        dur:8, txt:"48 HORAS DEPOIS",          tom:"acelera, urgência crescente"},
+  chaos:     {label:"CAOS",            dur:8, txt:"🔥 A NOITE DO CAOS",       tom:"tenso, respiração curta, voz seca"},
+  revelation:{label:"DESCOBERTA",      dur:8, txt:"ACHARAM O PADRÃO",         tom:"pausado, misterioso"},
+  twist:     {label:"REVIRAVOLTA",     dur:9, txt:"A VERDADE 😳",             tom:"pausa longa de 2s antes da última frase"},
+  cliff:     {label:"FINAL + CTA",     dur:8, txt:"PARTE 2 ➡️",               tom:"olhando pra câmera, convite direto e pressionando"},
+};
+
+/* ---------- dados: estilo visual (sufixo dos prompts) ---------- */
+const REALISMO = ", ultra photorealistic, looks like a real unedited photograph, real camera imperfections, natural skin and texture detail, no cgi look, no illustration, no painting";
+const ESTILOS = {
+  realista:{nome:"cinematográfico realista", suffix:"hyperrealistic cinematic film still, 35mm anamorphic, shot on ARRI Alexa, dramatic volumetric lighting, muted desaturated palette, authentic film grain, documentary realism"},
+  vhs:{nome:"found footage / VHS", suffix:"real found footage, VHS camcorder grain, harsh flashlight, shaky handheld framing, authentic analog horror, burned-in timestamp, unedited home video"},
+  absurdo:{nome:"horror absurdo", suffix:"photorealistic unsettling deadpan horror, broad daylight wrongness, liminal atmosphere, slightly off proportions, shot on 35mm film, Ari Aster style"},
+  cosmico:{nome:"cósmico surreal", suffix:"photorealistic dark surreal cosmic horror, impossible geometry, swirling mist, dreamlike dread, epic scale, realistic textures"},
+};
+
+/* ---------- detecção de entidade + aparência ---------- */
+function detectarEntidade(tema, manual){
+  if(manual && manual.trim()){
+    const m = manual.trim();
+    const pele = rnd(PELE), olhos = rnd(OLHOS), boca = rnd(BOCA), mover = rnd(MOVER);
+    const visEn = [pele.en, olhos.en, boca.en, mover.en].join(", ");
+    const visPt = [pele.pt, olhos.pt, boca.pt, mover.pt].join(", ");
+    return {pl:m, sing:m, en:m, visEn, visPt};
+  }
+  const t = (tema||"").toLowerCase();
+  const map = [
+    [/zumbi/, "os zumbis","o zumbi","zombies","rotting gray skin, clouded white eyes, jaw hanging unnaturally loose, black veins spreading across the neck, torn dirty clothes","pele cinzenta podre, olhos brancos sem pupila, mandíbula pendurada frouxa, veias negras subindo pelo pescoço, roupas rasgadas"],
+    [/vampir/, "os vampiros","o vampiro","vampires","porcelain pale skin, hollow black eyes, mouth slightly open revealing needle fangs, veins visible under translucent skin","pele pálida de porcelana, olhos fundos e pretos, presas de agulha aparecendo na boca entreaberta, veias visíveis sob a pele"],
+    [/lobisomem|licantrop/, "os lobisomens","o lobisomem","werewolves","matted black fur, elongated snout, yellow eyes, almost-human hands with cracked claws, saliva dripping","pelo preto emaranhado, focinho alongado, olhos amarelos, mãos quase humanas com garras rachadas"],
+    [/palha[çc]o/, "os palhaços","o palhaço","sinister clowns","cracked white face paint, smeared red smile stretched too wide, dead black eyes, filthy vintage circus costume","maquiagem branca rachada, sorriso vermelho borrado esticado demais, olhos pretos mortos, fantasia de circo imunda"],
+    [/fantasma|assombra|espectro/, "os fantasmas","o fantasma","ghosts","translucent bloated figure, face blurred like a bad signal, jaw dropped, hollow black eye sockets","figura translúcida e inchada, rosto borrado como sinal ruim, mandíbula caída, órbitas pretas vazias"],
+    [/dem[oô]nio|possess|exorcis/, "os possuídos","o possuído","possessed people","head tilted 90 degrees, eyes rolled back completely white, black veins crawling up the face, wrong smile","cabeça virada 90 graus, olhos virados totalmente brancos, veias negras subindo pelo rosto, sorriso errado"],
+    [/sereia/, "as sereias","a sereia","sirens","human-shaped with a too-wide smile, glassy black eyes, wet hair fused to the face, deep-sea fish teeth","figura humana com sorriso largo demais, olhos pretos de vidro, cabelo molhado grudado no rosto, dentes de peixe abissal"],
+    [/bonec/, "as bonecas","a boneca","cursed dolls","porcelain face cracked down the middle, one glass eye missing, tiny real human hands","rosto de porcelana rachado ao meio, um olho de vidro faltando, mãos humanas pequenas no lugar das mãos de boneca"],
+    [/barata|inseto|gafanhoto|mosca/, "os insetos","o enxame","swarming insects","a human-shaped mass made of thousands of crawling insects moving as one body","uma massa em formato de gente feita de milhares de insetos se movendo como um só corpo"],
+    [/rato/, "os ratos","os ratos","rats","a carpet of thousands of rats moving as a single wave, eyes reflecting the light","um tapete de milhares de ratos se movendo como uma única onda, olhos refletindo a luz"],
+    [/verme|parasita|larva/, "os parasitas","o parasita","parasites","human body with black veins pulsing under the skin, jerky puppet movements, pupils swallowed by black","corpo humano com veias negras pulsando sob a pele, movimentos de marionete, pupilas engolidas pelo preto"],
+    [/alien|extraterrestre|ovni|disco voador/, "os visitantes","o visitante","the visitors","tall thin silhouette with too-long arms, featureless pale face, completely black eyes","silhueta alta e fina com braços longos demais, rosto liso sem feições, olhos completamente pretos"],
+    [/bruxa/, "as bruxas","a bruxa","witches","elongated limbs, face hidden except for a wide pale smile, feet not quite touching the ground","membros alongados, rosto escondido exceto por um sorriso largo e pálido, pés que não tocam o chão"],
+    [/aranha/, "as aranhas","a aranha","giant spiders","human-sized spiders with an almost-human face pattern on the abdomen, too many joints","aranhas do tamanho de gente com um rosto quase humano desenhado no abdômen, articulações demais"],
+    [/est[aá]tua/, "as estátuas","a estátua","living statues","stone skin with wide-open eyes, marble tears, pose shifting between frames, cracks spreading like veins","pele de pedra com olhos escancarados, lágrimas de mármore, pose mudando entre uma cena e outra"],
+    [/cobra|serpente/, "as serpentes","a serpente","serpents","scales glistening like wet asphalt, vertical pupils, mouth opening wider than the skull should allow","escamas brilhando como asfalto molhado, pupilas verticais, boca abrindo mais do que o crânio permite"],
+    [/anjo/, "os anjos","o anjo","biblically accurate angels","a burning ring of eyes and wings, too many wings, no face, just light","um anel de olhos e asas em chamas, asas demais, nenhum rosto — só luz"],
+    [/g[eê]meo/, "os gêmeos","o gêmeo","the twins","identical faces perfectly synchronized, heads tilted at the same angle, unblinking","rostos idênticos perfeitamente sincronizados, cabeças inclinadas no mesmo ângulo, sem piscar"],
+    [/gat[oa]|felino|gat[oa]s/, "os gatos","o gato","feral cats","matted filthy fur, eyes glowing and reflecting light in the dark, needle teeth bared in a silent hiss, moving in unnatural synchronized packs, tails twitching in unison","pelagem imunda e emaranhada, olhos brilhando e refletindo a luz no escuro, dentes de agulha num sibilo silencioso, movendo-se em bandos sincronizados antinaturais, caudas tremendo em uníssono"],
+    [/cachorr|c[aã]es?\b|cadel|canin/, "os cachorros","o cachorro","feral dogs","matted fur stretched over bone, eyes rolled back showing white, jaws slack and dripping, running in silent coordinated packs","pelagem emaranhada sobre os ossos, olhos virados mostrando o branco, mandíbulas frouxas babando, correndo em matilhas silenciosas e coordenadas"],
+    [/pomb|p[aá]ssaro|ave\b/, "os pombos","o pombo","pigeons","clouded white eyes, feathers matted with something dark, hundreds of heads snapping toward you in perfect unison","olhos brancos leitosos, penas emaranhadas com algo escuro, centenas de cabeças virando pra você em uníssono perfeito"],
+    [/tubar[aã]o/, "os tubarões","o tubarão","sharks","dead black eyes, rows of broken teeth, skin scarred and pale, moving through flooded streets like through water","olhos pretos mortos, fileiras de dentes quebrados, pele pálida e cheia de cicatrizes, nadando por ruas alagadas como se fosse o mar"],
+    [/peixe/, "os peixes","o peixe","fish","fish with pale human-like eyes, flopping in unison, mouths opening wider than they should","peixes com olhos pálidos quase humanos, se debatendo em uníssono, bocas abrindo mais do que deviam"],
+    [/macac|sagui/, "os macacos","o macaco","monkeys","too-still postures, wide unblinking human-like eyes, long fingers drumming in sync, smiles showing too many teeth","posturas imóveis demais, olhos arregalados quase humanos sem piscar, dedos longos tamborilando em sincronia, sorrisos com dentes demais"],
+    [/morceg/, "os morcegos","o morcego","bats","leathery wings torn at the edges, eyes like red pinpricks, hanging perfectly still in shapes that almost look human","asas de couro rasgadas nas bordas, olhos como pontos vermelhos, pendurados completamente imóveis em formas quase humanas"],
+    [/vaca|gado|boi|touro/, "o gado","o gado","cattle","cattle standing perfectly still in the dark, all facing the same way, eyes reflecting white, chewing nothing","gado completamente parado no escuro, todo virado pro mesmo lado, olhos refletindo branco, mastigando nada"],
+    [/escorpi[aã]o/, "os escorpiões","o escorpião","scorpions","glistening black shells, stingers raised in perfect unison, thousands moving like a single liquid","cascos pretos reluzentes, ferrões erguidos em uníssono perfeito, milhares se movendo como um líquido só"],
+  ];
+  for(const row of map){
+    if(row[0].test(t)) return {pl:row[1], sing:row[2], en:row[3], visEn:row[4], visPt:row[5]};
+  }
+  /* nada conhecido: tenta extrair a entidade do próprio tema ("epidemia de X" → X) */
+  let nome = null;
+  const m = t.match(/\b(?:de|do|da|dos|das)\s+([a-zà-ú0-9][a-zà-ú0-9\s]{1,30})/);
+  if(m){
+    nome = m[1].trim().split(/\s+(?:em|na|no|nas|nos|que|com|para|pra)\b/)[0].trim();
+    if(nome.length < 3) nome = null;
+  }
+  const pele = rnd(PELE), olhos = rnd(OLHOS), boca = rnd(BOCA), mover = rnd(MOVER);
+  return {
+    pl: nome || "as criaturas", sing: nome || "a criatura", en: nome || "shadowy creatures",
+    visEn:[pele.en, olhos.en, boca.en, mover.en].join(", "),
+    visPt:[pele.pt, olhos.pt, boca.pt, mover.pt].join(", "),
+  };
+}
+
+/* ---------- geração do roteiro ---------- */
+function gerarRoteiro(cfg){
+  const cidade = (cfg.cidade||"").trim() || "Salvador";
+  const locsPool = cidade.toLowerCase().includes("salvador") ? LOC_SALVADOR : LOC_GENERICO;
+  const n = Math.min(8, Math.max(5, parseInt(cfg.cenas, 10) || 7));
+
+  const useLocs = [];
+  const shuffled = shuffle(locsPool);
+  for(let i=0;i<n;i++) useLocs.push(shuffled[i % shuffled.length]);
+
+  const nomes = shuffle(NOMES);
+  const pessoa = nomes[0], pessoa2 = nomes[1];
+  const data = rndInt(1,28) + " de " + rnd(MESES);
+  const hora = rnd(HORAS);
+  const ent = detectarEntidade(cfg.tema, cfg.entidade);
+  const estilo = ESTILOS[cfg.estilo] || ESTILOS.realista;
+
+  const prepFor = (l) => ({loc:l.nome, locP:(l.g==="f"?"da ":"do ")+l.nome, locNo:(l.g==="f"?"na ":"no ")+l.nome, artLoc:l.g==="f"?"a":"o"});
+  const som = rnd(SONS);
+  const frase = rnd(FRASES_ENIGMA);
+  const regra = rnd(REGRAS);
+  const desculpa = rnd(DESCULPAS);
+  const detObj  = rnd(DETALHES[cfg.estilo] || DETALHES.realista);
+  const origObj = rnd(ORIGENS[cfg.estilo] || ORIGENS.realista);
+  const caosObj = rnd(EVENTOS_CAOS);
+  const twistObj = rnd(TWISTS);
+  const futObj  = rnd(EVENTOS_FUTURO);
+  const detalhe = fill(detObj.pt, prepFor(useLocs[1]));
+  const origem = fill(origObj.pt, prepFor(useLocs[2]));
+  const eventoCaos = fill(caosObj.pt, {som});
+  const twist = twistObj.pt;
+  const eventoFuturo = futObj.pt;
+  const ancoraObj = rnd(ANCORAS);
+  const rets = shuffle(RETENCAO);
+
+  const baseCtx = {
+    tema:cfg.tema, cidade, pessoa, pessoa2, data, hora, som, frase, regra,
+    desculpa, twist, detalhe, origem, eventoCaos, eventoFuturo,
+    entityPl:ent.pl, entitySing:ent.sing, entityEn:ent.en,
+    creatureVis:ent.visEn, visPt:ent.visPt,
+    _detShots:detObj.shots, _origShots:origObj.shots, _caosShots:caosObj.shots,
+    _twistShots:twistObj.shots, _futShots:futObj.shots, _ancEn:ancoraObj.en,
+    cityName: cidade + ", Brazil",
+    ano: new Date().getFullYear(),
+  };
+
+  /* sequência de beats: sempre gancho, contexto, sinal, reviravolta e final;
+     os beats do meio entram conforme o nº de cenas */
+  let seq = ["hook","context","sign","twist","cliff"];
+  const extras = ["escalation","chaos","revelation"].slice(0, Math.max(0, n-5));
+  seq = seq.slice(0,3).concat(extras, seq.slice(3));
+
+  const scenes = seq.map((beat, i) => {
+    const loc = useLocs[i];
+    const ctx = Object.assign({}, baseCtx, prepFor(loc), {locEn:loc.en});
+    const pkg = rnd(PACKAGES[beat]);
+    const nar = fill(pkg.nar, ctx);
+    const shotSrc = (pkg.use && ctx[pkg.use] && ctx[pkg.use].length) ? ctx[pkg.use] : pkg.shots;
+    const shots = shotSrc.map(sh => ({
+      en: fill(sh.en, ctx) + ", " + estilo.suffix + REALISMO + ", " + ctx._ancEn + ", 9:16 vertical, cinematic composition, no text, no watermark",
+      pt: fill(sh.pt, ctx),
+    }));
+    /* reforço de terror: a partir do primeiro sinal, garante a criatura EM AÇÃO
+       (imagem 1 mantém a cena literal, imagem 2 mostra a criatura fazendo algo) */
+    const tension = beat !== "hook" && beat !== "context";
+    const hasCreature = shots.some(sh => sh.en.toLowerCase().includes(ent.en.toLowerCase()));
+    if(tension && !hasCreature){
+      const act = rnd(CREATURE_ACTIONS);
+      shots[1] = {
+        en: fill(act.en, ctx) + ", " + estilo.suffix + REALISMO + ", " + ctx._ancEn + ", 9:16 vertical, cinematic composition, no text, no watermark",
+        pt: fill(act.pt, ctx),
+      };
+    }
+    const info = BEAT_INFO[beat];
+    return {
+      beat, label:info.label, dur:info.dur, tom:info.tom, txt:info.txt,
+      nar, shots, locNome: loc.nome,
+      retention: beat==="sign" ? rets[0] : (beat==="chaos" ? rets[1] : null),
+    };
+  });
+
+  /* 🔎 CASOS REAIS PESQUISADOS: entram depois do contexto, sempre variados */
+  let pesqUsadas = 0;
+  if(cfg.pesquisa && cfg.pesquisa.historias && cfg.pesquisa.historias.length){
+    const INTRO_CASOS = ["E não foi a primeira vez. ", "Tem um caso antigo que quase ninguém comenta. ", "Os mais velhos ainda lembram de outro episódio. ", "E teve um precedente pior. "];
+    const pool = shuffle(cfg.pesquisa.historias.slice());
+    const casos = pool.slice(0, Math.min(2, pool.length)).map((h, ci) => {
+      const loc = useLocs[(2 + ci) % useLocs.length];
+      const ctx = Object.assign({}, baseCtx, prepFor(loc), {locEn: loc.en});
+      const shots = h.shots.slice(0,2).map((en, si) => ({
+        en: String(en) + ", " + estilo.suffix + REALISMO + ", " + ancoraObj.en + ", 9:16 vertical, cinematic composition, no text, no watermark",
+        pt: (h.titulo || "caso real") + (si ? " — a ameaça em ação" : ""),
+      }));
+      if(!shots[1].en.toLowerCase().includes(ent.en.toLowerCase())){
+        const act = rnd(CREATURE_ACTIONS);
+        shots[1] = { en: fill(act.en, ctx) + ", " + estilo.suffix + REALISMO + ", " + ancoraObj.en + ", 9:16 vertical, cinematic composition, no text, no watermark", pt: fill(act.pt, ctx) };
+      }
+      return {
+        beat: "caso_real", label: "🔎 CASO REAL", dur: 7, tom: "relato real", txt: "Prova de que já aconteceu antes",
+        nar: INTRO_CASOS[ci % INTRO_CASOS.length] + h.nar,
+        shots, locNome: loc.nome, retention: null,
+      };
+    });
+    scenes.splice(Math.min(2, scenes.length), 0, ...casos);
+    pesqUsadas = casos.length;
+  }
+  if(cfg.pesquisa && cfg.pesquisa.ganchos && cfg.pesquisa.ganchos.length && scenes[0]){
+    scenes[0].nar = rnd(cfg.pesquisa.ganchos) + " " + scenes[0].nar;
+  }
+
+  const titulos = pickN(TITULOS, 3).map(t => fill(t, baseCtx));
+  const hashtags = HASHTAGS_BASE.concat(["#" + slug(cidade)]).join(" ");
+  const thumbnail = "vertical 9:16 horror thumbnail for short video, photorealistic like a real photo: terrified young face half-lit by red light, and right behind them the face of " + ent.en + ", " + ent.visEn + ", mouth open, deep shadows, high contrast viral horror poster style, " + ancoraObj.en + ", negative space at the top for text, no text";
+  const direcaoVoz = "Voz baixa, urgente, sem pausas longas — como quem fala enquanto se esconde. Nos sustos, fale MAIS BAIXO, não mais alto. Respiração curta nos momentos de caos.";
+
+  return {tema:cfg.tema, cidade, estiloNome:estilo.nome, ent, titulos, hashtags, thumbnail, direcaoVoz, ancora:ancoraObj.pt, pesq:pesqUsadas, pesqFonte:(cfg.pesquisa && cfg.pesquisa.fonte) || null, scenes};
+}
+
+/* =========================================================
+   INTERFACE
+   ========================================================= */
+function copyText(txt, msg){
+  const done = () => {
+    const t = document.getElementById("toast");
+    t.textContent = msg || "Copiado! 🩸";
+    t.classList.add("show");
+    clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove("show"), 1600);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(done).catch(()=>fallbackCopy(txt, done));
+  } else fallbackCopy(txt, done);
+}
+function fallbackCopy(txt, done){
+  const ta = document.createElement("textarea");
+  ta.value = txt; document.body.appendChild(ta); ta.select();
+  try{ document.execCommand("copy"); }catch(e){}
+  document.body.removeChild(ta); done();
+}
+
+let LAST = null, VARIACAO = 0;
+
+/* =========================================================
+   ESTÚDIO DE VÍDEO — montagem automática 9:16
+   ========================================================= */
+const VW = 720, VH = 1280, VFPS = 30;
+let SCENE_IMG_SRC = [], SCENE_IMAGES = [];   // imagens por cena (objectURL / Image)
+let NARRATION_BLOB = null, NARRATION_NAME = "";
+let NARRATION_META = null; // {sceneCount, durs[]} — durações reais por cena
+let MIC_REC = null, MIC_CHUNKS = [], MIC_STREAM = null;
+let VIDEO_BUSY = false, PREVIEW_STOP = false;
+let LAST_VIDEO_URL = null, LAST_VIDEO_BLOB = null, LAST_VIDEO_EXT = "webm";
+let LAST_MP4_URL = null, MP4_BUSY = false;
+let NOISE = null, VIGNETTE = null;
+const INTENSITY = {hook:.45, context:.2, sign:.6, escalation:.7, chaos:1, revelation:.5, twist:.9, cliff:.6};
+
+function toastMsg(text){
+  const t = document.getElementById("toast");
+  t.textContent = text; t.classList.add("show");
+  clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove("show"), 2200);
+}
+function chk(id){ const el=document.getElementById(id); return el ? el.checked : false; }
+
+function syncImageArrays(n){
+  while(SCENE_IMG_SRC.length < n){ SCENE_IMG_SRC.push([null,null]); SCENE_IMAGES.push([null,null]); }
+  SCENE_IMG_SRC.length = n; SCENE_IMAGES.length = n;
+  for(let i=0;i<n;i++){
+    if(!Array.isArray(SCENE_IMG_SRC[i])) SCENE_IMG_SRC[i] = [SCENE_IMG_SRC[i], null];
+    if(!Array.isArray(SCENE_IMAGES[i])) SCENE_IMAGES[i] = [SCENE_IMAGES[i], null];
+    while(SCENE_IMG_SRC[i].length < 2) SCENE_IMG_SRC[i].push(null);
+    while(SCENE_IMAGES[i].length < 2) SCENE_IMAGES[i].push(null);
+  }
+}
+function setSceneImage(idx, slot, file){
+  const url = URL.createObjectURL(file);
+  SCENE_IMG_SRC[idx][slot] = url; SCENE_IMAGES[idx][slot] = null;
+  const thumb = document.querySelector('[data-thumb="'+idx+'-'+slot+'"]');
+  if(thumb){
+    const img = document.createElement('img');
+    img.className = 'img-thumb'; img.dataset.thumb = idx+'-'+slot; img.src = url;
+    thumb.replaceWith(img);
+  }
+}
+function ensureImages(){
+  if(!LAST) return Promise.resolve();
+  const ps = [];
+  LAST.scenes.forEach((s,i)=>{
+    [0,1].forEach(slot=>{
+      const src = SCENE_IMG_SRC[i] && SCENE_IMG_SRC[i][slot];
+      if(!src) return;
+      ps.push(new Promise(res=>{
+        const im = new Image();
+        im.onload = () => { SCENE_IMAGES[i][slot] = im; res(); };
+        im.onerror = () => { SCENE_IMAGES[i][slot] = null; res(); };
+        im.src = src;
+      }));
+    });
+  });
+  return Promise.all(ps);
+}
+function getAudioDuration(blob){
+  return new Promise(res=>{
+    const a = new Audio(URL.createObjectURL(blob));
+    a.onloadedmetadata = () => res(isFinite(a.duration) ? a.duration : 0);
+    a.onerror = () => res(0);
+  });
+}
+function buildOverlays(){
+  NOISE = document.createElement('canvas'); NOISE.width = NOISE.height = 256;
+  const nc = NOISE.getContext('2d');
+  const id = nc.createImageData(256,256);
+  for(let i=0;i<id.data.length;i+=4){ const v=(Math.random()*255)|0; id.data[i]=id.data[i+1]=id.data[i+2]=v; id.data[i+3]=255; }
+  nc.putImageData(id,0,0);
+  VIGNETTE = document.createElement('canvas'); VIGNETTE.width = VW; VIGNETTE.height = VH;
+  const vc = VIGNETTE.getContext('2d');
+  const g = vc.createRadialGradient(VW/2,VH/2,VH*0.30, VW/2,VH/2,VH*0.72);
+  g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(1,'rgba(0,0,0,0.55)');
+  vc.fillStyle = g; vc.fillRect(0,0,VW,VH);
+}
+function easeInOut(x){ return x<0.5 ? 2*x*x : 1-Math.pow(-2*x+2,2)/2; }
+
+function drawSceneImage(ctx, i, local, opts){
+  ctx.fillStyle = '#050508'; ctx.fillRect(-20,-20,VW+40,VH+40);
+  const slot = local < 0.5 ? 0 : 1;                 // 2 imagens por cena: troca no meio
+  const localP = (local % 0.5) / 0.5;                // progresso dentro da metade
+  const pair = SCENE_IMAGES[i] || [null,null];
+  const img = pair[slot] || pair[1-slot];            // fallback pra outra se faltar uma
+  if(!img){
+    const grd = ctx.createLinearGradient(0,0,0,VH);
+    grd.addColorStop(0,'#160709'); grd.addColorStop(1,'#050508');
+    ctx.fillStyle = grd; ctx.fillRect(-20,-20,VW+40,VH+40);
+    ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+    ctx.fillStyle='#ff4d55'; ctx.font='900 62px Arial, sans-serif';
+    ctx.fillText(LAST.scenes[i].label, VW/2, VH/2-16);
+    ctx.fillStyle='#8b8494'; ctx.font='600 28px Arial, sans-serif';
+    ctx.fillText('suba as imagens desta cena', VW/2, VH/2+40);
+    return;
+  }
+  const dir = (i+slot)%2===0 ? 1 : -1;
+  const z = opts.zoom ? (dir>0 ? 1.05+0.15*easeInOut(localP) : 1.20-0.15*easeInOut(localP)) : 1.07;
+  const cover = Math.max(VW/img.width, VH/img.height)*z;
+  const w = img.width*cover, h = img.height*cover;
+  const pan = Math.sin(localP*Math.PI*((i+slot)%2?1:-1))*12;
+  ctx.drawImage(img, (VW-w)/2+pan, (VH-h)/2, w, h);
+}
+function glitchFx(ctx, k){
+  for(let b=0;b<6;b++){
+    const y = Math.random()*VH, h = 8+Math.random()*42, off = (Math.random()-.5)*130*k;
+    ctx.drawImage(ctx.canvas, 0,y,VW,h, off,y,VW,h);
+  }
+  ctx.fillStyle = 'rgba(255,40,50,'+(0.26*k)+')'; ctx.fillRect(0,0,VW,VH);
+  ctx.fillStyle = 'rgba(255,255,255,'+(0.5*k*k)+')'; ctx.fillRect(0,0,VW,VH);
+}
+/* legendas estilo viral: chunks de palavras grandes, pop-in, palavra atual destacada */
+let CAP_WORDS = [];
+const CAP_CHUNK = 3;
+function buildCaptions(sceneDurs){
+  CAP_WORDS = [];
+  let acc = 0;
+  LAST.scenes.forEach((s, i) => {
+    const words = s.nar.split(/\s+/).filter(Boolean);
+    const per = sceneDurs[i] / (words.length + 1);
+    words.forEach((w, k) => {
+      CAP_WORDS.push({
+        w: w.toUpperCase().replace(/[\.,!\?;:\u2026"\u201c\u201d]/g, ""),
+        start: acc + k*per,
+        end: acc + (k+1)*per,
+      });
+    });
+    acc += sceneDurs[i];
+  });
+}
+function drawCaptions(ctx, t){
+  if(!CAP_WORDS.length) return;
+  let idx = CAP_WORDS.length-1;
+  for(let i=0;i<CAP_WORDS.length;i++){ if(t < CAP_WORDS[i].end){ idx = i; break; } }
+  const ci = Math.floor(idx/CAP_CHUNK);
+  const chunk = CAP_WORDS.slice(ci*CAP_CHUNK, ci*CAP_CHUNK+CAP_CHUNK);
+  if(!chunk.length) return;
+  const pop = Math.min(1, (t - chunk[0].start)/0.14);
+  const scale = 1.18 - 0.18*pop;
+  const alpha = 0.4 + 0.6*pop;
+  const text = chunk.map(o=>o.w).join(" ");
+  let fs = 86;
+  const maxW = VW-110;
+  ctx.font = '900 '+fs+'px "Arial Black", Arial, sans-serif';
+  let wpx = ctx.measureText(text).width;
+  if(wpx > maxW) fs = Math.max(40, Math.floor(fs*maxW/wpx));
+  ctx.font = '900 '+fs+'px "Arial Black", Arial, sans-serif';
+  wpx = ctx.measureText(text).width;
+  const spW = ctx.measureText(" ").width;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(VW/2, VH*0.78);
+  ctx.scale(scale, scale);
+  ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.lineJoin = "round";
+  let x = -wpx/2;
+  chunk.forEach((o) => {
+    const ww = ctx.measureText(o.w).width;
+    const cx = x + ww/2;
+    ctx.lineWidth = Math.max(9, fs*0.17);
+    ctx.strokeStyle = "rgba(0,0,0,0.95)";
+    ctx.strokeText(o.w, cx, 0);
+    ctx.fillStyle = (o === CAP_WORDS[idx]) ? "#ffd23f" : "#ffffff";
+    ctx.fillText(o.w, cx, 0);
+    x += ww + spW;
+  });
+  ctx.restore();
+}
+function drawTop(ctx, handle){
+  ctx.font = '800 27px Arial, sans-serif'; ctx.textBaseline='alphabetic'; ctx.lineJoin='round';
+  ctx.lineWidth = 6; ctx.strokeStyle = 'rgba(0,0,0,0.8)';
+  ctx.textAlign='left';  ctx.strokeText('PARTE 1', 28, 54); ctx.fillStyle='rgba(255,255,255,0.92)'; ctx.fillText('PARTE 1', 28, 54);
+  ctx.textAlign='right'; ctx.strokeText(handle, VW-28, 54); ctx.fillText(handle, VW-28, 54);
+}
+function drawFrame(ctx, t, total, sceneDurs, opts, handle){
+  let acc = 0, idx = 0, local = 1;
+  for(let i=0;i<sceneDurs.length;i++){
+    if(t < acc+sceneDurs[i]){ idx = i; local = (t-acc)/sceneDurs[i]; break; }
+    acc += sceneDurs[i];
+  }
+  const scene = LAST.scenes[idx];
+  const inten = INTENSITY[scene.beat] !== undefined ? INTENSITY[scene.beat] : 0.5;
+  ctx.save();
+  const amp = 1 + inten*6;
+  ctx.translate((Math.random()-.5)*amp, (Math.random()-.5)*amp);
+  drawSceneImage(ctx, idx, local, opts);
+  ctx.restore();
+  if(opts.glitch){
+    const inScene = t-acc;
+    if(idx>0 && inScene<0.3) glitchFx(ctx, 1-inScene/0.3);
+    if(idx===0 && t<0.22) glitchFx(ctx, 1-t/0.22);
+    const dMid = Math.abs(local-0.5);                  // glitch na troca imagem 1 → 2
+    if(dMid < 0.05) glitchFx(ctx, 1-dMid/0.05);
+  }
+  if(opts.grain){
+    ctx.globalAlpha = 0.07;
+    for(let gx=0; gx<VW; gx+=256)
+      for(let gy=0; gy<VH; gy+=256)
+        ctx.drawImage(NOISE, gx-((Math.random()*64)|0), gy-((Math.random()*64)|0));
+    ctx.globalAlpha = 1;
+    ctx.drawImage(VIGNETTE, 0, 0);
+  }
+  if(inten >= 0.6){
+    const p = (inten-0.55)*0.5*(0.5+0.5*Math.sin(t*7.5));
+    ctx.fillStyle = 'rgba(200,10,20,'+p+')'; ctx.fillRect(0,0,VW,VH);
+  }
+  if(opts.captions) drawCaptions(ctx, t);
+  drawTop(ctx, handle);
+  ctx.fillStyle = '#e5222e'; ctx.fillRect(0, VH-8, VW*(t/total), 8);
+}
+function buildAmbience(actx, outNode, total, sceneDurs){
+  const now = actx.currentTime;
+  const master = actx.createGain();
+  master.connect(outNode);
+  if(outNode !== actx.destination) master.connect(actx.destination); // ouvir durante a renderização
+  master.gain.setValueAtTime(0, now);
+  master.gain.linearRampToValueAtTime(0.9, now+1.2);
+  master.gain.setValueAtTime(0.9, now+Math.max(2, total-1.5));
+  master.gain.linearRampToValueAtTime(0, now+total);
+
+  /* 1) drone grave audível e dissonante */
+  const o1 = actx.createOscillator(), o2 = actx.createOscillator();
+  o1.type='sawtooth'; o1.frequency.value=65;
+  o2.type='sawtooth'; o2.frequency.value=69;
+  const f = actx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=340; f.Q.value=0.8;
+  const g = actx.createGain(); g.gain.value=0.3;
+  o1.connect(f); o2.connect(f); f.connect(g); g.connect(master);
+  o1.start(now); o2.start(now); o1.stop(now+total); o2.stop(now+total);
+
+  /* 2) pad médio fantasma (segunda menor) com tremolo lento */
+  const p1 = actx.createOscillator(), p2 = actx.createOscillator();
+  p1.type='triangle'; p1.frequency.value=196;
+  p2.type='triangle'; p2.frequency.value=207.6;
+  const pf = actx.createBiquadFilter(); pf.type='lowpass'; pf.frequency.value=900;
+  const pg = actx.createGain(); pg.gain.value=0.05;
+  const lfo = actx.createOscillator(); lfo.frequency.value=0.18;
+  const lfoG = actx.createGain(); lfoG.gain.value=0.03;
+  lfo.connect(lfoG); lfoG.connect(pg.gain);
+  p1.connect(pf); p2.connect(pf); pf.connect(pg); pg.connect(master);
+  p1.start(now); p2.start(now); lfo.start(now);
+  p1.stop(now+total); p2.stop(now+total); lfo.stop(now+total);
+
+  /* 3) vento de ruído (tensão) */
+  const nb = actx.createBuffer(1, actx.sampleRate*2, actx.sampleRate);
+  const nd = nb.getChannelData(0);
+  for(let i=0;i<nd.length;i++) nd[i] = (Math.random()*2-1)*0.5;
+  const noise = actx.createBufferSource(); noise.buffer = nb; noise.loop = true;
+  const bp = actx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=520; bp.Q.value=0.6;
+  const ng = actx.createGain(); ng.gain.value=0.035;
+  const nlfo = actx.createOscillator(); nlfo.frequency.value=0.07;
+  const nlfoG = actx.createGain(); nlfoG.gain.value=0.025;
+  nlfo.connect(nlfoG); nlfoG.connect(ng.gain);
+  noise.connect(bp); bp.connect(ng); ng.connect(master);
+  noise.start(now); noise.stop(now+total); nlfo.start(now); nlfo.stop(now+total);
+
+  /* 4) batimento cardíaco audível (tum-tá) */
+  const kick = (t, f0, vol) => {
+    const k = actx.createOscillator(), kg = actx.createGain();
+    k.type='sine';
+    k.frequency.setValueAtTime(f0, t);
+    k.frequency.exponentialRampToValueAtTime(48, t+0.14);
+    kg.gain.setValueAtTime(vol, t);
+    kg.gain.exponentialRampToValueAtTime(0.001, t+0.26);
+    k.connect(kg); kg.connect(master);
+    k.start(t); k.stop(t+0.3);
+  };
+  let beat = 0.8;
+  while(beat < total-0.4){
+    const t = now+beat;
+    kick(t, 120, 0.8);
+    kick(t+0.28, 110, 0.5);
+    beat += 1.3;
+  }
+
+  /* 5) riser/whoosh em cada transição de cena */
+  if(sceneDurs){
+    let acc = 0;
+    sceneDurs.forEach((d, i) => {
+      acc += d;
+      if(i < sceneDurs.length-1 && acc < total-0.5){
+        const t = now+acc-0.45;
+        const rs = actx.createBufferSource(); rs.buffer = nb; rs.loop = true;
+        const rf = actx.createBiquadFilter(); rf.type='bandpass'; rf.Q.value=1.4;
+        rf.frequency.setValueAtTime(300, t);
+        rf.frequency.exponentialRampToValueAtTime(2400, t+0.4);
+        const rg = actx.createGain();
+        rg.gain.setValueAtTime(0.0001, t);
+        rg.gain.exponentialRampToValueAtTime(0.5, t+0.35);
+        rg.gain.exponentialRampToValueAtTime(0.001, t+0.5);
+        rs.connect(rf); rf.connect(rg); rg.connect(master);
+        rs.start(t); rs.stop(t+0.55);
+      }
+    });
+  }
+}
+function setProgress(p, text){
+  const bar = document.getElementById('videoProgress');
+  const st = document.getElementById('videoStatus');
+  if(bar) bar.style.width = Math.round(p*100)+'%';
+  if(st) st.textContent = text;
+}
+function setBtnsBusy(busy){
+  ['btnVideo','btnPreview'].forEach(id=>{
+    const b = document.getElementById(id);
+    if(b){ b.disabled = busy; b.style.opacity = busy ? 0.5 : 1; }
+  });
+}
+async function renderVideo(record){
+  if(VIDEO_BUSY || !LAST) return;
+  if(!document.createElement('canvas').captureStream){ toastMsg('Seu navegador não suporta gravação de canvas 😢'); return; }
+  VIDEO_BUSY = true; PREVIEW_STOP = false;
+  setBtnsBusy(true);
+  const canvas = document.getElementById('videoCanvas');
+  canvas.style.display = 'block';
+  const ctx = canvas.getContext('2d');
+  buildOverlays();
+  await ensureImages();
+  /* SINCRONIA: as imagens trocam exatamente quando a narração troca de cena */
+  const durs = LAST.scenes.map(s=>s.dur);
+  const sum = durs.reduce((a,b)=>a+b,0);
+  let total = sum;
+  let sceneDurs;
+  if(NARRATION_META && NARRATION_META.sceneCount === LAST.scenes.length){
+    /* narração Gemini: usa a duração REAL do áudio de cada cena */
+    sceneDurs = NARRATION_META.durs.slice();
+    total = sceneDurs.reduce((a,b)=>a+b,0);
+  } else if(NARRATION_BLOB){
+    /* áudio único (arquivo/microfone): distribui pelo nº de palavras de cada cena,
+       que é muito mais próximo do tempo falado do que a duração do beat */
+    const ad = await getAudioDuration(NARRATION_BLOB);
+    if(ad > 1) total = ad + 0.3;
+    const words = LAST.scenes.map(s => s.nar.split(/\s+/).filter(Boolean).length);
+    const wsum = words.reduce((a,b)=>a+b,0);
+    sceneDurs = words.map(w => w/wsum*total);
+  } else {
+    sceneDurs = durs.map(d=>d/sum*total);
+  }
+  buildCaptions(sceneDurs);
+  buildCaptions(sceneDurs);
+  const opts = { zoom:chk('chkFxZoom'), glitch:chk('chkFxGlitch'), grain:chk('chkFxGrain'), captions:chk('chkCaptions') };
+  const handleEl = document.getElementById('handle');
+  const handle = (handleEl && handleEl.value.trim()) || '@onarradorsinistro';
+
+  let actx = null, dest = null, audioEl = null;
+  actx = new (window.AudioContext||window.webkitAudioContext)();
+  if(record) dest = actx.createMediaStreamDestination();
+  if(NARRATION_BLOB){
+    audioEl = new Audio(URL.createObjectURL(NARRATION_BLOB));
+    const msrc = actx.createMediaElementSource(audioEl);
+    const gg = actx.createGain(); gg.gain.value = 1;
+    msrc.connect(gg); gg.connect(actx.destination);
+    if(dest) gg.connect(dest);
+  }
+  if(chk('chkAmbience')) buildAmbience(actx, dest || actx.destination, total, sceneDurs);
+  const stream = canvas.captureStream(VFPS);
+  let rec = null, chunks = [];
+  if(record && dest){
+    dest.stream.getAudioTracks().forEach(tr=>stream.addTrack(tr));
+    let mime = 'video/webm', ext = 'webm';
+    if(window.MediaRecorder){
+      if(MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')){ mime='video/webm;codecs=vp9,opus'; }
+      else if(MediaRecorder.isTypeSupported('video/mp4')){ mime='video/mp4'; ext='mp4'; }
+    }
+    rec = new MediaRecorder(stream, {mimeType:mime, videoBitsPerSecond:5000000});
+    rec._ext = ext;
+    rec.ondataavailable = e => { if(e.data && e.data.size) chunks.push(e.data); };
+  }
+  document.getElementById('videoProgressWrap').style.display = 'block';
+  document.getElementById('videoResult').style.display = 'none';
+  setProgress(0, record ? 'gravando em tempo real...' : 'preview...');
+  if(rec){ try{ rec.start(250); }catch(e){} }
+  if(audioEl){ try{ await audioEl.play(); }catch(e){} }
+  if(actx && actx.state === 'suspended'){ try{ await actx.resume(); }catch(e){} }
+
+  const t0 = performance.now();
+  await new Promise(resolve=>{
+    function frame(){
+      const t = (performance.now()-t0)/1000;
+      if(PREVIEW_STOP || t >= total){ resolve(); return; }
+      drawFrame(ctx, t, total, sceneDurs, opts, handle);
+      setProgress(t/total, record ? ('gravando... '+Math.round(t/total*100)+'%') : ('preview '+Math.round(t/total*100)+'%'));
+      requestAnimationFrame(frame);
+    }
+    frame();
+  });
+
+  if(audioEl) audioEl.pause();
+  if(rec){ await new Promise(r=>{ rec.onstop = r; try{ rec.stop(); }catch(e){ r(); } }); }
+  if(actx){ try{ await actx.close(); }catch(e){} }
+  VIDEO_BUSY = false; setBtnsBusy(false);
+
+  if(record && rec){
+    const blob = new Blob(chunks, {type: rec._ext==='mp4' ? 'video/mp4' : 'video/webm'});
+    if(blob.size < 5000){
+      setProgress(1, 'gravação saiu vazia 😢 tenta de novo mantendo a aba aberta');
+    } else {
+      if(LAST_VIDEO_URL) URL.revokeObjectURL(LAST_VIDEO_URL);
+      LAST_VIDEO_BLOB = blob;
+      LAST_VIDEO_EXT = rec._ext;
+      LAST_VIDEO_URL = URL.createObjectURL(blob);
+      LAST_MP4_URL = null;
+      showVideoResult();
+      setProgress(1, 'pronto! 🩸 (' + (blob.size/1024/1024).toFixed(1) + ' MB)');
+    }
+  } else {
+    setProgress(1, 'preview finalizado');
+  }
+}
+async function toggleMic(){
+  const btn = document.getElementById('btnMic'), st = document.getElementById('micStatus');
+  if(MIC_REC && MIC_REC.state === 'recording'){ MIC_REC.stop(); return; }
+  try{
+    MIC_STREAM = await navigator.mediaDevices.getUserMedia({audio:true});
+    MIC_CHUNKS = [];
+    MIC_REC = new MediaRecorder(MIC_STREAM);
+    MIC_REC.ondataavailable = e => MIC_CHUNKS.push(e.data);
+    MIC_REC.onstop = () => {
+      NARRATION_BLOB = new Blob(MIC_CHUNKS, {type:'audio/webm'});
+      NARRATION_NAME = 'narração gravada no microfone';
+      NARRATION_META = null;
+      updateNarrInfo();
+      if(MIC_STREAM) MIC_STREAM.getTracks().forEach(t=>t.stop());
+      btn.textContent = '⏺ Gravar de novo';
+      st.textContent = '✓ narração salva!';
+    };
+    MIC_REC.start();
+    btn.textContent = '⏹ Parar gravação';
+    st.textContent = 'gravando... lê o roteiro em voz alta!';
+  }catch(e){
+    toastMsg('Microfone indisponível 😢 (permissão negada ou sem suporte)');
+  }
+}
+/* ---------- narração automática via Gemini TTS ---------- */
+const GEMINI_MODELS = ["gemini-3.1-flash-tts-preview", "gemini-2.5-flash-preview-tts", "gemini-2.5-flash-lite-preview-tts", "gemini-2.5-pro-preview-tts"];
+function pcmB64ToWav(b64, rate){
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
+  const buf = new ArrayBuffer(44+bytes.length);
+  const v = new DataView(buf);
+  const ws = (o,s)=>{ for(let i=0;i<s.length;i++) v.setUint8(o+i, s.charCodeAt(i)); };
+  ws(0,'RIFF'); v.setUint32(4,36+bytes.length,true); ws(8,'WAVE'); ws(12,'fmt ');
+  v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
+  v.setUint32(24,rate,true); v.setUint32(28,rate*2,true); v.setUint16(32,2,true); v.setUint16(34,16,true);
+  ws(36,'data'); v.setUint32(40,bytes.length,true);
+  new Uint8Array(buf).set(bytes,44);
+  return new Blob([buf], {type:'audio/wav'});
+}
+function silenceWav(rate, sec){
+  const n = Math.floor(rate*sec);
+  const buf = new ArrayBuffer(44+n*2);
+  const v = new DataView(buf);
+  const ws = (o,s)=>{ for(let i=0;i<s.length;i++) v.setUint8(o+i, s.charCodeAt(i)); };
+  ws(0,'RIFF'); v.setUint32(4,36+n*2,true); ws(8,'WAVE'); ws(12,'fmt ');
+  v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
+  v.setUint32(24,rate,true); v.setUint32(28,rate*2,true); v.setUint16(32,2,true); v.setUint16(34,16,true);
+  ws(36,'data'); v.setUint32(40,n*2,true);
+  return new Blob([buf], {type:'audio/wav'});
+}
+async function concatWavs(blobs){
+  const parts = []; let rate = 24000;
+  for(const b of blobs){
+    const ab = await b.arrayBuffer();
+    const v = new DataView(ab);
+    rate = v.getUint32(24, true);
+    parts.push(new Uint8Array(ab.slice(44)));
+  }
+  const total = parts.reduce((a,p)=>a+p.length,0);
+  const buf = new ArrayBuffer(44+total);
+  const v = new DataView(buf);
+  const ws = (o,s)=>{ for(let i=0;i<s.length;i++) v.setUint8(o+i, s.charCodeAt(i)); };
+  ws(0,'RIFF'); v.setUint32(4,36+total,true); ws(8,'WAVE'); ws(12,'fmt ');
+  v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
+  v.setUint32(24,rate,true); v.setUint32(28,rate*2,true); v.setUint16(32,2,true); v.setUint16(34,16,true);
+  ws(36,'data'); v.setUint32(40,total,true);
+  let off = 44;
+  parts.forEach(p=>{ new Uint8Array(buf).set(p, off); off += p.length; });
+  return new Blob([buf], {type:'audio/wav'});
+}
+async function fetchGeminiTTS(key, model, voice, text){
+  const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/"+model+":generateContent", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json", "x-goog-api-key":key },
+    body: JSON.stringify({
+      contents:[{ parts:[{ text }] }],
+      generationConfig:{
+        responseModalities:["AUDIO"],
+        speechConfig:{ voiceConfig:{ prebuiltVoiceConfig:{ voiceName:voice } } },
+      },
+    }),
+  });
+  if(!res.ok){
+    const j = await res.json().catch(()=>({}));
+    const msg = (j.error && j.error.message) || "";
+    const err = new Error(msg || ("HTTP "+res.status));
+    err.http = res.status;
+    throw err;
+  }
+  const j = await res.json();
+  const parts = (j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts) || [];
+  const part = parts.find(p => p.inlineData && p.inlineData.data);
+  if(!part) throw new Error("a API não devolveu áudio");
+  const m = (part.inlineData.mimeType||"").match(/rate=(\d+)/);
+  return { b64: part.inlineData.data, rate: m ? parseInt(m[1],10) : 24000 };
+}
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function isQuotaErr(e){ return e && (e.http === 429 || /quota|RESOURCE_EXHAUSTED|rate limit/i.test(e.message||"")); }
+async function gerarNarracaoGemini(){
+  const keyEl = document.getElementById("geminiKey");
+  const key = keyEl.value.trim();
+  if(!key){ toastMsg("Cola sua chave da API do Gemini primeiro 🔑"); keyEl.focus(); return; }
+  if(!LAST){ return; }
+  const voice = document.getElementById("geminiVoice").value;
+  const st = document.getElementById("geminiStatus");
+  const btn = document.getElementById("btnGemini");
+  try{ localStorage.setItem("ns_gemini_key", key); localStorage.setItem("ns_gemini_voice", voice); }catch(e){}
+  btn.disabled = true; btn.style.opacity = 0.5;
+  const style = 'Leia em português do Brasil, com voz baixa, tensa e sombria, como quem conta uma história de terror em segredo. Faça pausas dramáticas onde houver reticências ou pontos. Diga: ';
+  let model = null;
+  try{ model = localStorage.getItem("ns_gemini_model"); }catch(e){}
+  const wavs = [];
+  const sceneDursReal = [];
+  const GAP = 0.45; // pausa dramática entre cenas (imagem segura durante a pausa)
+  try{
+    for(let i=0;i<LAST.scenes.length;i++){
+      const text = style + '"' + LAST.scenes[i].nar + '"';
+      let audio = null, lastErr = null;
+      const order = model ? [model].concat(GEMINI_MODELS.filter(m=>m!==model)) : GEMINI_MODELS.slice();
+      for(let attempt=0; attempt<2 && !audio; attempt++){
+        for(const m of order){
+          st.textContent = "cena " + (i+1) + "/" + LAST.scenes.length + " · modelo " + m + "...";
+          try{ audio = await fetchGeminiTTS(key, m, voice, text); model = m; break; }
+          catch(e){
+            lastErr = e;
+            if(isQuotaErr(e)){ st.textContent = "limite da conta atingido, esperando 10s pra tentar de novo..."; await sleep(10000); }
+          }
+        }
+      }
+      if(!audio){
+        st.textContent = "❌ erro: " + lastErr.message + (lastErr.http===400 && /API key/i.test(lastErr.message) ? " — confere se a chave tá certa" : lastErr.http===403 ? " — a chave não tem acesso ao TTS (cria outra em aistudio.google.com)" : "");
+        toastMsg("Falha na narração 😢 olha a mensagem no painel");
+        return;
+      }
+      try{ localStorage.setItem("ns_gemini_model", model); }catch(e){}
+      wavs.push(pcmB64ToWav(audio.b64, audio.rate));
+      const durSec = (audio.b64.length * 0.75) / audio.rate / 2; // PCM 16-bit mono
+      sceneDursReal.push(durSec + GAP);
+      wavs.push(silenceWav(audio.rate, GAP));
+      st.textContent = "cena " + (i+1) + "/" + LAST.scenes.length + " pronta ✓ (" + durSec.toFixed(1) + "s)";
+    }
+    st.textContent = "juntando as cenas num áudio só...";
+    NARRATION_BLOB = await concatWavs(wavs);
+    NARRATION_NAME = "narração IA (Gemini · voz " + voice + ")";
+    NARRATION_META = {sceneCount: LAST.scenes.length, durs: sceneDursReal};
+    updateNarrInfo();
+    st.textContent = "✅ narração completa! Ela já entra no vídeo automaticamente.";
+    toastMsg("Narração gerada pela IA! 🎙️");
+  } finally {
+    btn.disabled = false; btn.style.opacity = 1;
+  }
+}
+function updateNarrInfo(){
+  const box = document.getElementById('narrInfo');
+  if(!box) return;
+  if(!NARRATION_BLOB){ box.style.display = 'none'; box.innerHTML = ''; return; }
+  const url = URL.createObjectURL(NARRATION_BLOB);
+  box.style.display = 'block';
+  box.innerHTML = '<div class="narr-pill">🎙️ <b>'+esc(NARRATION_NAME)+'</b><br>'
+    + '<audio controls src="'+url+'" style="width:100%; margin-top:8px"></audio>'
+    + '<button class="btn btn-ghost btn-sm" id="btnClearNarr" style="margin-top:8px">🗑 remover narração</button></div>';
+  const c = document.getElementById('btnClearNarr');
+  if(c) c.onclick = () => { NARRATION_BLOB = null; NARRATION_NAME=''; NARRATION_META=null; updateNarrInfo(); };
+}
+
+/* =========================================================
+   🔎 PESQUISA DE HISTÓRIAS REAIS (Gemini + Google Search)
+   ========================================================= */
+let PESQUISA = null;      /* {temaKey, historias[], ganchos[], lugares[]} */
+let PESQUISA_BUSY = false;
+/* ordem de preferência — a lista real é descoberta dinamicamente pela API */
+const PESQUISA_PRIORITY = ["gemini-3.7-flash","gemini-3.6-flash","gemini-3.5-flash","gemini-3.5-flash-lite","gemini-3.1-pro-preview","gemini-3-flash-preview","gemini-2.5-flash","gemini-2.5-flash-lite","gemini-2.5-pro","gemini-2.0-flash"];
+
+async function descobrirModelosPesq(key){
+  try{
+    const resp = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200", {headers: {"x-goog-api-key": key}});
+    if(!resp.ok) return null;
+    const data = await resp.json();
+    const nomes = (data.models || [])
+      .filter(m => (m.supportedGenerationMethods || []).includes("generateContent"))
+      .map(m => String(m.name || "").replace(/^models\//, ""))
+      .filter(n => /gemini/.test(n) && !/tts|image|live|embed|veo|imagen|banana|translate|omni|native-audio/i.test(n));
+    if(!nomes.length) return null;
+    const rank = n => { const i = PESQUISA_PRIORITY.indexOf(n); return i === -1 ? 99 : i; };
+    nomes.sort((a, b) => rank(a) - rank(b));
+    return nomes.slice(0, 5);
+  }catch(e){ return null; }
+}
+
+function getGeminiKeyPesq(){
+  const inp = document.getElementById("geminiKey");
+  return ((inp && inp.value) || "").trim() || localStorage.getItem("ns_gemini_key") || "";
+}
+function extrairJsonDoTexto(txt){
+  let t = String(txt).replace(/```json|```/gi, "").trim();
+  const a = t.indexOf("{"), b = t.lastIndexOf("}");
+  if(a >= 0 && b > a) t = t.slice(a, b + 1);
+  return JSON.parse(t);
+}
+async function pesquisarHistorias(){
+  if(PESQUISA_BUSY) return;
+  const tema = document.getElementById("tema").value.trim();
+  const cidade = document.getElementById("cidade").value.trim() || "Salvador";
+  const st = document.getElementById("pesqStatus");
+  if(!tema){ if(st) st.textContent = "⚠️ Escreve um tema primeiro."; return; }
+  const key = getGeminiKeyPesq();
+  if(!key){ if(st) st.textContent = "⚠️ Cola sua chave Gemini no painel de narração (🎙️) pra habilitar a pesquisa."; return; }
+  PESQUISA_BUSY = true;
+  const btnP = document.getElementById("btnPesquisar");
+  if(btnP) btnP.disabled = true;
+  if(st) st.textContent = "🔎 Descobrindo modelos disponíveis na sua conta...";
+  let MODELOS = await descobrirModelosPesq(key);
+  if(!MODELOS || !MODELOS.length) MODELOS = PESQUISA_PRIORITY.slice(0, 4);
+  if(st) st.textContent = "🔎 Varrendo a internet atrás de casos reais (" + MODELOS[0] + ")...";
+  const cabPrompt = [
+    "Você é pesquisador de histórias de terror REAIS para roteiros virais de vídeos curtos.",
+    'TEMA DO VÍDEO: "' + tema + '"',
+    "CIDADE: " + cidade,
+    "",
+    "MISSAO_WEB: Pesquise na internet: lendas urbanas brasileiras, casos misteriosos reais, desaparecimentos, relatos sobrenaturais e fatos estranhos ligados a esse tema — priorizando " + cidade + " e a Bahia, depois o resto do Brasil.",
+    "MISSAO_IA: Usando seu conhecimento sobre o Brasil, crie histórias no estilo de lendas urbanas e casos reais brasileiros ligados a esse tema — priorizando " + cidade + " e a Bahia. Varie nomes, datas e lugares.",
+    "Retorne SOMENTE JSON válido (sem markdown, sem texto fora do JSON) neste formato:",
+    '{"historias":[{"titulo":"nome curto e chamativo do caso/lenda","nar":"1 ou 2 frases de narração em português estilo relato, com detalhes específicos (nome, ano, lugar)","shots":["english cinematic image prompt of the scene, photorealistic","second english image prompt showing the creature or entity actively doing something menacing"]}],',
+    '"ganchos":["3 frases de abertura em português conectando o tema a casos reais"],',
+    '"lugares":["6 lugares reais e específicos encontrados nas histórias"]}',
+    "Regras: exatamente 5 historias; nada genérico — nomes, datas e lugares específicos; tom de terror real; os image prompts sempre em inglês, descritivos e cinematográficos."
+  ];
+  const montaPrompt = (comWeb) => cabPrompt.map(l => {
+    if(l.startsWith("MISSAO_WEB:")) return comWeb ? l.slice(11).trim() : null;
+    if(l.startsWith("MISSAO_IA:")) return comWeb ? null : l.slice(10).trim();
+    return l;
+  }).filter(l => l !== null).join("\n");
+  const chamarGemini = async (model, comWeb) => {
+    const body = {
+      contents: [{parts: [{text: montaPrompt(comWeb)}]}],
+      generationConfig: {temperature: comWeb ? 1.0 : 1.2, maxOutputTokens: 4096},
+    };
+    if(comWeb) body.tools = [{google_search: {}}];
+    const resp = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent", {
+      method: "POST",
+      headers: {"Content-Type": "application/json", "x-goog-api-key": key},
+      body: JSON.stringify(body),
+    });
+    if(!resp.ok){
+      const extra = resp.status === 429 ? " (limite do plano gratuito)" : resp.status === 404 ? " (modelo fora de linha)" : "";
+      throw new Error("HTTP " + resp.status + extra);
+    }
+    const data = await resp.json();
+    const txt = (((data.candidates || [])[0] || {}).content?.parts || []).map(p => p.text || "").join("");
+    if(!txt) throw new Error("resposta vazia");
+    const parsed = extrairJsonDoTexto(txt);
+    if(!parsed || !Array.isArray(parsed.historias) || !parsed.historias.length) throw new Error("JSON incompleto");
+    return parsed;
+  };
+  let result = null, fonte = null; const errs = [];
+  /* 1º: pesquisa REAL na internet (quota gratuita é pequena — máx. 2 tentativas) */
+  for(const model of MODELOS.slice(0, 2)){
+    try{ result = await chamarGemini(model, true); fonte = "web"; break; }
+    catch(e){ errs.push(model + " [web]: " + e.message); }
+  }
+  /* 2º: busca ao vivo no limite → gera histórias únicas com o conhecimento da IA
+     (sem a ferramenta de busca — usa a quota normal, que é generosa) */
+  if(!result){
+    if(st) st.textContent = "⚠️ Busca ao vivo no limite — gerando histórias únicas com IA...";
+    for(const model of MODELOS.slice(0, 3)){
+      try{ result = await chamarGemini(model, false); fonte = "ia"; break; }
+      catch(e){ errs.push(model + " [ia]: " + e.message); }
+    }
+  }
+  PESQUISA_BUSY = false;
+  if(btnP) btnP.disabled = false;
+  if(result){
+    PESQUISA = {
+      temaKey: (tema + "|" + cidade).toLowerCase(),
+      fonte,
+      historias: result.historias.filter(h => h && h.nar && Array.isArray(h.shots) && h.shots.length),
+      ganchos: Array.isArray(result.ganchos) ? result.ganchos : [],
+      lugares: Array.isArray(result.lugares) ? result.lugares : [],
+    };
+    if(st) st.innerHTML = fonte === "web"
+      ? "✅ <b>" + PESQUISA.historias.length + " casos reais</b> carregados da internet — cada roteiro agora sorteia histórias diferentes. 🩸"
+      : "🧠 <b>" + PESQUISA.historias.length + " histórias únicas</b> geradas pela IA (a busca ao vivo tava no limite gratuito) — roteiros continuam variados. 🩸";
+    gerarAgora(false);
+  }else{
+    if(st) st.textContent = "❌ Pesquisa falhou em todos os modos [" + errs.slice(0,3).join(" · ") + "] — espera ~1min e tenta de novo. Por ora, bancos locais.";
+  }
+}
+
+function gerarAgora(scroll){
+  const tema = document.getElementById("tema").value.trim();
+  if(!tema){
+    const t = document.getElementById("toast");
+    t.textContent = "Escreve o tema primeiro, corajoso... 💀";
+    t.classList.add("show"); clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove("show"), 1800);
+    document.getElementById("tema").focus();
+    return;
+  }
+  const cfg = {
+    tema,
+    entidade: document.getElementById("entidade").value,
+    cidade: document.getElementById("cidade").value,
+    estilo: document.getElementById("estilo").value,
+    cenas: parseInt(document.getElementById("cenas").value,10),
+    pesquisa: null,
+  };
+  const _chkP = document.getElementById("chkPesquisa");
+  if(_chkP && _chkP.checked && PESQUISA){
+    const _key = (tema + "|" + (cfg.cidade.trim() || "Salvador")).toLowerCase();
+    if(PESQUISA.temaKey === _key) cfg.pesquisa = PESQUISA;
+  }
+  LAST = gerarRoteiro(cfg);
+  VARIACAO++;
+  try{ localStorage.setItem("ns_cfg", JSON.stringify(cfg)); }catch(e){}
+  render(LAST, scroll);
+}
+
+function exportTxt(r){
+  let L = [];
+  L.push("═══════════════════════════════════════");
+  L.push("  O NARRADOR SINISTRO — roteiro completo");
+  L.push("  Tema: " + r.tema + " | Cidade: " + r.cidade);
+  L.push("  Estilo: " + r.estiloNome + (r.pesq ? " | 🔎 inclui " + r.pesq + " casos reais pesquisados na internet" : ""));
+  L.push("═══════════════════════════════════════");
+  L.push("");
+  L.push("📌 TÍTULOS (escolha 1):");
+  r.titulos.forEach(t => L.push("  • " + t));
+  L.push("");
+  L.push("📝 DESCRIÇÃO + HASHTAGS:");
+  L.push("  Parte 1 — " + r.tema + " em " + r.cidade + ". As imagens vazaram. 😳");
+  L.push("  " + r.hashtags);
+  L.push("");
+  L.push("👹 A CRIATURA: " + r.ent.visPt);
+  L.push("🎭 ÂNCORA VISUAL (já vai escondida nos prompts): " + r.ancora);
+  L.push("🎙️ DIREÇÃO DE VOZ: " + r.direcaoVoz);
+  L.push("");
+  r.scenes.forEach((s,i)=>{
+    L.push("───── CENA " + (i+1) + " · " + s.label + " · ~" + s.dur + "s ─────");
+    L.push("TEXTO NA TELA: " + s.txt);
+    L.push("NARRAÇÃO:");
+    L.push("  " + s.nar + (s.retention ? " " + s.retention : ""));
+    s.shots.forEach((sh, k) => {
+      L.push("IMAGEM " + (k+1) + " — O QUE MOSTRAR: " + sh.pt);
+      L.push("PROMPT " + (k+1) + " (9:16):");
+      L.push("  " + sh.en);
+    });
+    L.push("TOM DE VOZ: " + s.tom);
+    L.push("");
+  });
+  L.push("───── CAPA / THUMBNAIL ─────");
+  L.push("PROMPT: " + r.thumbnail);
+  return L.join("\n");
+}
+
+function narrationText(r){
+  return r.scenes.map((s, i) => {
+    let t = s.nar;
+    if(s.retention) t += " " + s.retention.replace(/^\(|\)$/g, "");
+    return "CENA " + (i+1) + " (" + s.label + "): " + t;
+  }).join("\n\n");
+}
+let SPEAKING = false;
+function narrarTudo(){
+  if(!window.speechSynthesis){ alert("Seu navegador não tem voz disponível 😢"); return; }
+  if(SPEAKING){ window.speechSynthesis.cancel(); SPEAKING=false; setNarrarBtn("🔊 Narrar tudo"); return; }
+  if(!LAST) return;
+  const texts = LAST.scenes.map(s => s.nar);
+  SPEAKING = true; setNarrarBtn("⏹ Parar narração");
+  let i = 0;
+  const next = () => {
+    if(!SPEAKING || i >= texts.length){ SPEAKING=false; setNarrarBtn("🔊 Narrar tudo"); return; }
+    const u = new SpeechSynthesisUtterance(texts[i]);
+    u.lang = "pt-BR"; u.rate = 1.02; u.pitch = 0.8;
+    u.onend = () => { i++; next(); };
+    u.onerror = () => { SPEAKING=false; setNarrarBtn("🔊 Narrar tudo"); };
+    window.speechSynthesis.speak(u);
+  };
+  next();
+}
+function setNarrarBtn(txt){
+  const b = document.getElementById("btnNarrar");
+  if(b) b.textContent = txt;
+}
+function narrarCena(txt, btn){
+  if(!window.speechSynthesis){ alert("Seu navegador não tem voz disponível 😢"); return; }
+  window.speechSynthesis.cancel(); SPEAKING=false; setNarrarBtn("🔊 Narrar tudo");
+  const u = new SpeechSynthesisUtterance(txt);
+  u.lang = "pt-BR"; u.rate = 1.02; u.pitch = 0.8;
+  u.onend = () => { btn.textContent = "🔊 narrar"; };
+  btn.textContent = "⏹ parar";
+  window.speechSynthesis.speak(u);
+}
+
+function esc(s){
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+function render(r, scroll){
+  const out = document.getElementById("output");
+  syncImageArrays(r.scenes.length);
+  let html = "";
+
+  /* barra de ferramentas */
+  html += '<div class="toolbar">';
+  html += '<span class="var-badge">🎬 Variação #' + VARIACAO + ' · estilo ' + esc(r.estiloNome) + '</span>';
+  if(r.pesq) html += r.pesqFonte === "ia"
+    ? '<span class="var-badge" style="border-color:#5b4a8a; color:#b3a5e8;">🧠 +' + r.pesq + ' histórias únicas de IA</span>'
+    : '<span class="var-badge" style="border-color:#2e7d4f; color:#8fd0a0;">🔎 +' + r.pesq + ' casos reais da internet</span>';
+  html += '<button class="btn btn-ghost" id="btnRegen">🎲 Gerar outra variação</button>';
+  html += '<button class="btn btn-ghost" id="btnNarrar">🔊 Narrar tudo</button>';
+  html += '<button class="btn btn-ghost" id="btnCopyAll">📋 Copiar roteiro completo</button>';
+  html += '<button class="btn btn-ghost" id="btnCopyNar" style="border-color:#8a0f16; color:#ff8b93">🗣️ Copiar SÓ a narração</button>';
+  html += '<button class="btn btn-ghost" id="btnTxt">⬇️ Baixar .txt</button>';
+  html += '</div>';
+
+  /* card de metadados */
+  html += '<div class="card"><h3>📌 Pacote viral</h3>';
+  r.titulos.forEach(t => {
+    html += '<div class="tit-item"><span>“' + esc(t) + '”</span><button class="btn btn-ghost btn-sm copy-tit">copiar</button></div>';
+  });
+  html += '<p class="mini-info" style="margin-top:12px;"><b>Descrição:</b> Parte 1 — ' + esc(r.tema) + ' em ' + esc(r.cidade) + '. As imagens vazaram. 😳</p>';
+  html += '<p class="hashtags">' + esc(r.hashtags) + '</p>';
+  html += '<div class="creature-box">👹 <b>A criatura</b> (mantenha essa aparência em TODAS as imagens): <b>' + esc(r.ent.visPt) + '</b></div>';
+  html += '<div class="anchor-box">🎭 <b>Âncora visual</b> — já vai escondida em todos os prompts (bem difícil de achar, pra galera reassistir caçando): <b>' + esc(r.ancora) + '</b></div>';
+  html += '<p class="mini-info" style="margin-top:10px;">🎙️ <b>Direção de voz:</b> ' + esc(r.direcaoVoz) + '</p>';
+  html += '<div style="margin-top:12px;"><b style="font-size:13px; color:var(--dim);">PROMPT DA CAPA / THUMBNAIL:</b>';
+  html += '<div class="prompt-box">' + esc(r.thumbnail) + '</div>';
+  html += '<div class="scene-actions"><button class="btn btn-ghost btn-sm" id="btnCopyThumb">copiar prompt da capa</button></div></div>';
+  html += '</div>';
+
+  /* cenas */
+  r.scenes.forEach((s, i) => {
+    html += '<div class="scene">';
+    html += '<div class="scene-head">';
+    html += '<span class="scene-num">CENA ' + (i+1) + '/' + r.scenes.length + '</span>';
+    html += '<span class="beat-label">' + esc(s.label) + '</span>';
+    html += '<span class="scene-num">📍 ' + esc(s.locNome) + '</span>';
+    html += '<span class="scene-dur">~' + s.dur + 's</span>';
+    html += '</div>';
+    html += '<p class="narr">' + esc(s.nar) + (s.retention ? ' <span class="retention">' + esc(s.retention) + '</span>' : '') + '</p>';
+    html += '<span class="overlay-chip">📺 texto na tela: ' + esc(s.txt) + '</span>';
+    s.shots.forEach((sh, k) => {
+      html += '<p class="shot-pt">🎥 <b>IMAGEM ' + (k+1) + (k===0 ? ' (primeira metade da cena)' : ' (troca no meio da cena)') + ':</b> ' + esc(sh.pt) + '</p>';
+      html += '<div class="prompt-box">' + esc(sh.en) + '</div>';
+      html += '<div class="scene-actions" style="margin-top:6px">';
+      html += '<button class="btn btn-ghost btn-sm img-pick" data-i="'+i+'" data-s="'+k+'">🖼️ subir imagem ' + (k+1) + '</button>';
+      const have = SCENE_IMG_SRC[i] && SCENE_IMG_SRC[i][k];
+      if(have) html += '<img class="img-thumb" data-thumb="'+i+'-'+k+'" src="'+have+'" alt="imagem '+(k+1)+'">';
+      else html += '<span class="img-empty" data-thumb="'+i+'-'+k+'">sem imagem '+(k+1)+'</span>';
+      html += '<button class="btn btn-ghost btn-sm copy-prompt" data-k="'+k+'">📋 copiar prompt ' + (k+1) + '</button>';
+      html += '</div>';
+    });
+    html += '<p class="tom">🎙️ <b>Tom de voz:</b> ' + esc(s.tom) + '</p>';
+    html += '<div class="scene-actions">';
+    html += '<button class="btn btn-ghost btn-sm copy-nar" data-i="'+i+'">📋 copiar narração</button>';
+    html += '<button class="btn btn-ghost btn-sm narr-scene">🔊 narrar esta cena</button>';
+    html += '</div>';
+    html += '</div>';
+  });
+
+  /* ESTÚDIO DE VÍDEO */
+  html += '<div class="card" id="studio">';
+  html += '<h3>🎬 ESTÚDIO DE VÍDEO — montagem automática</h3>';
+  html += '<p class="mini-info">Suba as <b>2 imagens de cada cena</b> (o vídeo alterna entre elas no meio da cena, com glitch), adicione a narração, e o app monta o vídeo <b>9:16</b> sozinho com zoom cinematográfico, transições, granulado, legendas animadas estilo TikTok, pulsação vermelha nos momentos tensos e trilha de suspense.</p>';
+
+  html += '<div class="scene-actions" style="margin-top:12px">';
+  html += '<button class="btn btn-ghost btn-sm" id="btnAllImages">🖼️ subir várias de uma vez (2 por cena, na ordem)</button>';
+  html += '<button class="btn btn-primary btn-sm" id="btnAutoAssign" style="width:auto; margin-top:0">🧠 COLOCAR IMAGENS AUTOMATICAMENTE</button>';
+  html += '</div>';
+  html += '<p class="mini-info" id="assignStatus" style="margin-top:8px">Joga todas as imagens que você gerou de uma vez — o app detecta qual pertence a cada cena e coloca na ordem. Com chave Gemini ele usa IA pra reconhecer o conteúdo; sem chave, usa a ordem dos arquivos.</p>';
+  html += '<input type="file" id="imgPickerAuto" accept="image/*" multiple style="display:none">';
+
+  html += '<div style="margin-top:16px; background:#12101c; border:1px solid #33284a; border-radius:12px; padding:14px 16px">';
+  html += '<h3 style="margin-bottom:8px">🤖 NARRAÇÃO AUTOMÁTICA — GEMINI</h3>';
+  html += '<p class="mini-info">Sem gravar voz: a IA narra o roteiro inteiro com voz de terror. Cola sua chave gratuita de <b>aistudio.google.com → Get API key</b>, escolhe a voz e gera. O áudio já entra como narração do vídeo.</p>';
+  html += '<label>Chave da API do Gemini</label>';
+  html += '<input type="password" id="geminiKey" placeholder="AIza..." autocomplete="off">';
+  html += '<div class="row" style="margin-top:10px">';
+  html += '<div><label>Voz</label><select id="geminiVoice">';
+  html += '<option value="Charon">Charon — grave e pesada (ideal terror)</option>';
+  html += '<option value="Fenrir">Fenrir — intensa e agressiva</option>';
+  html += '<option value="Orus">Orus — firme e firme</option>';
+  html += '<option value="Puck">Puck — rápida e energética</option>';
+  html += '<option value="Kore">Kore — feminina dramática</option>';
+  html += '<option value="Leda">Leda — feminina firme</option>';
+  html += '<option value="Aoede">Aoede — feminina sombria</option>';
+  html += '<option value="Zephyr">Zephyr — feminina suave</option>';
+  html += '</select></div>';
+  html += '<div style="display:flex; align-items:flex-end"><button class="btn btn-primary" id="btnGemini" style="margin-top:0">🎙️ GERAR NARRAÇÃO COM IA</button></div>';
+  html += '</div>';
+  html += '<p class="mini-info" id="geminiStatus" style="margin-top:8px"></p>';
+  html += '</div>';
+
+  html += '<div class="studio-grid">';
+  html += '<div>';
+  html += '<label style="margin-top:0">🎙️ Narração / áudio do vídeo</label>';
+  html += '<select id="audioMode">';
+  html += '<option value="none">Sem áudio</option>';
+  html += '<option value="file">Enviar arquivo (mp3 / wav / m4a)</option>';
+  html += '<option value="mic">Gravar no microfone</option>';
+  html += '</select>';
+  html += '<div id="audioFileWrap" style="display:none; margin-top:10px"><input type="file" id="audioFile" accept="audio/*"></div>';
+  html += '<div id="micWrap" style="display:none; margin-top:10px">';
+  html += '<button class="btn btn-ghost btn-sm" id="btnMic">⏺ Gravar narração</button> ';
+  html += '<span id="micStatus" class="mini-info"></span>';
+  html += '</div>';
+  html += '<div id="narrInfo" style="display:none"></div>';
+  html += '</div>';
+
+  html += '<div>';
+  html += '<label style="margin-top:0">✨ Efeitos viciantes</label>';
+  html += '<label class="chk"><input type="checkbox" id="chkFxZoom" checked> Zoom cinematográfico (Ken Burns)</label>';
+  html += '<label class="chk"><input type="checkbox" id="chkFxGlitch" checked> Glitch + flash nas transições</label>';
+  html += '<label class="chk"><input type="checkbox" id="chkFxGrain" checked> Granulado + vinheta</label>';
+  html += '<label class="chk"><input type="checkbox" id="chkCaptions" checked> Legendas animadas (palavra por palavra)</label>';
+  html += '<label class="chk"><input type="checkbox" id="chkAmbience" checked> Trilha de suspense automática (drone + batidas)</label>';
+  html += '<label>Seu @ (marca d\'água no topo)</label>';
+  html += '<input type="text" id="handle" placeholder="@seunarrador" value="@onarradorsinistro">';
+  html += '</div>';
+  html += '</div>';
+
+  html += '<div class="scene-actions" style="margin-top:16px">';
+  html += '<button class="btn btn-primary" id="btnVideo" style="width:auto; margin-top:0">🎥 MONTAR VÍDEO AGORA</button>';
+  html += '<button class="btn btn-ghost" id="btnPreview">▶ Só preview (sem gravar)</button>';
+  html += '</div>';
+  html += '<p class="mini-info" style="margin-top:8px">A gravação acontece em tempo real (~duração do vídeo). Mantém a aba aberta até terminar. Depois de pronto: assiste no player e baixa em MP4 🎞️</p>';
+
+  html += '<div id="videoProgressWrap" style="display:none; margin-top:12px">';
+  html += '<div class="progress"><div class="progress-fill" id="videoProgress"></div></div>';
+  html += '<p class="mini-info" id="videoStatus" style="margin-top:6px">preparando...</p>';
+  html += '</div>';
+
+  html += '<div style="text-align:center; margin-top:14px"><canvas id="videoCanvas" width="'+VW+'" height="'+VH+'" style="display:none"></canvas></div>';
+  html += '<div id="videoResult" style="display:none; margin-top:14px; text-align:center"></div>';
+  html += '<input type="file" id="imgPicker" accept="image/*" multiple style="display:none">';
+  html += '</div>';
+
+  out.innerHTML = html;
+
+  /* eventos */
+  document.getElementById("btnRegen").onclick = () => gerarAgora(true);
+  document.getElementById("btnNarrar").onclick = narrarTudo;
+  document.getElementById("btnCopyAll").onclick = () => copyText(exportTxt(LAST), "Roteiro completo copiado! 📋");
+  document.getElementById("btnCopyNar").onclick = () => copyText(narrationText(LAST), "Narração copiada! 🗣️");
+  document.getElementById("btnCopyThumb").onclick = () => copyText(LAST.thumbnail, "Prompt da capa copiado! 🖼️");
+  document.getElementById("btnTxt").onclick = () => {
+    const blob = new Blob([exportTxt(LAST)], {type:"text/plain;charset=utf-8"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "roteiro-" + slug(LAST.cidade) + "-variacao" + VARIACAO + ".txt";
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+  };
+  out.querySelectorAll(".copy-tit").forEach((b, idx) => {
+    b.onclick = () => copyText(LAST.titulos[idx], "Título copiado! 📌");
+  });
+  out.querySelectorAll(".copy-nar").forEach((b) => {
+    b.onclick = () => {
+      const s = LAST.scenes[+b.dataset.i];
+      copyText(s.nar, "Narração da cena " + (+b.dataset.i+1) + " copiada! 🗣️");
+    };
+  });
+  out.querySelectorAll(".narr-scene").forEach((b) => {
+    b.onclick = () => {
+      const nar = LAST.scenes[Array.from(out.querySelectorAll(".narr-scene")).indexOf(b)].nar;
+      narrarCena(nar, b);
+    };
+  });
+
+  /* estúdio de vídeo: imagens por cena (2 slots) */
+  const imgPicker = document.getElementById("imgPicker");
+  let imgPickIdx = 0, imgPickSlot = 0, imgPickAll = false;
+  out.querySelectorAll(".img-pick").forEach((b) => {
+    b.onclick = () => { imgPickIdx = +b.dataset.i; imgPickSlot = +b.dataset.s; imgPickAll = false; imgPicker.value=""; imgPicker.click(); };
+  });
+  document.getElementById("btnAllImages").onclick = () => { imgPickAll = true; imgPicker.value=""; imgPicker.click(); };
+  const imgPickerAuto = document.getElementById("imgPickerAuto");
+  document.getElementById("btnAutoAssign").onclick = () => { imgPickerAuto.value=""; imgPickerAuto.click(); };
+  imgPickerAuto.onchange = () => {
+    const files = Array.from(imgPickerAuto.files||[]);
+    if(files.length) autoAssignImages(files);
+  };
+  imgPicker.onchange = () => {
+    const files = Array.from(imgPicker.files||[]);
+    if(!files.length) return;
+    if(imgPickAll){
+      /* 2 por cena, na ordem: arquivo 2i e 2i+1 vão pra cena i */
+      files.forEach((f,i)=>{
+        const cena = Math.floor(i/2), slot = i%2;
+        if(cena < LAST.scenes.length) setSceneImage(cena, slot, f);
+      });
+      toastMsg(files.length + " imagem(ns) aplicadas (2 por cena)! 🖼️");
+    } else {
+      setSceneImage(imgPickIdx, imgPickSlot, files[0]);
+      toastMsg("Imagem " + (imgPickSlot+1) + " da cena " + (imgPickIdx+1) + " aplicada! 🖼️");
+    }
+  };
+
+  /* copiar prompt 1 ou 2 da cena */
+  out.querySelectorAll(".copy-prompt").forEach((b) => {
+    b.onclick = () => {
+      const k = +b.dataset.k;
+      const boxes = b.closest(".scene").querySelectorAll(".prompt-box");
+      if(boxes[k]) copyText(boxes[k].textContent, "Prompt " + (k+1) + " copiado! 🎨");
+    };
+  });
+
+  /* narração automática Gemini */
+  const gk = document.getElementById("geminiKey");
+  try{
+    const savedKey = localStorage.getItem("ns_gemini_key");
+    if(savedKey) gk.value = savedKey;
+    const savedVoice = localStorage.getItem("ns_gemini_voice");
+    if(savedVoice) document.getElementById("geminiVoice").value = savedVoice;
+  }catch(e){}
+  document.getElementById("btnGemini").onclick = gerarNarracaoGemini;
+
+  /* estúdio: áudio / narração */
+  const audioMode = document.getElementById("audioMode");
+  const fileWrap = document.getElementById("audioFileWrap");
+  const micWrap = document.getElementById("micWrap");
+  audioMode.onchange = () => {
+    fileWrap.style.display = audioMode.value === "file" ? "block" : "none";
+    micWrap.style.display = audioMode.value === "mic" ? "block" : "none";
+  };
+  if(NARRATION_BLOB && NARRATION_NAME === "narração gravada no microfone"){ audioMode.value = "mic"; micWrap.style.display="block"; }
+  document.getElementById("audioFile").onchange = (e) => {
+    const f = e.target.files[0];
+    if(!f) return;
+    NARRATION_BLOB = f; NARRATION_NAME = f.name;
+    NARRATION_META = null;
+    updateNarrInfo();
+    toastMsg("Narração carregada! 🎙️");
+  };
+  document.getElementById("btnMic").onclick = toggleMic;
+  updateNarrInfo();
+
+  /* estúdio: gerar vídeo / preview */
+  document.getElementById("btnVideo").onclick = () => renderVideo(true);
+  document.getElementById("btnPreview").onclick = () => renderVideo(false);
+  if(LAST_VIDEO_URL) showVideoResult();
+
+  if(scroll !== false){ out.scrollIntoView({behavior:"smooth", block:"start"}); }
+}
+
+/* ---------- auto-organização de imagens ---------- */
+const VISION_MODELS = ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash"];
+function fileToB64Resized(file, maxSide){
+  maxSide = maxSide || 768;
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file);
+    const im = new Image();
+    im.onload = () => {
+      let w = im.width, h = im.height;
+      const k = Math.min(1, maxSide/Math.max(w,h));
+      w = Math.round(w*k); h = Math.round(h*k);
+      const c = document.createElement("canvas"); c.width = w; c.height = h;
+      c.getContext("2d").drawImage(im, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      const dataUrl = c.toDataURL("image/jpeg", 0.85);
+      res(dataUrl.split(",")[1]);
+    };
+    im.onerror = () => { URL.revokeObjectURL(url); rej(new Error("imagem inválida")); };
+    im.src = url;
+  });
+}
+function sortAssign(files, st){
+  const arr = Array.from(files);
+  const hasNum = arr.some(f => /\d+/.test(f.name));
+  arr.sort((a,b) => {
+    const na = (a.name.match(/\d+/)||[])[0], nb = (b.name.match(/\d+/)||[])[0];
+    if(hasNum && na !== undefined && nb !== undefined) return parseInt(na,10) - parseInt(nb,10);
+    return a.lastModified - b.lastModified;
+  });
+  let placed = 0;
+  arr.forEach((f,i) => {
+    const cena = Math.floor(i/2), slot = i%2;
+    if(cena < LAST.scenes.length){ setSceneImage(cena, slot, f); placed++; }
+  });
+  st.innerHTML = "✅ <b>" + placed + " imagens colocadas na ordem dos arquivos</b> (" + Math.ceil(placed/2) + " cenas). Confere as miniaturas — se alguma ficou trocada, usa os botões 🖼️ da cena pra corrigir.";
+}
+function parseAssignJSON(text){
+  const i0 = text.indexOf("{"), i1 = text.lastIndexOf("}");
+  if(i0 === -1 || i1 === -1) throw new Error("resposta sem JSON");
+  return JSON.parse(text.slice(i0, i1+1));
+}
+async function geminiAssign(files, key, st){
+  if(files.length > 16){ st.textContent = "⚠️ máximo de 16 imagens por vez pra IA — usando as 16 primeiras."; files = files.slice(0,16); }
+  const desc = LAST.scenes.map((s,i) =>
+    "CENA " + (i+1) + " [" + s.label + "] — narração: " + s.nar + " | IMAGEM1 ideal: " + s.shots[0].pt + " | IMAGEM2 ideal: " + s.shots[1].pt
+  ).join("\n");
+  const parts = [{ text: desc + "\n\nAgora vou enviar " + files.length + " imagens geradas. Analise o CONTEÚDO de cada uma e associe à cena/slot que ela melhor representa. Responda SOMENTE um JSON neste formato: {\"assign\":[{\"img\":1,\"cena\":1,\"slot\":1}]} — img é o número da imagem na ordem enviada (começa em 1), cena de 1 a " + LAST.scenes.length + ", slot 1 ou 2." }];
+  for(const f of files){
+    st.textContent = "preparando imagem: " + f.name + "...";
+    const b64 = await fileToB64Resized(f, 768);
+    parts.push({ inlineData: { mimeType: "image/jpeg", data: b64 } });
+  }
+  let j = null, lastErr = null;
+  for(const m of VISION_MODELS){
+    try{
+      st.textContent = "IA reconhecendo as imagens (" + m + ")...";
+      const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + m + ":generateContent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+        body: JSON.stringify({ contents: [{ parts }] }),
+      });
+      if(!res.ok){
+        const ej = await res.json().catch(()=>({}));
+        throw new Error((ej.error && ej.error.message) || ("HTTP " + res.status));
+      }
+      j = await res.json();
+      break;
+    }catch(e){ lastErr = e; }
+  }
+  if(!j) throw lastErr || new Error("falha na IA");
+  const txt = (j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts || [])
+    .map(p => p.text || "").join("");
+  const parsed = parseAssignJSON(txt);
+  const used = new Set();
+  let placed = 0;
+  (parsed.assign || []).forEach(a => {
+    const idx = (a.img||0) - 1, cena = (a.cena||0) - 1, slot = Math.min(1, Math.max(0, (a.slot||1) - 1));
+    if(idx < 0 || idx >= files.length || cena < 0 || cena >= LAST.scenes.length) return;
+    let s2 = slot;
+    if(used.has(cena + "-" + s2)) s2 = used.has(cena + "-0") ? null : 0;
+    if(s2 === null){ s2 = used.has(cena+"-1") ? null : 1; }
+    if(s2 === null) return;
+    used.add(cena + "-" + s2);
+    setSceneImage(cena, s2, files[idx]);
+    placed++;
+  });
+  /* preenche buracos com imagens que a IA não usou */
+  const usedIdx = new Set((parsed.assign||[]).map(a => (a.img||0)-1));
+  const leftover = files.filter((f,i) => !usedIdx.has(i));
+  for(let c=0; c<LAST.scenes.length && leftover.length; c++){
+    for(let s=0; s<2 && leftover.length; s++){
+      if(!used.has(c + "-" + s) && !(SCENE_IMG_SRC[c] && SCENE_IMG_SRC[c][s])){
+        setSceneImage(c, s, leftover.shift());
+        used.add(c + "-" + s);
+        placed++;
+      }
+    }
+  }
+  st.innerHTML = "🧠 ✅ <b>IA posicionou " + placed + " imagens nas cenas certas!</b> Dá uma olhada nas miniaturas — se alguma ficou trocada, clica em 🖼️ na cena pra substituir.";
+}
+async function autoAssignImages(files){
+  if(!LAST || !files || !files.length) return;
+  const st = document.getElementById("assignStatus");
+  const key = (document.getElementById("geminiKey").value || "").trim();
+  if(key){
+    try{ await geminiAssign(Array.from(files), key, st); toastMsg("Imagens posicionadas pela IA! 🧠"); return; }
+    catch(e){
+      st.textContent = "IA não conseguiu (" + e.message + ") — usando a ordem dos arquivos...";
+    }
+  }
+  sortAssign(files, st);
+  toastMsg("Imagens organizadas! 🖼️");
+}
+function baixarBlobUrl(url, filename){
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>a.remove(), 2000);
+}
+function showVideoResult(){
+  const res = document.getElementById('videoResult');
+  if(!res || !LAST_VIDEO_URL) return;
+  res.style.display = 'block';
+  const base = 'video-' + slug(LAST ? LAST.cidade : 'cidade') + '-v' + VARIACAO;
+  let html = '<video controls playsinline src="' + LAST_VIDEO_URL + '" style="width:min(300px,82%); border-radius:14px; border:1px solid var(--line); box-shadow:0 12px 40px rgba(0,0,0,.6); background:#000"></video>';
+  html += '<div class="scene-actions" style="justify-content:center; margin-top:12px">';
+  if(LAST_VIDEO_EXT === 'mp4'){
+    html += '<button class="btn btn-primary" id="btnDlOrig" style="width:auto; margin-top:0">⬇️ BAIXAR VÍDEO (.mp4)</button>';
+  } else {
+    html += '<button class="btn btn-primary" id="btnDlOrig" style="width:auto; margin-top:0">⬇️ BAIXAR VÍDEO (.' + LAST_VIDEO_EXT + ')</button>';
+    html += '<button class="btn btn-ghost" id="btnDlMp4">🎞️ Baixar em MP4</button>';
+  }
+  html += '</div>';
+  html += '<p class="mini-info" id="mp4Status" style="margin-top:8px"></p>';
+  res.innerHTML = html;
+  document.getElementById('btnDlOrig').onclick = () => baixarBlobUrl(LAST_VIDEO_URL, base + '.' + LAST_VIDEO_EXT);
+  const b2 = document.getElementById('btnDlMp4');
+  if(b2) b2.onclick = () => converterParaMp4(base);
+}
+function loadScript(src){
+  return new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = src; s.onload = res;
+    s.onerror = () => rej(new Error('não consegui baixar o conversor — precisa de internet'));
+    document.head.appendChild(s);
+  });
+}
+async function loadFFmpeg(){
+  if(window._ffmpegInst) return window._ffmpegInst;
+  const st = document.getElementById('mp4Status');
+  if(!window.FFmpegWASM){
+    if(st) st.textContent = '⬇️ baixando conversor MP4 (só na 1ª vez)...';
+    await loadScript('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js');
+    await loadScript('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/index.js');
+  }
+  const { FFmpeg } = window.FFmpegWASM;
+  const { toBlobURL } = window.FFmpegUtil;
+  const ffmpeg = new FFmpeg();
+  if(st) st.textContent = '⬇️ carregando núcleo do conversor (~30MB, só na 1ª vez)...';
+  const core = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd';
+  const libDir = 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd';
+  await ffmpeg.load({
+    coreURL: await toBlobURL(core + '/ffmpeg-core.js', 'text/javascript'),
+    wasmURL: await toBlobURL(core + '/ffmpeg-core.wasm', 'application/wasm'),
+    /* Worker precisa ser same-origin: baixa como blob em vez de apontar pro CDN */
+    classWorkerURL: await toBlobURL(libDir + '/814.ffmpeg.js', 'text/javascript'),
+  });
+  window._ffmpegInst = ffmpeg;
+  return ffmpeg;
+}
+async function converterParaMp4(base){
+  if(MP4_BUSY || !LAST_VIDEO_BLOB) return;
+  MP4_BUSY = true;
+  const st = document.getElementById('mp4Status');
+  const btn = document.getElementById('btnDlMp4');
+  if(btn){ btn.disabled = true; btn.style.opacity = .5; }
+  try{
+    const ffmpeg = await loadFFmpeg();
+    const { fetchFile } = window.FFmpegUtil;
+    const onProg = (ev) => { if(st) st.textContent = '🎞️ convertendo pra MP4... ' + Math.round((ev.progress||0)*100) + '%'; };
+    ffmpeg.on('progress', onProg);
+    const inputName = 'in.' + LAST_VIDEO_EXT;
+    await ffmpeg.writeFile(inputName, await fetchFile(LAST_VIDEO_BLOB));
+    await ffmpeg.exec(['-i', inputName, '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '23', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '128k', 'out.mp4']);
+    const data = await ffmpeg.readFile('out.mp4');
+    await ffmpeg.deleteFile(inputName).catch(()=>{});
+    await ffmpeg.deleteFile('out.mp4').catch(()=>{});
+    ffmpeg.off('progress', onProg);
+    const mp4 = new Blob([data], {type:'video/mp4'});
+    if(LAST_MP4_URL) URL.revokeObjectURL(LAST_MP4_URL);
+    LAST_MP4_URL = URL.createObjectURL(mp4);
+    if(st) st.innerHTML = '✅ <b>MP4 pronto!</b> (' + (mp4.size/1024/1024).toFixed(1) + ' MB) — começando o download...';
+    baixarBlobUrl(LAST_MP4_URL, base + '.mp4');
+  }catch(e){
+    if(st) st.textContent = '❌ não consegui converter (' + (e.message || e) + '). Tenta de novo em instantes — ou usa o botão do formato original acima.';
+  } finally {
+    MP4_BUSY = false;
+    if(btn){ btn.disabled = false; btn.style.opacity = 1; }
+  }
+}
+/* ---------- init ---------- */
+if(typeof document !== "undefined"){
+  document.addEventListener("DOMContentLoaded", () => {
+    const slider = document.getElementById("cenas");
+    slider.addEventListener("input", () => {
+      document.getElementById("cenasVal").textContent = slider.value;
+    });
+    document.getElementById("btnGerar").onclick = () => gerarAgora(true);
+    document.getElementById("tema").addEventListener("keydown", e => { if(e.key === "Enter") gerarAgora(true); });
+    document.getElementById("btnExemplo").onclick = () => {
+      document.getElementById("tema").value = "epidemia zumbi";
+      gerarAgora(false);
+    };
+    try{
+      const saved = JSON.parse(localStorage.getItem("ns_cfg") || "null");
+      if(saved){
+        document.getElementById("tema").value = saved.tema || "";
+        document.getElementById("entidade").value = saved.entidade || "";
+        if(saved.cidade) document.getElementById("cidade").value = saved.cidade;
+        if(saved.estilo) document.getElementById("estilo").value = saved.estilo;
+        if(saved.cenas){ slider.value = saved.cenas; document.getElementById("cenasVal").textContent = saved.cenas; }
+      }
+    }catch(e){}
+
+    /* ⚡ criação automática: gera ao abrir e regenera sozinho quando qualquer opção muda */
+    const temaEl = document.getElementById("tema");
+    if(!temaEl.value.trim()) temaEl.value = "epidemia zumbi";
+    gerarAgora(false);
+
+    let debTimer = null;
+    /* 🔎 pesquisa de histórias reais */
+    const chkPesquisa = document.getElementById("chkPesquisa");
+    try{ chkPesquisa.checked = localStorage.getItem("ns_pesquisa") === "1"; }catch(e){}
+    chkPesquisa.addEventListener("change", () => {
+      try{ localStorage.setItem("ns_pesquisa", chkPesquisa.checked ? "1" : "0"); }catch(e){}
+      if(chkPesquisa.checked){ if(PESQUISA) gerarAgora(false); else pesquisarHistorias(); }
+      else gerarAgora(false);
+    });
+    document.getElementById("btnPesquisar").addEventListener("click", () => pesquisarHistorias());
+
+    const autoGen = () => {
+      clearTimeout(debTimer); debTimer = setTimeout(() => gerarAgora(false), 600);
+      /* se a pesquisa tá ligada e o tema mudou, re-pesquisa depois de 3s parado */
+      clearTimeout(window._pesqTimer);
+      if(chkPesquisa.checked && getGeminiKeyPesq()){
+        window._pesqTimer = setTimeout(() => {
+          const tema = document.getElementById("tema").value.trim();
+          const cidade = document.getElementById("cidade").value.trim() || "Salvador";
+          if(tema && (!PESQUISA || PESQUISA.temaKey !== (tema + "|" + cidade).toLowerCase())) pesquisarHistorias();
+        }, 3000);
+      }
+    };
+    ["tema","entidade","cidade"].forEach(id => document.getElementById(id).addEventListener("input", autoGen));
+    ["estilo","cenas"].forEach(id => document.getElementById(id).addEventListener("input", autoGen));
+  });
+}
+</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2ff90770b374a71',t:'MTc4NzU0NTIyNA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
