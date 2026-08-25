@@ -290,82 +290,6 @@ body {
 .nav-btn.active.ai-tab .nav-btn-title { color: #a5b4fc; }
 .nav-btn.active.ai-tab .nav-btn-icon-wrap { background: rgba(129, 140, 248, 0.2); color: #818cf8; }
 
-.nav-btn.active.voz-tab {
-  background: linear-gradient(90deg, rgba(0, 242, 254, 0.15) 0%, rgba(0, 242, 254, 0.04) 100%);
-  border-color: rgba(0, 242, 254, 0.35);
-  box-shadow: 0 4px 16px rgba(0, 242, 254, 0.12), inset 0 0 12px rgba(0, 242, 254, 0.05);
-}
-.nav-btn.active.voz-tab .nav-btn-title { color: #7dd3fc; }
-.nav-btn.active.voz-tab .nav-btn-icon-wrap { background: rgba(0, 242, 254, 0.2); color: #00f2fe; }
-
-/* ---- ABA 4: GERADOR DE VOZ ---- */
-#tabVozContent {
-  background: var(--panel-bg);
-  backdrop-filter: blur(20px);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  padding: 20px 24px;
-  height: calc(100vh - 32px);
-  box-sizing: border-box;
-  overflow-y: auto;
-}
-#tabVozContent.active { display: block; }
-.voz-theme h2 {
-  background: linear-gradient(135deg, #ffffff 0%, #38bdf8 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-#tabVozContent .voz-wrap { max-width: 980px; margin: 0 auto; }
-#tabVozContent .voz-btn {
-  border: 0; border-radius: var(--radius-sm); padding: 12px 20px; color: #fff;
-  font-weight: 700; font-size: .95rem; cursor: pointer; transition: all .2s;
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-  box-shadow: 0 4px 14px rgba(2,132,199,.35);
-}
-#tabVozContent .voz-btn:hover:not(:disabled) { filter: brightness(1.12); transform: translateY(-1px); }
-#tabVozContent .voz-btn:disabled { background: #334155; cursor: not-allowed; box-shadow: none; filter: none; transform: none; }
-#tabVozContent .voz-btn.sec {
-  background: rgba(255,255,255,.04); color: #cbd5e1;
-  border: 1px solid rgba(255,255,255,.12); box-shadow: none;
-}
-#tabVozContent .voz-btn.sec:hover { background: rgba(255,255,255,.09); color: #fff; }
-#tabVozContent .voz-item .download-link { padding: 8px 12px; font-size: .8rem; }
-#tabVozContent .voz-grid { display: grid; grid-template-columns: 1fr 300px; gap: 18px; align-items: start; }
-@media (max-width: 900px) { #tabVozContent .voz-grid { grid-template-columns: 1fr; } }
-#tabVozContent textarea.voz-texto {
-  width: 100%; min-height: 230px; resize: vertical; font: inherit; line-height: 1.6;
-  background: rgba(6, 9, 17, .75); color: var(--text-main);
-  border: 1px solid var(--card-border); border-radius: var(--radius-md); padding: 14px;
-}
-#tabVozContent textarea.voz-texto:focus { outline: none; border-color: rgba(0,242,254,.45); }
-#tabVozContent .voz-contador { font-size: .74rem; color: var(--text-dim); text-align: right; margin-top: 6px; }
-#tabVozContent .voz-contador.alerta { color: var(--accent-yellow); }
-#tabVozContent .voz-lista { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
-#tabVozContent .voz-item {
-  display: flex; align-items: center; gap: 12px; padding: 12px 14px;
-  background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius-md);
-}
-#tabVozContent .voz-item .vi-num {
-  flex: 0 0 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
-  background: rgba(0,242,254,.14); color: #7dd3fc; font-size: .72rem; font-weight: 800;
-}
-#tabVozContent .voz-item .vi-txt { flex: 1; min-width: 0; font-size: .82rem; color: var(--text-muted); }
-#tabVozContent .voz-item .vi-txt b { color: var(--text-main); display: block; font-weight: 600;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#tabVozContent .voz-item audio { height: 34px; max-width: 260px; }
-#tabVozContent .voz-status {
-  margin-top: 14px; font-size: .82rem; color: var(--text-muted); min-height: 20px;
-  display: flex; align-items: center; gap: 8px;
-}
-#tabVozContent .voz-bar { height: 4px; background: rgba(255,255,255,.06); border-radius: 99px; overflow: hidden; margin-top: 10px; }
-#tabVozContent .voz-bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg,#00f2fe,#38bdf8); transition: width .25s; }
-#tabVozContent .voz-dica {
-  font-size: .74rem; color: var(--text-dim); line-height: 1.5;
-  border-top: 1px solid var(--border-subtle); padding-top: 12px; margin-top: 14px;
-}
-#tabVozContent .voz-dica code { background: rgba(0,0,0,.35); padding: 2px 6px; border-radius: 4px; }
-
 .nav-btn.active.downloader-tab {
   background: linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.04) 100%);
   border-color: rgba(16, 185, 129, 0.35);
@@ -373,25 +297,6 @@ body {
 }
 .nav-btn.active.downloader-tab .nav-btn-title { color: #34d399; }
 .nav-btn.active.downloader-tab .nav-btn-icon-wrap { background: rgba(16, 185, 129, 0.2); color: #10b981; }
-
-.nav-btn.active.narrador-tab {
-  background: linear-gradient(90deg, rgba(255, 59, 70, 0.15) 0%, rgba(255, 59, 70, 0.04) 100%);
-  border-color: rgba(255, 59, 70, 0.35);
-  box-shadow: 0 4px 16px rgba(255, 59, 70, 0.12), inset 0 0 12px rgba(255, 59, 70, 0.05);
-}
-.nav-btn.active.narrador-tab .nav-btn-title { color: #ff5d67; }
-.nav-btn.active.narrador-tab .nav-btn-icon-wrap { background: rgba(255, 59, 70, 0.2); color: #ff3b46; }
-
-/* =========================================================================
-   ABA 5: NARRADOR SINISTRO (app completo isolado em narrador.html via iframe)
-   ========================================================================= */
-#tabNarradorContent { height: calc(100vh - 32px); width: 100%; }
-.narrador-frame-wrap { position: relative; width: 100%; height: 100%; border-radius: var(--radius-lg); overflow: hidden; background: #07070b; border: 1px solid rgba(255, 59, 70, 0.22); box-shadow: 0 18px 44px rgba(0,0,0,.45); }
-#narradorFrame { width: 100%; height: 100%; border: 0; display: block; background: #07070b; }
-.narrador-loading { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: #ff5d67; font-weight: 800; letter-spacing: .5px; background: radial-gradient(circle at 50% 30%, rgba(255,59,70,.08), transparent 60%), #07070b; z-index: 2; }
-.narrador-loading .skull { font-size: 44px; animation: narrPulse 1.4s ease-in-out infinite; }
-@keyframes narrPulse { 0%,100% { transform: scale(1); opacity: .85; } 50% { transform: scale(1.12); opacity: 1; } }
-@media (max-width: 900px) { #tabNarradorContent { height: calc(100vh - 24px); } }
 
 /* Storage Location Card */
 .save-location-box {
@@ -1742,16 +1647,6 @@ video#sourceVideo { display: none; }
         </div>
       </button>
 
-      <button class="nav-btn voz-tab" id="tabBtnVoz">
-        <div class="nav-btn-icon-wrap">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"></path></svg>
-        </div>
-        <div class="nav-btn-text">
-          <span class="nav-btn-title">Gerador de Voz</span>
-          <span class="nav-btn-sub">Francisca pt-BR • Grátis</span>
-        </div>
-      </button>
-
       <button class="nav-btn downloader-tab" id="tabBtnDownloader">
         <div class="nav-btn-icon-wrap">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
@@ -1759,16 +1654,6 @@ video#sourceVideo { display: none; }
         <div class="nav-btn-text">
           <span class="nav-btn-title">Downloads Sociais</span>
           <span class="nav-btn-sub">YouTube • Instagram • TikTok</span>
-        </div>
-      </button>
-
-      <button class="nav-btn narrador-tab" id="tabBtnNarrador">
-        <div class="nav-btn-icon-wrap">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2a8.2 8.2 0 00-8.2 8.2c0 2.7 1.3 4.9 3.2 6.3V19a2 2 0 002 2h6a2 2 0 002-2v-2.5a7.9 7.9 0 003.2-6.3A8.2 8.2 0 0012 2zM8.8 12.6a1.6 1.6 0 110-3.2 1.6 1.6 0 010 3.2zm6.4 0a1.6 1.6 0 110-3.2 1.6 1.6 0 010 3.2zM10.4 17h3.2l-1.6 2.3L10.4 17z"></path></svg>
-        </div>
-        <div class="nav-btn-text">
-          <span class="nav-btn-title">Narrador Sinistro</span>
-          <span class="nav-btn-sub">Roteiros virais • Imagens • Vídeo</span>
         </div>
       </button>
     </nav>
@@ -2283,7 +2168,7 @@ video#sourceVideo { display: none; }
                 <span class="module-badge indigo">⚡ Módulo IA Studio</span>
               </div>
               <h2>Resumidor de Vídeo & Roteirista IA</h2>
-              <p class="desc">Envie seu vídeo e receba o corte exato com narração em 3ª pessoa, dublada por uma voz sintética humanizada.</p>
+              <p class="desc">Envie seu vídeo e receba o corte exato com narração em 3ª pessoa, dublada por uma voz sintética humanizada. O roteiro SEMPRE abre com o momento de maior tensão do vídeo e uma frase-gancho (pergunta ou afirmação chocante) nos primeiros 2 segundos.</p>
             </div>
 
             <div class="card">
@@ -2327,12 +2212,6 @@ video#sourceVideo { display: none; }
               <div class="form-group" style="margin-top: 16px;">
                 <label for="aiVoice">Voz do Narrador (IA)</label>
                 <select id="aiVoice">
-                  <optgroup label="🆓 Grátis — não consome cota da API (requer servidor local)">
-                    <option value="edge:francisca">⭐ Francisca — natural, suave (edge-tts)</option>
-                    <option value="edge:antonio">Antônio — masculina, firme (edge-tts)</option>
-                    <option value="edge:thalita">Thalita — multilíngue (edge-tts)</option>
-                  </optgroup>
-                  <optgroup label="Gemini TTS — consome cota da sua chave de API">
                   <option value="Sulafat">Sulafat — Calorosa (recomendada)</option>
                   <option value="Achird">Achird — Amigável</option>
                   <option value="Rasalgethi">Rasalgethi — Documental / Informativa</option>
@@ -2341,18 +2220,7 @@ video#sourceVideo { display: none; }
                   <option value="Gacrux">Gacrux — Madura / Séria</option>
                   <option value="Umbriel">Umbriel — Tranquila</option>
                   <option value="Kore">Kore — Firme / Neutra</option>
-                  </optgroup>
                 </select>
-                <div id="edgeProxyWrap" style="display:none;margin-top:8px;">
-                  <label for="aiEdgeProxy" style="font-size:0.78rem;">Endereço do servidor de voz (HTTPS)</label>
-                  <input type="text" id="aiEdgeProxy" placeholder="https://seu-narrador.onrender.com" value="" style="width:100%;">
-                  <p style="font-size:0.74rem;color:var(--text-muted);margin:4px 0 0;line-height:1.45;">
-                    Publique a pasta <code>deploy/</code> no Render (grátis) e cole aqui o endereço gerado — veja
-                    <code>PUBLICAR-O-SERVIDOR.md</code>. Depois disso a narração fica gratuita para
-                    <strong>você e qualquer visitante</strong>, sem gastar cota do Gemini e sem o limite de 3 por minuto.
-                    <span id="edgeProxyStatus" style="display:block;margin-top:4px;font-weight:700;"></span>
-                  </p>
-                </div>
                 <label style="text-transform:none;font-weight:400;font-size:0.8rem;display:flex;align-items:center;gap:8px;margin-top:8px;cursor:pointer;">
                   <input type="checkbox" id="aiSkipNarration" style="width:16px;height:16px;margin:0;">
                   🔇 Não gerar narração — manter o áudio original do vídeo em todas as cenas
@@ -2382,7 +2250,7 @@ video#sourceVideo { display: none; }
                   <input type="checkbox" id="aiViralMode" checked style="width:16px;height:16px;margin:0;">
                   🧲 Modo Viciante — otimizado pra retenção (recomendado)
                 </label>
-                <p style="font-size:0.74rem;color:var(--text-muted);margin:4px 0 0;line-height:1.45;">Ativa 3 coisas de uma vez: (1) exige que a IA abra com o momento mais forte do vídeo inteiro, com uma frase-gancho em destaque nos 2-3s iniciais; (2) regra de ritmo mais rígida no roteiro (cortes mais curtos, espalhados pelo vídeo todo); (3) barra de progresso fina no rodapé. Não queima legenda na imagem — o roteiro/legenda é exportado à parte em .srt, já no mesmo tempo do vídeo final, pra você sincronizar com o áudio gerado no ElevenLabs. Deixa o processamento um pouco mais lento (o vídeo ainda precisa ser reprocessado pelo gancho e pela barra).</p>
+                <p style="font-size:0.74rem;color:var(--text-muted);margin:4px 0 0;line-height:1.45;"><strong>Abertura de alta tensão está SEMPRE ativa em todo roteiro:</strong> a primeira cena é o momento de maior tensão/confronto do vídeo (nunca "aquecimento" ou apresentação lenta) e a narração começa com uma frase-gancho (pergunta ou afirmação chocante) nos primeiros 2 segundos. Este modo adiciona: (1) regra de ritmo mais rígida (cortes mais curtos, espalhados pelo vídeo todo); (2) barra de progresso fina no rodapé. Não queima legenda na imagem — o roteiro/legenda é exportado à parte em .srt, já no mesmo tempo do vídeo final, pra você sincronizar com o áudio gerado no ElevenLabs. Deixa o processamento um pouco mais lento (o vídeo ainda precisa ser reprocessado pelo gancho e pela barra).</p>
               </div>
 
               <div class="form-group" style="margin-top: 16px;">
@@ -2499,67 +2367,7 @@ video#sourceVideo { display: none; }
         </div>
       </div>
 
-      <!-- ABA 4: GERADOR DE VOZ (Francisca pt-BR, grátis) -->
-      <div class="tab-content" id="tabVozContent">
-        <div class="voz-wrap">
-          <div class="module-header">
-            <div class="module-badge-row"><span class="module-badge cyan">Voz Neural • Grátis</span></div>
-            <h2>🎙️ Gerador de Voz — Francisca pt-BR</h2>
-            <p class="desc">Cole o texto, gere o áudio e baixe o MP3. Voz neural gratuita: não consome cota da sua chave do Gemini e não tem limite de 3 por minuto. Use para narrar vídeos, ou baixe o arquivo e envie no card "Sincronizar Narração" da aba Roteirista.</p>
-          </div>
-
-          <div class="pro-card">
-            <div class="voz-grid">
-              <div>
-                <label>Texto para narrar</label>
-                <textarea class="voz-texto" id="vozTexto" placeholder="Cole aqui o texto da narração...&#10;&#10;Dica: deixe uma linha em branco entre os blocos para gerar um MP3 separado por cena."></textarea>
-                <div class="voz-contador" id="vozContador">0 caracteres</div>
-              </div>
-
-              <div>
-                <label for="vozVoz">Voz</label>
-                <select id="vozVoz">
-                  <option value="francisca">⭐ Francisca — natural, suave</option>
-                  <option value="antonio">Antônio — masculina, firme</option>
-                  <option value="thalita">Thalita — multilíngue</option>
-                </select>
-
-                <label style="margin-top:12px;">Velocidade: <span id="vozRateLbl">+0</span>%</label>
-                <input type="range" id="vozRate" min="-40" max="60" step="5" value="0" style="width:100%;">
-
-                <label style="margin-top:8px;">Tom: <span id="vozPitchLbl">+0</span>Hz</label>
-                <input type="range" id="vozPitch" min="-40" max="40" step="5" value="0" style="width:100%;">
-
-                <label style="text-transform:none;font-weight:400;font-size:.78rem;display:flex;align-items:center;gap:8px;margin-top:12px;cursor:pointer;">
-                  <input type="checkbox" id="vozPorCena" checked style="width:16px;height:16px;margin:0;">
-                  Gerar um MP3 por bloco (linha em branco separa)
-                </label>
-
-                <label style="margin-top:12px;" for="vozServidor">Servidor de voz</label>
-                <input type="text" id="vozServidor" placeholder="https://seu-narrador.onrender.com" style="width:100%;">
-                <div id="vozServidorStatus" style="font-size:.72rem;font-weight:700;margin-top:6px;"></div>
-              </div>
-            </div>
-
-            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;">
-              <button id="vozGerarBtn" class="voz-btn" style="flex:1;min-width:200px;">🎙️ Gerar narração</button>
-              <button id="vozBaixarTudoBtn" class="voz-btn sec" style="display:none;">⬇️ Baixar todos</button>
-              <button id="vozLimparBtn" class="voz-btn sec">Limpar</button>
-            </div>
-
-            <div class="voz-bar"><i id="vozBar"></i></div>
-            <div class="voz-status" id="vozStatus"></div>
-            <div class="voz-lista" id="vozLista"></div>
-
-            <div class="voz-dica">
-              O servidor é o mesmo configurado na aba <strong>Roteirista &amp; Resumo IA</strong> — preencher aqui atualiza lá também.
-              Publique a pasta <code>deploy/</code> no Render (veja <code>PUBLICAR-O-SERVIDOR.md</code>) e cole o endereço HTTPS acima.
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ABA 5: CENTRAL DE DOWNLOADS SOCIAIS -->
+      <!-- ABA 4: CENTRAL DE DOWNLOADS SOCIAIS -->
       <div class="tab-content" id="tabDownloaderContent">
         <div class="ai-grid-container">
 
@@ -2673,17 +2481,6 @@ video#sourceVideo { display: none; }
         </div>
       </div>
 
-      <!-- ABA 6: NARRADOR SINISTRO -->
-      <div class="tab-content" id="tabNarradorContent">
-        <div class="narrador-frame-wrap">
-          <div id="narradorLoading" class="narrador-loading">
-            <div class="skull">💀</div>
-            <span>Carregando o Narrador Sinistro...</span>
-          </div>
-          <iframe id="narradorFrame" title="Narrador Sinistro" allow="clipboard-write; clipboard-read; microphone; fullscreen"></iframe>
-        </div>
-      </div>
-
     </div>
   </main>
 
@@ -2722,16 +2519,12 @@ video#sourceVideo { display: none; }
   const tabBtnFound = document.getElementById('tabBtnFound');
   const tabBtnDorama = document.getElementById('tabBtnDorama');
   const tabBtnAi = document.getElementById('tabBtnAi');
-  const tabBtnVoz = document.getElementById('tabBtnVoz');
   const tabBtnDownloader = document.getElementById('tabBtnDownloader');
-  const tabBtnNarrador = document.getElementById('tabBtnNarrador');
 
   const tabFoundContent = document.getElementById('tabFoundContent');
   const tabDoramaContent = document.getElementById('tabDoramaContent');
   const tabAiContent = document.getElementById('tabAiContent');
-  const tabVozContent = document.getElementById('tabVozContent');
   const tabDownloaderContent = document.getElementById('tabDownloaderContent');
-  const tabNarradorContent = document.getElementById('tabNarradorContent');
 
   const appDashboard = document.getElementById('appDashboard');
   const blindPreviewColumn = document.getElementById('blindPreviewColumn');
@@ -2747,8 +2540,8 @@ video#sourceVideo { display: none; }
   let isExportingVideo = false;
 
   function resetNavTabs() {
-    [tabBtnFound, tabBtnDorama, tabBtnAi, tabBtnVoz, tabBtnDownloader, tabBtnNarrador].forEach(btn => btn.classList.remove('active'));
-    [tabFoundContent, tabDoramaContent, tabAiContent, tabVozContent, tabDownloaderContent, tabNarradorContent].forEach(c => c.classList.remove('active'));
+    [tabBtnFound, tabBtnDorama, tabBtnAi, tabBtnDownloader].forEach(btn => btn.classList.remove('active'));
+    [tabFoundContent, tabDoramaContent, tabAiContent, tabDownloaderContent].forEach(c => c.classList.remove('active'));
   }
 
   // A Aba 3 agora usa o mesmo monitor lateral das Abas 1 e 2. Esta função
@@ -2845,21 +2638,6 @@ video#sourceVideo { display: none; }
     blindPreviewColumn.style.display = 'flex';
     mainControlsColumn.style.display = 'none';
     setSharedPreviewMode('ai');
-  });
-
-  tabBtnVoz.addEventListener('click', () => {
-    if (isExportingVideo) { alert('⏳ Aguarde o processamento do vídeo atual terminar antes de trocar de aba — trocar agora gera um MP4 incompleto.'); return; }
-    activeTab = 'voz';
-    resetNavTabs();
-    tabBtnVoz.classList.add('active');
-    tabVozContent.classList.add('active');
-
-    appDashboard.className = 'dashboard voz-theme full-mode';
-    setSharedPreviewMode('hidden');
-    blindPreviewColumn.style.display = 'none';
-    mainControlsColumn.style.display = 'none';
-
-    if (window.vozSyncServidor) window.vozSyncServidor();
   });
 
   tabBtnDownloader.addEventListener('click', () => {
@@ -3055,7 +2833,7 @@ video#sourceVideo { display: none; }
   }
 
   function syncActiveTabElements() {
-    if (activeTab === 'ai' || activeTab === 'downloader' || activeTab === 'narrador') return;
+    if (activeTab === 'ai' || activeTab === 'downloader') return;
     const ctrl = getActiveControls();
     if (!video.videoWidth) return;
     if (ctrl.enableCrop.checked && currentPreviewMode === 'overlay') {
@@ -3655,7 +3433,7 @@ video#sourceVideo { display: none; }
   }
 
   function renderInteractivePreview() {
-    if (!video.videoWidth || activeTab === 'ai' || activeTab === 'downloader' || activeTab === 'narrador') return;
+    if (!video.videoWidth || activeTab === 'ai' || activeTab === 'downloader') return;
     const ctrl = getActiveControls();
     const currentTitle = ctrl.hookText.value.trim();
 
@@ -5113,15 +4891,11 @@ video#sourceVideo { display: none; }
     // própria é o sinal mais forte de "conteúdo original" pro TikTok.
     window.generateVoiceoverAudio = async function (text, onProgress) {
         if (!text || !text.trim()) throw new Error('Texto de narração vazio.');
-        const sel = document.getElementById('aiVoice');
-        const escolhida = (sel && sel.value) || 'Puck';
-        const ehEdge = escolhida.startsWith('edge:');
         const apiKey = document.getElementById('aiApiKey').value.trim();
-        // Com a voz gratuita nao precisamos de chave de API pra narrar.
-        if (!apiKey && !ehEdge) throw new Error('Preencha a Chave de API do Gemini (aba "Roteirista IA") antes de narrar.');
-        const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
+        if (!apiKey) throw new Error('Preencha a Chave de API do Gemini (aba "Roteirista & Resumo IA") antes de narrar.');
+        const ai = new GoogleGenAI({ apiKey });
         const tone = 'dinâmico, envolvente e direto ao ponto';
-        const voiceName = ehEdge ? escolhida : 'Puck';
+        const voiceName = 'Puck'; // animada/empolgante — boa pra cortes
         const { pcmBytes } = await generateNarrationAudioWithRetry(
             ai, text.trim(), voiceName, tone,
             (attempt, attempts, waitMs, isQuota) => {
@@ -5431,202 +5205,6 @@ video#sourceVideo { display: none; }
     // Quando "Não gerar narração" está marcado, a voz deixa de fazer sentido
     // (não vai haver chamada de TTS) — desabilita o seletor pra deixar isso
     // óbvio, em vez de só ignorar o valor escolhido em silêncio.
-    // Mostra o campo da URL so quando uma voz gratuita esta selecionada,
-    // lembra o valor entre sessoes e testa a conexao com o proxy.
-    function updateEdgeProxyUI() {
-        const sel = document.getElementById('aiVoice');
-        const wrap = document.getElementById('edgeProxyWrap');
-        if (!sel || !wrap) return;
-        const ehEdge = (sel.value || '').startsWith('edge:');
-        wrap.style.display = ehEdge ? 'block' : 'none';
-        if (ehEdge) testarEdgeProxy();
-    }
-
-    let edgeTestTimer = null;
-    function testarEdgeProxy() {
-        const st = document.getElementById('edgeProxyStatus');
-        const base = getEdgeProxyUrl();
-        if (!st) return;
-        if (!base) { st.textContent = ''; return; }
-        st.style.color = 'var(--text-muted)';
-        st.textContent = 'Verificando servidor...';
-        clearTimeout(edgeTestTimer);
-        edgeTestTimer = setTimeout(() => {
-            fetch(base + '/vozes', { method: 'GET' })
-                .then(r => r.ok ? r.json() : Promise.reject())
-                .then(() => { st.style.color = '#34d399'; st.textContent = '✅ Servidor conectado — narração gratuita ativa.'; })
-                .catch(() => { st.style.color = '#fb7185'; st.textContent = '⚠️ Servidor fora do ar ou endereço errado. No plano grátis do Render a primeira chamada pode demorar ~50s (hibernação) — tente de novo.'; });
-        }, 400);
-    }
-
-    (function initEdgeProxy() {
-        const sel = document.getElementById('aiVoice');
-        const inp = document.getElementById('aiEdgeProxy');
-        if (!sel || !inp) return;
-        // Preencha SERVIDOR_VOZ_PADRAO com a URL do seu Render e todos os
-        // visitantes do site ja usam a narracao gratuita, sem configurar nada.
-        const SERVIDOR_VOZ_PADRAO = '';   // ex: 'https://seu-narrador.onrender.com'
-        const salvo = localStorage.getItem('aiEdgeProxy');
-        inp.value = salvo || SERVIDOR_VOZ_PADRAO || '';
-        inp.addEventListener('input', () => {
-            localStorage.setItem('aiEdgeProxy', inp.value.trim());
-            testarEdgeProxy();
-        });
-        sel.addEventListener('change', updateEdgeProxyUI);
-        updateEdgeProxyUI();
-    })();
-
-    // ===== ABA 4: Gerador de Voz ============================================
-    // Reaproveita generateNarrationAudioEdge() e o campo de servidor da Aba 3
-    // (mesma chave no localStorage), pra nao existir configuracao duplicada.
-    (function initAbaVoz() {
-        const $ = id => document.getElementById(id);
-        const txt = $('vozTexto'), lista = $('vozLista'), status = $('vozStatus'),
-              bar = $('vozBar'), btn = $('vozGerarBtn'), btnTudo = $('vozBaixarTudoBtn'),
-              btnLimpar = $('vozLimparBtn'), cont = $('vozContador'), srv = $('vozServidor');
-        if (!txt || !btn) return;
-
-        let gerados = [];   // {nome, url, blob}
-
-        // --- servidor compartilhado com a Aba 3 ---
-        window.vozSyncServidor = function () {
-            const outro = $('aiEdgeProxy');
-            const salvo = localStorage.getItem('aiEdgeProxy') || (outro && outro.value) || '';
-            if (srv && !srv.value) srv.value = salvo;
-            testarServidor();
-        };
-
-        function testarServidor() {
-            const st = $('vozServidorStatus');
-            const base = (srv.value || '').trim().replace(/\/+$/, '');
-            if (!st) return;
-            if (!base) { st.textContent = '⚠️ Cole o endereço do servidor de voz.'; st.style.color = 'var(--accent-yellow)'; return; }
-            st.style.color = 'var(--text-dim)'; st.textContent = 'Verificando...';
-            fetch(base + '/vozes').then(r => r.ok ? r.json() : Promise.reject())
-                .then(() => { st.style.color = '#34d399'; st.textContent = '✅ Conectado'; })
-                .catch(() => { st.style.color = '#fb7185'; st.textContent = '⚠️ Fora do ar (no plano grátis do Render a 1ª chamada leva ~50s)'; });
-        }
-
-        srv.addEventListener('input', () => {
-            const v = srv.value.trim();
-            localStorage.setItem('aiEdgeProxy', v);
-            const outro = $('aiEdgeProxy');
-            if (outro) outro.value = v;          // mantem as duas abas em sincronia
-            clearTimeout(srv._t); srv._t = setTimeout(testarServidor, 500);
-        });
-
-        // --- contador ---
-        txt.addEventListener('input', () => {
-            const n = txt.value.length;
-            cont.textContent = n.toLocaleString('pt-BR') + ' caracteres';
-            cont.classList.toggle('alerta', n > 5000);
-            if (n > 5000) cont.textContent += ' — acima de 5.000 por bloco o servidor recusa';
-        });
-
-        function limparGerados() {
-            gerados.forEach(g => URL.revokeObjectURL(g.url));
-            gerados = []; lista.innerHTML = ''; btnTudo.style.display = 'none';
-        }
-
-        btnLimpar.addEventListener('click', () => {
-            limparGerados(); txt.value = ''; txt.dispatchEvent(new Event('input'));
-            status.textContent = ''; bar.style.width = '0';
-        });
-
-        function blocos() {
-            const t = txt.value.trim();
-            if (!t) return [];
-            if (!$('vozPorCena').checked) return [t];
-            return t.split(/\n\s*\n/).map(x => x.trim()).filter(Boolean);
-        }
-
-        btn.addEventListener('click', async () => {
-            const partes = blocos();
-            if (!partes.length) { status.textContent = 'Cole um texto primeiro.'; return; }
-
-            const grande = partes.find(p => p.length > 5000);
-            if (grande) { status.textContent = '⚠️ Um dos blocos passa de 5.000 caracteres. Separe em partes menores.'; return; }
-
-            // usa o mesmo campo de servidor da Aba 3
-            const outro = $('aiEdgeProxy');
-            if (outro) outro.value = (srv.value || '').trim();
-
-            limparGerados();
-            btn.disabled = true;
-            const voz = $('vozVoz').value;
-            const rate = (($('vozRate').value >= 0) ? '+' : '') + $('vozRate').value + '%';
-            const pitch = (($('vozPitch').value >= 0) ? '+' : '') + $('vozPitch').value + 'Hz';
-            let ok = 0;
-
-            for (let i = 0; i < partes.length; i++) {
-                status.textContent = `Gerando ${i + 1} de ${partes.length}...`;
-                bar.style.width = (i / partes.length * 100) + '%';
-                try {
-                    const base = (srv.value || '').trim().replace(/\/+$/, '');
-                    const r = await fetch(base + '/falar', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ texto: partes[i], voz, rate, pitch })
-                    });
-                    if (!r.ok) {
-                        let m = ''; try { m = (await r.json()).erro || ''; } catch (e) {}
-                        throw new Error(m || ('HTTP ' + r.status));
-                    }
-                    const blob = await r.blob();
-                    const nome = partes.length > 1 ? `narracao_${String(i + 1).padStart(2, '0')}.mp3` : 'narracao.mp3';
-                    const url = URL.createObjectURL(blob);
-                    gerados.push({ nome, url, blob });
-                    addItem(i + 1, partes[i], nome, url, blob.size);
-                    ok++;
-                } catch (e) {
-                    addErro(i + 1, partes[i], e.message);
-                }
-            }
-
-            bar.style.width = '100%';
-            status.textContent = ok === partes.length
-                ? `✅ ${ok} áudio(s) gerado(s).`
-                : `${ok} de ${partes.length} gerado(s) — veja os erros abaixo.`;
-            btn.disabled = false;
-            if (gerados.length > 1) btnTudo.style.display = '';
-            setTimeout(() => bar.style.width = '0', 1200);
-        });
-
-        function addItem(num, texto, nome, url, bytes) {
-            const div = document.createElement('div');
-            div.className = 'voz-item';
-            div.innerHTML = `<div class="vi-num">${num}</div>
-              <div class="vi-txt"><b></b><span>${(bytes / 1024).toFixed(0)} KB</span></div>
-              <audio controls preload="metadata" src="${url}"></audio>
-              <a class="download-link" href="${url}" download="${nome}" style="flex:0 0 auto;">⬇️</a>`;
-            div.querySelector('b').textContent = texto.slice(0, 70) + (texto.length > 70 ? '…' : '');
-            lista.appendChild(div);
-        }
-
-        function addErro(num, texto, msg) {
-            const div = document.createElement('div');
-            div.className = 'voz-item';
-            div.style.borderColor = 'rgba(244,63,94,.4)';
-            div.innerHTML = `<div class="vi-num" style="background:rgba(244,63,94,.18);color:#fb7185;">${num}</div>
-              <div class="vi-txt"><b></b><span style="color:#fb7185;"></span></div>`;
-            div.querySelector('b').textContent = texto.slice(0, 70) + (texto.length > 70 ? '…' : '');
-            div.querySelector('span').textContent = '✗ ' + msg;
-            lista.appendChild(div);
-        }
-
-        // baixa um a um (sem zip, pra nao adicionar dependencia)
-        btnTudo.addEventListener('click', async () => {
-            for (const g of gerados) {
-                const a = document.createElement('a');
-                a.href = g.url; a.download = g.nome;
-                document.body.appendChild(a); a.click(); a.remove();
-                await new Promise(r => setTimeout(r, 350));
-            }
-        });
-
-        window.vozSyncServidor();
-    })();
-
     function updateSkipNarrationUI() {
         const skip = document.getElementById('aiSkipNarration').checked;
         document.getElementById('aiVoice').disabled = skip;
@@ -5814,15 +5392,22 @@ video#sourceVideo { display: none; }
             const targetWords = Math.round(targetTime * readingWpm);
             const isViralMode = document.getElementById('aiViralMode').checked;
             const maxSceneSeconds = isTurboToneSelected() ? 4 : 6;
+            // ABERTURA DE ALTA TENSÃO + FALA-GANCHO NOS PRIMEIROS 2 SEGUNDOS:
+            // obrigatório em TODOS os roteiros, independente do tom escolhido
+            // ou do "Modo Viciante" — nunca abrir com "aquecimento" ou
+            // apresentação lenta (regra fixada a pedido do usuário).
+            const openingRules = `
+7. ABERTURA DE MÁXIMA TENSÃO (obrigatório, vale para TODOS os roteiros): a PRIMEIRA cena (índice 0) precisa ser o momento de MAIOR tensão, conflito ou confronto do vídeo inteiro — a briga mais intensa, a revelação mais chocante, o confronto mais explosivo. NUNCA abra com "aquecimento", apresentação lenta, plano atmosférico, letreiro ou diálogo sem conflito. É essa cena que decide se a pessoa continua assistindo ou passa o vídeo nos primeiros 1-2 segundos.
+8. FALA-GANCHO NOS PRIMEIROS 2 SEGUNDOS (obrigatório, vale para TODOS os roteiros): no campo "gancho", escreva uma frase curta de até 8 palavras (de preferência 6 ou menos, para caber lida em até 2 segundos), no formato de PERGUNTA ou de AFIRMAÇÃO CHOCANTE, que prenda o espectador na hora (ex.: "Ele fez isso com a própria mãe?" / "O final vai te gelar a sangue"). Preencha "gancho" SÓ na primeira cena (índice 0); nas demais cenas deixe "gancho" como string vazia (""). Essa frase será exibida/falada no COMEÇO do vídeo final: a NARRAÇÃO da primeira cena precisa COMEÇAR com essa frase-gancho dentro dos primeiros 2 segundos, antes de qualquer nome, contexto ou explicação.`;
+            let ruleNum = 8; // regras 1-6 (base) + 7 e 8 (abertura, sempre)
             const turboRules = isTurboToneSelected() ? `
-7. ESTILO TURBO TIKTOK/DORAMA (obrigatório neste roteiro): monte MUITOS cortes curtos — cada cena deve durar só o tempo de 1 a 2 frases de narração, nunca cenas longas e paradas. Priorize os momentos de maior impacto emocional: brigas, confissões, reviravoltas, olhares, close-ups de reação. Comece com o gancho mais forte do vídeo logo nos primeiros segundos (nada de introdução lenta). Encadeie as cenas como cliffhangers, sempre empurrando para "o que vem a seguir". Frases de narração curtas, diretas, quase sem pausas — no ritmo de vídeo de resumo de dorama/novela que viraliza no TikTok.` : '';
-            // "Modo Viciante": regras de RETENÇÃO que valem para qualquer tom de
-            // narração escolhido (independente do estilo Turbo acima) — gancho
-            // forçado logo de cara e ritmo de corte mais constante o vídeo inteiro.
+${++ruleNum}. ESTILO TURBO TIKTOK/DORAMA (obrigatório neste roteiro): monte MUITOS cortes curtos — cada cena deve durar só o tempo de 1 a 2 frases de narração, nunca cenas longas e paradas. Priorize os momentos de maior impacto emocional: brigas, confissões, reviravoltas, olhares, close-ups de reação. Encadeie as cenas como cliffhangers, sempre empurrando para "o que vem a seguir". Frases de narração curtas, diretas, quase sem pausas — no ritmo de vídeo de resumo de dorama/novela que viraliza no TikTok.` : '';
+            // "Modo Viciante": adiciona a regra de ritmo de corte mais rígida
+            // (a abertura de alta tensão e a fala-gancho de 2s já são obrigatórias
+            // em todos os roteiros).
             const viralRules = isViralMode ? `
-${turboRules ? '8' : '7'}. GANCHO INICIAL (obrigatório): a PRIMEIRA cena escolhida precisa ser o momento mais chocante, emocionante ou intrigante do vídeo inteiro — nunca um plano parado, atmosférico ou de introdução lenta. É essa cena que decide se a pessoa continua assistindo ou passa o vídeo nos primeiros segundos.
-${turboRules ? '9' : '8'}. No campo "gancho", escreva uma frase de até 8 palavras, curta e impactante, tipo manchete, resumindo o choque/mistério central da história — mas SÓ na primeira cena (índice 0). Nas demais cenas, deixe "gancho" como uma string vazia ("").
-${turboRules ? '10' : '9'}. RITMO CONSTANTE: nenhuma cena deve durar mais que ${maxSceneSeconds} segundos, mesmo que isso signifique escrever frases de narração mais curtas — prefira várias frases curtas a uma cena longa e parada. Distribua os cortes de forma constante por TODO o vídeo original, do início ao fim; não concentre os cortes só numa parte do vídeo e deixe outras partes com um único plano longo sem corte.` : '';
+${++ruleNum}. RITMO CONSTANTE: nenhuma cena deve durar mais que ${maxSceneSeconds} segundos, mesmo que isso signifique escrever frases de narração mais curtas — prefira várias frases curtas a uma cena longa e parada. Distribua os cortes de forma constante por TODO o vídeo original, do início ao fim; não concentre os cortes só numa parte do vídeo e deixe outras partes com um único plano longo sem corte.` : '';
+            const nextRuleNumber = ruleNum + 1;
             const promptText = `Atue como um editor de vídeo e roteirista profissional.
 Analise este vídeo anexado e crie um roteiro de resumo compactado para exatamente ${targetTime} minutos.
 
@@ -5832,8 +5417,8 @@ REGRAS OBRIGATÓRIAS:
 3. Escolha as melhores cenas e mapeie exatamente em qual momento do vídeo original o corte deve acontecer para coincidir com a narração.
 4. MUITO IMPORTANTE: a duração de CADA corte (fim - início) deve ser compatível com o tempo de leitura da narração DAQUELA cena, e não apenas com o total do vídeo. Use como referência ~${(readingWpm / 60).toFixed(2)} palavras por segundo (${readingWpm} palavras/minuto). Se a narração de uma cena tem 20 palavras, o corte dessa cena precisa ter pelo menos ~${Math.ceil(20 / (readingWpm / 60))} segundos — nunca faça um corte mais curto que o tempo de leitura da sua própria narração.
 5. Os campos "inicio" e "fim" devem ser o timestamp exato do vídeo original no formato HH:MM:SS (ex: 00:01:23).
-6. Retorne as cenas em ordem cronológica do vídeo original.${turboRules}${viralRules}
-${turboRules && viralRules ? '11' : (turboRules || viralRules) ? '10' : '7'}. Além das cenas, escreva também uma "fraseCuriosidade": uma frase de curiosidade / gancho emocional sobre o vídeo INTEIRO (não sobre uma cena isolada), no estilo de legenda/descrição de post de TikTok — algo que desperte curiosidade pra fazer a pessoa clicar e assistir. Curta (até 20 palavras), sem hashtags, sem emojis em excesso (no máximo 1-2).`;
+6. Retorne as cenas em ordem cronológica do vídeo original.${openingRules}${turboRules}${viralRules}
+${nextRuleNumber}. Além das cenas, escreva também uma "fraseCuriosidade": uma frase de curiosidade / gancho emocional sobre o vídeo INTEIRO (não sobre uma cena isolada), no estilo de legenda/descrição de post de TikTok — algo que desperte curiosidade pra fazer a pessoa clicar e assistir. Curta (até 20 palavras), sem hashtags, sem emojis em excesso (no máximo 1-2).`;
 
             // ID conferido na documentação oficial do Gemini API em 11/08/2026 —
             // gemini-3.6-flash é o modelo GA atual da família 3.x Flash (sucessor
@@ -5863,13 +5448,9 @@ ${turboRules && viralRules ? '11' : (turboRules || viralRules) ? '10' : '7'}. Al
                                         fim: { type: Type.STRING, description: 'Timestamp de fim no vídeo original, formato HH:MM:SS.' },
                                         narracao: { type: Type.STRING, description: 'Narração em 3ª pessoa para esse trecho.' },
                                         visual: { type: Type.STRING, description: 'Descrição curta do que aparece na cena.' },
-                                        ...(isViralMode ? {
-                                            gancho: { type: Type.STRING, description: 'Frase-gancho de até 8 palavras — preenchida SÓ na primeira cena (índice 0); string vazia nas demais.' }
-                                        } : {})
+                                        gancho: { type: Type.STRING, description: 'Frase-gancho no formato de PERGUNTA ou AFIRMAÇÃO CHOCANTE, de até 8 palavras — preenchida SÓ na primeira cena (índice 0); string vazia nas demais. Será exibida/falada nos primeiros 2 segundos do vídeo final.' }
                                     },
-                                    propertyOrdering: isViralMode
-                                        ? ['cena', 'inicio', 'fim', 'narracao', 'visual', 'gancho']
-                                        : ['cena', 'inicio', 'fim', 'narracao', 'visual']
+                                    propertyOrdering: ['cena', 'inicio', 'fim', 'narracao', 'visual', 'gancho']
                                 }
                             },
                             fraseCuriosidade: { type: Type.STRING, description: 'Frase de curiosidade / gancho emocional sobre o vídeo inteiro, para usar como legenda de post. Até 20 palavras.' }
@@ -6456,7 +6037,7 @@ ${turboRules && viralRules ? '11' : (turboRules || viralRules) ? '10' : '7'}. Al
                 : (c._ajustado || c._avisoCurto) ? ' style="background-color:#3f2d0f;"' : '';
 
             const ganchoHtml = (i === 0 && c.gancho && c.gancho.trim())
-                ? `<div style="font-size:0.75rem;color:#FFE600;margin-bottom:4px;">🪝 Gancho (aparece em destaque nos 1ºs segundos): "${escapeHtml(c.gancho)}"</div>`
+                ? `<div style="font-size:0.75rem;color:#FFE600;margin-bottom:4px;">🪝 Gancho (exibido + falado nos primeiros 2s): "${escapeHtml(c.gancho)}"</div>`
                 : '';
 
             // Contagem de palavras + duração estimada de leitura (na velocidade
@@ -6588,82 +6169,7 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
 "${narrationText}"`;
     }
 
-    // ===== Motor de voz gratuito (edge-tts / Francisca) ====================
-    // O endpoint de TTS do Edge exige os cabecalhos Origin e User-Agent de uma
-    // extensao do Chrome + um token de seguranca assinado. O navegador PROIBE o
-    // JavaScript de definir Origin/User-Agent, entao chamar direto daqui sempre
-    // retorna 403. Por isso a chamada passa por um proxy local minusculo
-    // (proxy-francisca.py), que roda no seu computador e faz essa parte.
-    function getEdgeProxyUrl() {
-        const el = document.getElementById('aiEdgeProxy');
-        const v = (el && el.value || '').trim().replace(/\/+$/, '');
-        return v;
-    }
-
-    // Converte o MP3 devolvido pelo proxy no mesmo formato que o resto do app
-    // ja usa (PCM s16le, mono, 24 kHz) — assim nada mais precisa mudar: a
-    // tabela de cortes, o ajuste de duracao e o ffmpeg continuam iguais.
-    async function mp3ToPcm24k(arrayBuffer) {
-        const Ctx = window.AudioContext || window.webkitAudioContext;
-        const tmp = new Ctx();
-        let decoded;
-        try {
-            decoded = await tmp.decodeAudioData(arrayBuffer.slice(0));
-        } finally {
-            tmp.close();
-        }
-        const frames = Math.max(1, Math.ceil(decoded.duration * TTS_SAMPLE_RATE));
-        const off = new OfflineAudioContext(1, frames, TTS_SAMPLE_RATE);
-        const src = off.createBufferSource();
-        src.buffer = decoded;
-        src.connect(off.destination);
-        src.start();
-        const rendered = await off.startRendering();
-        const f32 = rendered.getChannelData(0);
-        const pcm = new Uint8Array(f32.length * 2);
-        const view = new DataView(pcm.buffer);
-        for (let i = 0; i < f32.length; i++) {
-            const x = Math.max(-1, Math.min(1, f32[i]));
-            view.setInt16(i * 2, x < 0 ? x * 0x8000 : x * 0x7FFF, true);
-        }
-        return pcm;
-    }
-
-    async function generateNarrationAudioEdge(text, edgeVoice) {
-        const base = getEdgeProxyUrl();
-        if (!base) throw new Error('Cole o endereço do servidor de voz no campo abaixo do seletor (ex: https://seu-narrador.onrender.com).');
-        // Página HTTPS (GitHub Pages) não pode chamar http:// — o navegador bloqueia
-        // como "conteúdo misto". O servidor precisa estar em HTTPS.
-        if (location.protocol === 'https:' && base.startsWith('http://')) {
-            throw new Error('Seu site está em HTTPS, então o servidor de voz também precisa ser HTTPS. Use o endereço https:// do Render.');
-        }
-        let resp;
-        try {
-            resp = await fetch(base + '/falar', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ texto: text, voz: edgeVoice })
-            });
-        } catch (e) {
-            throw new Error('Não consegui falar com o servidor de voz em ' + base +
-                '. Confira o endereço e se o serviço está no ar (no plano grátis do Render ele hiberna e a primeira chamada demora ~50s).');
-        }
-        if (!resp.ok) {
-            let msg = '';
-            try { msg = (await resp.json()).erro || ''; } catch (e) {}
-            throw new Error('Servidor Francisca: ' + (msg || ('HTTP ' + resp.status)));
-        }
-        const buf = await resp.arrayBuffer();
-        if (!buf || buf.byteLength < 1024) throw new Error('O servidor Francisca devolveu audio vazio.');
-        const pcmBytes = await mp3ToPcm24k(buf);
-        return { pcmBytes, durationSeconds: pcmBytes.length / (TTS_SAMPLE_RATE * 2) };
-    }
-
     async function generateNarrationAudio(ai, text, voiceName, tone) {
-        // Voz gratuita escolhida -> nao gasta nada da cota do Gemini.
-        if (typeof voiceName === 'string' && voiceName.startsWith('edge:')) {
-            return generateNarrationAudioEdge(text, voiceName.slice(5));
-        }
         const response = await ai.models.generateContent({
             model: TTS_MODEL,
             contents: [{ parts: [{ text: buildTtsPrompt(text, tone) }] }],
@@ -6819,11 +6325,13 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
         return words.slice(0, mid).join(' ') + '\n' + words.slice(mid).join(' ');
     }
 
-    // Frase-gancho em destaque nos 2,6s iniciais (só existe na cena 0). Fonte
-    // grande e proporcional à largura do vídeo (não um valor fixo em pixels —
-    // senão estoura a tela em formatos verticais), cor de alto contraste,
-    // posicionada mais pro topo pra não brigar com a legenda normal (que fica
-    // perto do rodapé).
+    // Frase-gancho em destaque nos PRIMEIROS 2 SEGUNDOS (só existe na cena 0) —
+    // a regra do roteirista exige que o gancho (pergunta ou afirmação chocante)
+    // caia dentro dos 2s iniciais, então o texto também some logo em 2.0s.
+    // Fonte grande e proporcional à largura do vídeo (não um valor fixo em
+    // pixels — senão estoura a tela em formatos verticais), cor de alto
+    // contraste, posicionada mais pro topo pra não brigar com a legenda normal
+    // (que fica perto do rodapé).
     async function buildHookFilter(ff, hookText, filePrefix, trackedFiles) {
         if (!hookText || !hookText.trim()) return null;
         const fileName = `${filePrefix}_hook.txt`;
@@ -6833,7 +6341,7 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
             `borderw=6:bordercolor=black:line_spacing=10:` +
             `box=1:boxcolor=black@0.45:boxborderw=24:` +
             `x=(w-text_w)/2:y=h*0.14:` +
-            `enable='between(t,0,2.6)'`;
+            `enable='between(t,0,2.0)'`;
     }
 
     // Barra fina no rodapé que enche conforme o vídeo FINAL (já concatenado)
@@ -7117,20 +6625,23 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
                 console.warn('Não foi possível calcular o corte central (resolução do vídeo desconhecida) — mantendo o formato original.');
             }
 
-            // "Modo Viciante": gancho inicial + barra de progresso (a legenda
-            // não é mais queimada na imagem, sai à parte em .srt). Se a fonte
-            // não conseguir baixar (rede bloqueada, CDN fora do ar), não
-            // travamos o corte inteiro por causa disso — só desligamos essas
-            // 2 coisas nesta rodada e avisamos no resultado final.
+            // A abertura de alta tensão com frase-gancho é OBRIGATÓRIA em todo
+            // roteiro (não depende mais do "Modo Viciante"); a barra de
+            // progresso continua exclusiva do Modo Viciante. A fonte só é
+            // necessária quando a cena 0 trouxe gancho ou a barra está ativa.
+            // Se a fonte não conseguir baixar (rede bloqueada, CDN fora do ar),
+            // não travamos o corte inteiro por causa disso — só desligamos
+            // esses elementos nesta rodada e avisamos no resultado final.
             const isViralMode = document.getElementById('aiViralMode').checked;
+            const temGanchoAbertura = !!(currentCuts.length > 0 && (currentCuts[0].gancho || '').trim());
             let captionsAvailable = false;
-            if (isViralMode) {
-                cutProgress.innerText = 'Baixando fonte para as legendas (só na primeira vez)...';
+            if (temGanchoAbertura || isViralMode) {
+                cutProgress.innerText = 'Baixando fonte para a frase-gancho de abertura (só na primeira vez)...';
                 try {
                     await ensureCaptionFont(ff);
                     captionsAvailable = true;
                 } catch (err) {
-                    console.warn('Não foi possível baixar a fonte das legendas — seguindo sem legenda/gancho/barra nesta rodada.', err);
+                    console.warn('Não foi possível baixar a fonte — seguindo sem gancho/barra nesta rodada.', err);
                     captionsAvailable = false;
                 }
             }
@@ -7205,16 +6716,19 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
 
                 // Monta a lista de filtros visuais dessa cena, NA ORDEM certa: crop
                 // primeiro (define a largura/altura final), depois gancho (só cena
-                // 0) e barra de progresso — cada um sabendo o tamanho de tela já
+                // 0 — SEMPRE que a IA tiver gerado a frase) e barra de progresso
+                // (só Modo Viciante) — cada um sabendo o tamanho de tela já
                 // cortado. Sem legenda queimada aqui — o roteiro sai à parte em .srt.
                 const sceneFilters = [];
                 if (cropFilter) sceneFilters.push(cropFilter);
                 if (captionsAvailable) {
-                    if (i === 0) {
+                    if (i === 0 && temGanchoAbertura) {
                         const hookFilter = await buildHookFilter(ff, cut.gancho, `cap${i}`, tempFiles);
                         if (hookFilter) sceneFilters.push(hookFilter);
                     }
-                    sceneFilters.push(buildProgressBarFilter(offsetsAcumulados[i], totalDuration));
+                    if (isViralMode) {
+                        sceneFilters.push(buildProgressBarFilter(offsetsAcumulados[i], totalDuration));
+                    }
                 }
 
                 try {
@@ -7430,17 +6944,20 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
             const notaFormato = cropFilter
                 ? ` Formato de saída aplicado: ${aspectRatio} (bordas cortadas no centro).`
                 : '';
-            const notaViciante = isViralMode
+            const notaGancho = temGanchoAbertura
                 ? (captionsAvailable
-                    ? ' Modo Viciante aplicado: gancho inicial e barra de progresso. ✅ (baixe a legenda .srt separadamente para sincronizar com o áudio do ElevenLabs)'
-                    : ' ⚠️ Modo Viciante estava ligado, mas não consegui baixar a fonte do gancho (rede bloqueada?) — o vídeo saiu SEM gancho/barra desta vez.')
+                    ? ' Abertura de alta tensão aplicada: frase-gancho exibida/falada nos primeiros 2 segundos. ✅ (baixe a legenda .srt separadamente para sincronizar com o áudio do ElevenLabs)'
+                    : ' ⚠️ Não consegui baixar a fonte da frase-gancho (rede bloqueada?) — o vídeo saiu SEM o gancho desta vez.')
+                : '';
+            const notaViciante = (isViralMode && captionsAvailable)
+                ? ' Modo Viciante aplicado: barra de progresso no rodapé. ✅'
                 : '';
             const notaCenasPuladas = scenesSkipped.length > 0
                 ? ` ⚠️ ${scenesSkipped.length} cena(s) falharam ao cortar e ficaram DE FORA do vídeo final (cena(s) ${scenesSkipped.map(s => s.numero).join(', ')}). Motivo da 1ª falha: ${scenesSkipped[0].motivo}`
                 : '';
             cutProgress.innerText = resumoNarracao +
                 ' (os cortes seguem o quadro-chave mais próximo, então pode haver ~1-2s de folga em cada corte)' +
-                notaFormato + notaViciante + notaCenasPuladas;
+                notaFormato + notaGancho + notaViciante + notaCenasPuladas;
             return true;
 
         } catch (error) {
@@ -8943,27 +8460,6 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
   setTimeout(() => wakeSocialBackend(false), 600);
   setInterval(() => wakeSocialBackend(false), 8 * 60 * 1000);
   tabBtnDownloader.addEventListener('click', () => wakeSocialBackend(false));
-  tabBtnNarrador.addEventListener('click', () => {
-    if (isExportingVideo) { alert('⏳ Aguarde o processamento do vídeo atual terminar antes de trocar de aba — trocar agora gera um MP4 incompleto.'); return; }
-    activeTab = 'narrador';
-    resetNavTabs();
-    tabBtnNarrador.classList.add('active');
-    tabNarradorContent.classList.add('active');
-
-    appDashboard.className = 'dashboard narrador-theme full-mode';
-    setSharedPreviewMode('hidden');
-    blindPreviewColumn.style.display = 'none';
-    mainControlsColumn.style.display = 'none';
-
-    // Carrega o app do Narrador só na primeira vez que a abre (iframe lazy)
-    const frame = document.getElementById('narradorFrame');
-    const loading = document.getElementById('narradorLoading');
-    if (frame && !frame.getAttribute('src')) {
-      frame.addEventListener('load', () => { if (loading) loading.style.display = 'none'; }, { once: true });
-      frame.setAttribute('src', 'narrador.html');
-    }
-  });
-
 
   testCobaltBtn.addEventListener('click', async () => {
     testCobaltBtn.disabled = true;
@@ -8997,5 +8493,5 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
   window.wireDownloadLinkToSaveFolder(document.getElementById('aiSyncDownloadLink'));
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2ff4d1adad600e9',t:'MTc4NzU0MjQ2NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3051d7cac9cc663',t:'MTc4NzYwMzQyOQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
