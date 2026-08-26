@@ -2292,6 +2292,14 @@ video#sourceVideo { display: none; }
                 <p style="font-size:0.74rem;color:var(--text-muted);margin:4px 0 0;line-height:1.45;">Pula a pergunta "quer que eu corte o vídeo?" — assim que o roteiro e a narração terminarem, o corte começa sozinho, igual já acontece automaticamente quando você processa vários vídeos de uma vez (fila).</p>
               </div>
 
+              <div class="form-group" style="margin-top: 16px;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;font-weight:600;">
+                  <input type="checkbox" id="aiSyncAfterCut" style="width:16px;height:16px;margin:0;">
+                  🔗 Ao terminar de cortar, ir direto para a Sincronização
+                </label>
+                <p style="font-size:0.74rem;color:var(--text-muted);margin:4px 0 0;line-height:1.45;">Assim que o corte terminar, a tela rola sozinha até o card "🎙️ Sincronizar Narração" já com o vídeo cortado pronto — você só escolhe a narração (MP3 do ElevenLabs ou gerar pela IA) e clica em "Sincronizar e Baixar".</p>
+              </div>
+
               <p style="font-size:0.76rem; color:var(--text-muted); margin: 18px 0 0; line-height:1.5;">💳 Cada processamento consome a cota/saldo da <strong>sua</strong> chave de API do Gemini — o upload do vídeo, a geração do roteiro e a narração de cada cena são chamadas pagas (a chave tem uma cota gratuita limitada; acima dela, cobra por uso). Acompanhe o consumo em <a href="https://aistudio.google.com/app/apikey" target="_blank" class="apiKey-link">aistudio.google.com</a>.</p>
 
               <div style="display:flex; gap:12px; margin-top: 14px;">
@@ -4657,7 +4665,9 @@ video#sourceVideo { display: none; }
         } else if (action === 'download-legenda') {
             downloadLegendaSrt();
         } else if (action === 'copy-narracao') {
-            await copyTextToClipboard(currentCuts.map(c => (c.narracao || '').trim()).filter(Boolean).join('\n\n'), btn, '📋 Copiar narração completa (p/ ElevenLabs)');
+            // Cenas juntas num TEXTO CONTÍNUO, sem quebra de linha — o
+            // usuário prefere colar um parágrafo corrido no ElevenLabs.
+            await copyTextToClipboard(currentCuts.map(c => (c.narracao || '').trim()).filter(Boolean).join(' '), btn, '📋 Copiar narração completa (p/ ElevenLabs)');
         } else if (action === 'copy-hook-phrase') {
             await copyTextToClipboard(currentHookPhrase, btn, '📋 Copiar');
         }
@@ -5225,6 +5235,7 @@ video#sourceVideo { display: none; }
         // alguma vez, respeita a última escolha do usuário (mesmo que seja "desligar").
         if (saved.viralMode !== undefined) document.getElementById('aiViralMode').checked = saved.viralMode;
         if (saved.skipNarration !== undefined) document.getElementById('aiSkipNarration').checked = saved.skipNarration;
+        if (saved.syncAfterCut !== undefined) document.getElementById('aiSyncAfterCut').checked = saved.syncAfterCut;
         if (saved.rememberApiKey) {
             document.getElementById('aiRememberApiKey').checked = true;
             if (saved.apiKey) document.getElementById('aiApiKey').value = saved.apiKey;
@@ -5241,6 +5252,7 @@ video#sourceVideo { display: none; }
             readingWpm: document.getElementById('aiReadingWpm').value,
             viralMode: document.getElementById('aiViralMode').checked,
             skipNarration: document.getElementById('aiSkipNarration').checked,
+            syncAfterCut: document.getElementById('aiSyncAfterCut').checked,
             rememberApiKey,
             apiKey: rememberApiKey ? document.getElementById('aiApiKey').value.trim() : ''
         };
@@ -5249,7 +5261,7 @@ video#sourceVideo { display: none; }
         } catch (e) { /* localStorage indisponível/cheio — ignora silenciosamente */ }
     }
 
-    ['aiTargetTime', 'aiTone', 'aiVoice', 'aiAspectRatio', 'aiReadingWpm', 'aiViralMode', 'aiSkipNarration', 'aiApiKey', 'aiRememberApiKey'].forEach(id => {
+    ['aiTargetTime', 'aiTone', 'aiVoice', 'aiAspectRatio', 'aiReadingWpm', 'aiViralMode', 'aiSkipNarration', 'aiSyncAfterCut', 'aiApiKey', 'aiRememberApiKey'].forEach(id => {
         document.getElementById(id).addEventListener('change', saveSettings);
     });
     loadSettings();
@@ -6984,6 +6996,22 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
 
             videoResultCard.style.display = 'block';
             videoResultCard.scrollIntoView({ behavior: 'smooth' });
+
+            // Se marcado, corta o caminho: vai direto pro card de
+            // Sincronização com o vídeo recém-cortado já como fonte.
+            const syncAfterCutChk = document.getElementById('aiSyncAfterCut');
+            if (syncAfterCutChk && syncAfterCutChk.checked) {
+                setTimeout(() => {
+                    const syncCard = document.getElementById('aiSyncCard');
+                    if (!syncCard) return;
+                    syncCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    const syncStatus = document.getElementById('aiSyncStatus');
+                    if (syncStatus) {
+                        syncStatus.innerText = '✅ Corte pronto! O vídeo cortado já está pronto aí embaixo — escolha a narração (MP3 do ElevenLabs ou gerar pela IA) e clique em "Sincronizar e Baixar".';
+                    }
+                }, 500);
+            }
+
             const cenasNarradas = currentNarrationAudios.filter(a => a && a.length > 0).length;
             let resumoNarracao;
             if (cenasNarradas === currentCuts.length) {
