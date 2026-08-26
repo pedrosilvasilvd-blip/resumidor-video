@@ -4095,15 +4095,16 @@ video#sourceVideo { display: none; }
 
         const { mainX: destX, mainY: destY, mainW: destW, mainH: destH } = getVideoRenderLayout();
 
-        ctx.fillStyle = '#000000';
-        ctx.fillRect(0, 0, TARGET_W, TARGET_H);
-        try {
-          ctx.drawImage(video, sx, sy, sw, sh, destX, destY, destW, destH);
-        } catch (e) { /* frame ainda não disponível — o loop corrige no tick */ }
+ctx.fillStyle = '#000000';
+          ctx.fillRect(0, 0, TARGET_W, TARGET_H);
+          try {
+            ctx.drawImage(video, sx, sy, sw, sh, destX, destY, destW, destH);
+          } catch (e) { /* frame ainda não disponível — o loop corrige no tick */ }
 
-        mediaRecorder.start();
+          mediaRecorder.start();
 
-        const introDuration = (config.introStyle === 'none') ? 0 : VISUAL.INTRO_DURATION;
+          const noEffectsMode = !!config.noEffectsMode;
+          const introDuration = (noEffectsMode || config.introStyle === 'none') ? 0 : VISUAL.INTRO_DURATION;
         const startTime = Date.now();
         let videoStarted = false;
         let frameIndex = 0;
@@ -8726,5 +8727,5 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
   window.wireDownloadLinkToSaveFolder(document.getElementById('aiSyncDownloadLink'));
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a30f64a0aa1f55a8',t:'MTc4NzcxMTIwMQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a30f88381d91b707',t:'MTc4NzcxMjY1OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
