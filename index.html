@@ -1153,6 +1153,37 @@ input[type="file"]:hover {
   box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2);
 }
 
+/* Slider de volume (música de fundo do Sincronizador) dentro do painel IA */
+.ai30-panel input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.1);
+  height: 6px;
+  border-radius: 4px;
+  border: none;
+  padding: 0;
+  outline: none;
+}
+.ai30-panel input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent-indigo);
+  border: 2px solid #fff;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(129, 140, 248, 0.5);
+}
+.ai30-panel input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent-indigo);
+  border: 2px solid #fff;
+  cursor: pointer;
+}
+
 .ai30-panel button {
   background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
   color: white;
@@ -2301,6 +2332,7 @@ video#sourceVideo { display: none; }
             <div class="card" id="aiSyncCard">
               <h3 style="margin-top:0; font-size:1.2rem;">🎙️ Sincronizar Narração</h3>
               <p class="desc">Gerou a narração no ElevenLabs e o tempo não bateu exato com o corte? Suba o áudio — ou deixe a própria IA gerar uma narração energética automaticamente. De qualquer jeito, o app ajusta a velocidade de um dos dois pra ficarem do mesmo tamanho, sem precisar abrir o CapCut.</p>
+              <p class="desc" style="color:#a5b4fc;">🎵 Agora dá pra adicionar <strong>música de fundo</strong> direto aqui: você escolhe o MP3/WAV e o volume, e o app mixa a trilha por baixo da narração no vídeo sincronizado final.</p>
 
               <label>Vídeo a sincronizar:</label>
               <p id="aiSyncVideoSourceHint" style="font-size:0.75rem;color:var(--text-muted);margin:2px 0 8px;">Usando automaticamente o vídeo cortado acima. Se preferir, envie outro arquivo:</p>
@@ -2341,6 +2373,26 @@ video#sourceVideo { display: none; }
                   <input type="radio" name="aiSyncMode" value="video_to_audio">
                   <span><strong>Manter a duração da NARRAÇÃO</strong> — o vídeo acelera ou desacelera pra acompanhar o áudio inteiro, sem cortar nem repetir nenhum trecho da narração. A voz mantém o tom normal; o vídeo é que fica mais rápido/lento.</span>
                 </label>
+              </div>
+
+              <label style="margin-top:16px;">🎵 Música de fundo (opcional)</label>
+              <div class="feature-list" style="margin-top:6px;">
+                <label class="checkbox-item">
+                  <input type="checkbox" id="aiSyncBgmChk">
+                  <span><strong>Adicionar música de fundo</strong> — mixa uma trilha por baixo da narração no vídeo sincronizado final. A narração mantém o volume original; a música fica por baixo, no volume que você escolher.</span>
+                </label>
+              </div>
+              <div id="aiSyncBgmOpts" style="display:none; margin-top:10px;">
+                <label>Música (MP3, WAV, M4A...):</label>
+                <div class="file-dropzone-wrap">
+                  <input type="file" id="aiSyncBgmInput" accept="audio/*">
+                </div>
+                <div class="control-row" style="margin-top:10px;">
+                  <span>Volume da música:</span>
+                  <input type="range" id="aiSyncBgmVolume" min="0" max="1" step="0.05" value="0.3">
+                  <span class="control-val" id="aiSyncBgmVolumeVal">30%</span>
+                </div>
+                <p style="font-size:0.72rem;color:var(--text-muted);margin:8px 0 0;line-height:1.45;">Se a música for mais curta que o vídeo, ela repete (loop) até o fim e sai com um fade de ~1s no último segundo. A música é misturada apenas no vídeo sincronizado que vai ser baixado — o corte e a narração originais não mudam.</p>
               </div>
 
               <label class="checkbox-item" style="margin-top:14px;">
@@ -7053,6 +7105,20 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
     }
     [aiSyncSourceUpload, aiSyncSourceAuto].forEach(el => el.addEventListener('change', refreshSyncSourceUI));
 
+    // ===== Música de fundo no Sincronizador ===============================
+    // Opcional: se o usuário marcar, uma trilha (MP3/WAV...) é mixada por
+    // baixo da narração no vídeo sincronizado final, no volume escolhido.
+    const aiSyncBgmChk = document.getElementById('aiSyncBgmChk');
+    const aiSyncBgmOpts = document.getElementById('aiSyncBgmOpts');
+    const aiSyncBgmVolume = document.getElementById('aiSyncBgmVolume');
+    const aiSyncBgmVolumeVal = document.getElementById('aiSyncBgmVolumeVal');
+    aiSyncBgmChk.addEventListener('change', () => {
+        aiSyncBgmOpts.style.display = aiSyncBgmChk.checked ? 'block' : 'none';
+    });
+    aiSyncBgmVolume.addEventListener('input', () => {
+        aiSyncBgmVolumeVal.innerText = `${Math.round(parseFloat(aiSyncBgmVolume.value) * 100)}%`;
+    });
+
     // Voz e estilo de interpretação fixos para a narração automática do
     // sincronizador — sempre humanizada, animada e cheia de energia,
     // independente do que estiver selecionado em "Voz do Narrador (IA)" lá
@@ -7135,6 +7201,22 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
             }
         }
 
+        // Música de fundo (opcional): lê a opção, o arquivo e o volume, e
+        // valida ANTES de qualquer coisa pesada (download do motor ffmpeg).
+        let bgmFile = null;
+        let bgmVolume = 0;
+        const bgmChk = document.getElementById('aiSyncBgmChk');
+        const bgmInput = document.getElementById('aiSyncBgmInput');
+        if (bgmChk && bgmChk.checked) {
+            bgmFile = bgmInput.files && bgmInput.files[0];
+            if (!bgmFile) {
+                alert('Você marcou "Adicionar música de fundo" mas não selecionou o arquivo — escolha o MP3/WAV (ou desmarque a opção).');
+                return;
+            }
+            const volEl = document.getElementById('aiSyncBgmVolume');
+            bgmVolume = Math.max(0, Math.min(1, parseFloat(volEl.value) || 0));
+        }
+
         let videoSourceBlob = videoOverrideInput.files && videoOverrideInput.files[0];
         if (!videoSourceBlob) {
             if (!finalVideoEl.src || finalVideoEl.src === window.location.href) {
@@ -7148,7 +7230,7 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
 
         syncBtn.disabled = true;
         resultBox.style.display = 'none';
-        let ff, videoName, audioName, outputName;
+        let ff, videoName, audioName, outputName, bgmName = null;
         try {
             if (sourceMode === 'auto') {
                 audioFile = await generateAutoSyncNarrationFile((msg) => { syncStatus.innerText = msg; });
@@ -7177,36 +7259,85 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
             syncStatus.innerText = 'Preparando arquivos...';
             await ff.writeFile(videoName, (await fetchFile(videoSourceBlob)).slice());
             await ff.writeFile(audioName, (await fetchFile(audioFile)).slice());
+            if (bgmFile) {
+                bgmName = 'sync_bgm.' + (bgmFile.name.split('.').pop() || 'mp3');
+                await ff.writeFile(bgmName, (await fetchFile(bgmFile)).slice());
+            }
 
-            syncStatus.innerText = 'Sincronizando e exportando (pode levar um pouco)...';
+            syncStatus.innerText = bgmName
+                ? 'Sincronizando, exportando e mixando a música de fundo (pode levar um pouco)...'
+                : 'Sincronizando e exportando (pode levar um pouco)...';
+
+            // Com música de fundo, o áudio final é montado num filter_complex:
+            //  [n] = narração ajustada, com exatamente a duração do resultado (T)
+            //  [b] = música no volume escolhido, no mesmo tamanho T, com fade de
+            //        1s no fim (o -stream_loop repete a música se ela for mais
+            //        curta que o vídeo; atrim corta o excedente)
+            //  amix soma as duas; o volume=2 depois do amix COMPENSA a divisão
+            //  por 2 que o amix aplica por padrão — a narração sai no volume
+            //  original e a música entra proporcional ao volume escolhido.
+            const totalSeconds = mode === 'audio_to_video' ? videoDuration : audioDuration;
+            const totalStr = totalSeconds.toFixed(3);
+            const fadeStartStr = Math.max(0, totalSeconds - 1).toFixed(3);
+            const bgmMixFilter =
+                `[2:a]volume=${bgmVolume.toFixed(3)},atrim=0:${totalStr},asetpts=PTS-STARTPTS,afade=t=out:st=${fadeStartStr}:d=1[b];` +
+                `[n][b]amix=inputs=2:duration=first:dropout_transition=0,volume=2[aout]`;
 
             if (mode === 'audio_to_video') {
-                // Narração se ajusta ao tamanho do vídeo. -shortest+apad garante
+                // Narração se ajusta ao tamanho do vídeo. apad+atrim garantem
                 // que pequenas sobras de arredondamento do atempo não deixem o
                 // arquivo final maior/menor que o vídeo original.
                 const factor = audioDuration / videoDuration;
                 const atempoChain = buildAtempoChain(factor);
-                await ff.exec([
-                    '-i', videoName, '-i', audioName,
-                    '-filter:a', `${atempoChain},apad`,
-                    '-map', '0:v:0', '-map', '1:a:0',
-                    '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k',
-                    '-t', videoDuration.toFixed(3),
-                    outputName
-                ]);
+                if (bgmName) {
+                    await ff.exec([
+                        '-i', videoName, '-i', audioName,
+                        '-stream_loop', '-1', '-i', bgmName,
+                        '-filter_complex',
+                        `[1:a]${atempoChain},apad,atrim=0:${totalStr},asetpts=PTS-STARTPTS[n];${bgmMixFilter}`,
+                        '-map', '0:v:0', '-map', '[aout]',
+                        '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k',
+                        '-t', totalStr,
+                        outputName
+                    ]);
+                } else {
+                    await ff.exec([
+                        '-i', videoName, '-i', audioName,
+                        '-filter:a', `${atempoChain},apad`,
+                        '-map', '0:v:0', '-map', '1:a:0',
+                        '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k',
+                        '-t', videoDuration.toFixed(3),
+                        outputName
+                    ]);
+                }
             } else {
                 // Vídeo se ajusta ao tamanho da narração — a voz não muda de
                 // velocidade nem de tom, o vídeo que fica mais rápido/lento.
                 const ptsFactor = audioDuration / videoDuration;
-                await ff.exec([
-                    '-i', videoName, '-i', audioName,
-                    '-filter:v', `setpts=${ptsFactor.toFixed(4)}*PTS`,
-                    '-map', '0:v:0', '-map', '1:a:0',
-                    '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20',
-                    '-c:a', 'aac', '-b:a', '192k',
-                    '-t', audioDuration.toFixed(3),
-                    outputName
-                ]);
+                if (bgmName) {
+                    await ff.exec([
+                        '-i', videoName, '-i', audioName,
+                        '-stream_loop', '-1', '-i', bgmName,
+                        '-filter_complex',
+                        `[0:v]setpts=${ptsFactor.toFixed(4)}*PTS[v];` +
+                        `[1:a]atrim=0:${totalStr},asetpts=PTS-STARTPTS[n];${bgmMixFilter}`,
+                        '-map', '[v]', '-map', '[aout]',
+                        '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20',
+                        '-c:a', 'aac', '-b:a', '192k',
+                        '-t', totalStr,
+                        outputName
+                    ]);
+                } else {
+                    await ff.exec([
+                        '-i', videoName, '-i', audioName,
+                        '-filter:v', `setpts=${ptsFactor.toFixed(4)}*PTS`,
+                        '-map', '0:v:0', '-map', '1:a:0',
+                        '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20',
+                        '-c:a', 'aac', '-b:a', '192k',
+                        '-t', audioDuration.toFixed(3),
+                        outputName
+                    ]);
+                }
             }
 
             const data = await ff.readFile(outputName);
@@ -7219,9 +7350,12 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
             resultBox.style.display = 'block';
             resultBox.scrollIntoView({ behavior: 'smooth' });
 
-            syncStatus.innerText = mode === 'audio_to_video'
+            const bgmNote = bgmName
+                ? ` 🎵 Música de fundo adicionada a ${Math.round(bgmVolume * 100)}% (por baixo da narração).`
+                : '';
+            syncStatus.innerText = (mode === 'audio_to_video'
                 ? `✅ Pronto! Narração ajustada para caber nos ${videoDuration.toFixed(1)}s do vídeo.`
-                : `✅ Pronto! Vídeo ajustado para acompanhar os ${audioDuration.toFixed(1)}s da narração.`;
+                : `✅ Pronto! Vídeo ajustado para acompanhar os ${audioDuration.toFixed(1)}s da narração.`) + bgmNote;
 
             // Se marcado, já joga o vídeo recém-sincronizado na fila da aba
             // Dorama, preenche título e frase de curiosidade/gancho com o que
@@ -7262,7 +7396,7 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
             syncStatus.innerText = '❌ Erro ao sincronizar: ' + (err.message || err);
         } finally {
             if (ff) {
-                for (const f of [videoName, audioName, outputName]) {
+                for (const f of [videoName, audioName, outputName, bgmName]) {
                     if (f) await safeDeleteFile(ff, f);
                 }
             }
