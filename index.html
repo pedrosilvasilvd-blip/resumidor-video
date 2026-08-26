@@ -2042,6 +2042,16 @@ video#sourceVideo { display: none; }
             </label>
           </div>
 
+          <!-- Opção: Processar sem efeitos (apenas adicionar) -->
+          <div class="pro-card" style="border-color: rgba(251, 191, 36, 0.4); background: rgba(251, 191, 36, 0.06); box-shadow: 0 4px 16px rgba(251, 191, 36, 0.08);">
+            <div class="control-title" style="color: var(--accent-yellow);">🎬 Processar Sem Efeitos (Apenas Adicionar)</div>
+            <p style="font-size:0.75rem;color:var(--text-muted);margin:6px 0 10px;line-height:1.4;">Quando marcado, o vídeo é processado <strong>sem nenhum efeito</strong> — sem blindagem, sem crop, sem desfoque, sem edição criativa, sem narração, sem alteração de áudio, sem cor cinematográfica. Apenas o vídeo original é exportado como está. Marque esta opção só se quiser adicionar o vídeo sem alterações.</p>
+            <label class="checkbox-item" style="margin:0; cursor:pointer;">
+              <input type="checkbox" class="no-effects-chk" id="doramaNoEffectsChk" style="width:20px; height:20px;">
+              <span><strong>🚫 Ativar modo sem efeitos</strong> — desliga todos os efeitos e processa o vídeo original sem alterações</span>
+            </label>
+          </div>
+
           <div class="pro-card">
             <div class="control-title">🎬 Cortes do Filme / Dorama</div>
             <label>Selecione os Cortes do Filme / Dorama:</label>
@@ -2982,6 +2992,67 @@ video#sourceVideo { display: none; }
     }
     renderInteractivePreview();
     status.innerText = '🛡️ Modo Aprovação aplicado! Arraste o quadrado amarelo sobre o QR/logo. Se o início do vídeo de origem for letreiro/tela parada, aumente o "Cortar Início".';
+  }
+
+  // --- Modo Sem Efeitos (Dorama: processar sem nenhuma alteração) ---
+  // Quando o checkbox "Sem Efeitos" é marcado na aba Dorama, desliga todos
+  // os efeitos (blindagem, crop, desfoque, edição criativa, narração, cor)
+  // e processa o vídeo original como está. Ativado por checkbox, não por
+  // botão — só quando o usuário explicitamente marca a opção.
+  function applyNoEffectsMode(container) {
+    const set = (sel, val) => { const el = container.querySelector(sel); if (el) el.value = val; };
+    const uncheck = (sel) => { const el = container.querySelector(sel); if (el) el.checked = false; };
+
+    // Desliga todos os efeitos visuais
+    uncheck('.shake-chk');
+    uncheck('.mirror-chk');
+    uncheck('.stego-chk');
+    uncheck('.audio-chk');
+    uncheck('.audio-ducking-chk');
+    uncheck('.blur-chk');
+    uncheck('.creative-chk');
+
+    // Desativa crop e narração
+    uncheck('.enable-crop-chk');
+    uncheck('.narration-chk');
+
+    // Restaura opções para valores sem alteração
+    set('.intro-style-select', 'none');
+    set('.overlay-style-select', 'netflix_style');
+    set('.pitch-select', '0');
+    set('.video-volume-range', '1.0');
+    set('.bgm-volume-range', '0');
+    set('.trim-start-range', '0');
+    set('.trim-end-range', '0');
+
+    // Atualiza os displays dos valores dos ranges
+    const trimStartVal = container.querySelector('.trim-start-val');
+    const trimEndVal = container.querySelector('.trim-end-val');
+    const videoVolumeVal = container.querySelector('.video-volume-val');
+    const bgmVolumeVal = container.querySelector('.bgm-volume-val');
+    if (trimStartVal) trimStartVal.innerText = '0.0s';
+    if (trimEndVal) trimEndVal.innerText = '0.0s';
+    if (videoVolumeVal) videoVolumeVal.innerText = '100%';
+    if (bgmVolumeVal) bgmVolumeVal.innerText = '0%';
+
+    // Esconde a máscara de desfoque
+    blurBox.style.display = 'none';
+
+    // Atualiza a prévia
+    renderInteractivePreview();
+    status.innerText = '🚫 Modo sem efeitos ativado! O vídeo será processado sem nenhuma alteração — apenas exportado como está.';
+  }
+
+  // Listener do checkbox "Sem Efeitos" na aba Dorama
+  const doramaNoEffectsChk = document.getElementById('doramaNoEffectsChk');
+  if (doramaNoEffectsChk) {
+    doramaNoEffectsChk.addEventListener('change', () => {
+      if (doramaNoEffectsChk.checked) {
+        applyNoEffectsMode(tabDoramaContent);
+      } else {
+        status.innerText = 'Modo sem efeitos desativado. Você pode reativar os efeitos manualmente.';
+      }
+    });
   }
 
   document.querySelectorAll('.approval-btn').forEach(btn => {
@@ -4489,37 +4560,37 @@ video#sourceVideo { display: none; }
         delete processingContainer.dataset.autoUseFastRender;
       }
       const baseTitle = ctrl.hookText.value.trim();
+      // Verifica se o modo "Sem Efeitos" está ativado (aba Dorama)
+      const noEffectsChk = processingContainer?.querySelector('.no-effects-chk');
+      const noEffects = noEffectsChk ? noEffectsChk.checked : false;
       const config = {
-        cutStart: parseFloat(ctrl.trimStart.value) || 0,
-        cutEnd: parseFloat(ctrl.trimEnd.value) || 0,
-        isCropActive: autoApprovalPreset ? true : ctrl.enableCrop.checked,
-        blur: autoApprovalPreset ? false : (ctrl.blur ? ctrl.blur.checked : false),
-        creativeEdit: autoApprovalPreset ? true : (ctrl.creative ? ctrl.creative.checked : false),
-        fastRender: autoApprovalPreset ? false : (ctrl.fast ? ctrl.fast.checked : false),
-        captionStyle: autoApprovalPreset ? 'none' : (ctrl.captionStyle ? ctrl.captionStyle.value : 'none'),
-        captionText: ctrl.captionText ? ctrl.captionText.value : '',
-        narrationText: ctrl.narrationText ? ctrl.narrationText.value : '',
-        narration: ctrl.narration ? ctrl.narration.checked : false,
-        introStyle: autoApprovalPreset ? 'none' : ctrl.introStyle.value,
-        overlayStyle: ctrl.overlayStyle.value,
-        colorFilter: activeTab === 'dorama' ? doramaColorFilter.value : '',
-        channelName: autoApprovalPreset ? '' : (ctrl.channelName ? ctrl.channelName.value : ''),
-        shake: autoApprovalPreset ? true : ctrl.shake.checked,
-        mirror: autoApprovalPreset ? true : (ctrl.mirror ? ctrl.mirror.checked : false),
-        stego: autoApprovalPreset ? true : ctrl.stego.checked,
-        audio: autoApprovalPreset ? true : ctrl.audio.checked,
-        ducking: autoApprovalPreset && activeTab === 'dorama' ? true : (ctrl.ducking ? ctrl.ducking.checked : false),
-        bgmFile: (ctrl.bgmInput && ctrl.bgmInput.files && ctrl.bgmInput.files[0]) ? ctrl.bgmInput.files[0] : null,
-        bgmVolume: ctrl.bgmVolume ? parseFloat(ctrl.bgmVolume.value) : 0.35,
-        videoVolume: ctrl.videoVolume ? parseFloat(ctrl.videoVolume.value) : 1.5,
-        // Defesa dupla: mesmo que o HTML seja alterado pelo navegador, Dorama
-        // nunca sai com pitch diferente de zero.
-        // No fluxo automático o pitch fica sempre em zero para preservar a
-        // duração e a sincronia exata entre áudio e vídeo nas duas abas.
-        pitchSemitones: autoApprovalPreset
+        cutStart: noEffects ? 0 : (parseFloat(ctrl.trimStart.value) || 0),
+        cutEnd: noEffects ? 0 : (parseFloat(ctrl.trimEnd.value) || 0),
+        isCropActive: noEffects ? false : (autoApprovalPreset ? true : ctrl.enableCrop.checked),
+        blur: noEffects ? false : (autoApprovalPreset ? false : (ctrl.blur ? ctrl.blur.checked : false)),
+        creativeEdit: noEffects ? false : (autoApprovalPreset ? true : (ctrl.creative ? ctrl.creative.checked : false)),
+        fastRender: noEffects ? false : (autoApprovalPreset ? false : (ctrl.fast ? ctrl.fast.checked : false)),
+        captionStyle: noEffects ? 'none' : (autoApprovalPreset ? 'none' : (ctrl.captionStyle ? ctrl.captionStyle.value : 'none')),
+        captionText: noEffects ? '' : (ctrl.captionText ? ctrl.captionText.value : ''),
+        narrationText: noEffects ? '' : (ctrl.narrationText ? ctrl.narrationText.value : ''),
+        narration: noEffects ? false : (ctrl.narration ? ctrl.narration.checked : false),
+        introStyle: noEffects ? 'none' : (autoApprovalPreset ? 'none' : ctrl.introStyle.value),
+        overlayStyle: noEffects ? 'none' : ctrl.overlayStyle.value,
+        colorFilter: noEffects ? '' : (activeTab === 'dorama' ? doramaColorFilter.value : ''),
+        channelName: noEffects ? '' : (autoApprovalPreset ? '' : (ctrl.channelName ? ctrl.channelName.value : '')),
+        shake: noEffects ? false : (autoApprovalPreset ? true : ctrl.shake.checked),
+        mirror: noEffects ? false : (autoApprovalPreset ? true : (ctrl.mirror ? ctrl.mirror.checked : false)),
+        stego: noEffects ? false : (autoApprovalPreset ? true : ctrl.stego.checked),
+        audio: noEffects ? false : (autoApprovalPreset ? true : ctrl.audio.checked),
+        ducking: noEffects ? false : (autoApprovalPreset && activeTab === 'dorama' ? true : (ctrl.ducking ? ctrl.ducking.checked : false)),
+        bgmFile: noEffects ? null : ((ctrl.bgmInput && ctrl.bgmInput.files && ctrl.bgmInput.files[0]) ? ctrl.bgmInput.files[0] : null),
+        bgmVolume: noEffects ? 0 : (ctrl.bgmVolume ? parseFloat(ctrl.bgmVolume.value) : 0.35),
+        videoVolume: noEffects ? 1.0 : (ctrl.videoVolume ? parseFloat(ctrl.videoVolume.value) : 1.5),
+        pitchSemitones: noEffects ? 0 : (autoApprovalPreset
           ? 0
-          : (activeTab === 'dorama' ? 0 : (ctrl.pitch ? parseFloat(ctrl.pitch.value) : 0)),
-        autoApprovalPreset
+          : (activeTab === 'dorama' ? 0 : (ctrl.pitch ? parseFloat(ctrl.pitch.value) : 0))),
+        autoApprovalPreset,
+        noEffectsMode: noEffects
       };
 
       // Checklist de pré-export: se houver avisos, pergunta antes de gastar
@@ -8655,5 +8726,5 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
   window.wireDownloadLinkToSaveFolder(document.getElementById('aiSyncDownloadLink'));
 </script>
 
-</body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a30f64a0aa1f55a8',t:'MTc4NzcxMTIwMQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
