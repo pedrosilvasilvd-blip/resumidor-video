@@ -1617,6 +1617,197 @@ input[type="file"]:hover {
 
 video#sourceVideo { display: none; }
 
+/* =========================================================================
+   ABA 5: NARRADOR IA (tema roxo)
+   ========================================================================= */
+.nav-btn.active.narrator-tab {
+  background: linear-gradient(90deg, rgba(192, 132, 252, 0.15) 0%, rgba(192, 132, 252, 0.04) 100%);
+  border-color: rgba(192, 132, 252, 0.35);
+  box-shadow: 0 4px 16px rgba(192, 132, 252, 0.12), inset 0 0 12px rgba(192, 132, 252, 0.05);
+}
+.nav-btn.active.narrator-tab .nav-btn-title { color: #c084fc; }
+.nav-btn.active.narrator-tab .nav-btn-icon-wrap { background: rgba(192, 132, 252, 0.2); color: #c084fc; }
+
+.module-badge.purple {
+  background: rgba(192, 132, 252, 0.15);
+  border: 1px solid rgba(192, 132, 252, 0.3);
+  color: #c084fc;
+}
+
+#tabNarradorContent {
+  background: var(--panel-bg);
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  padding: 20px 24px;
+  height: calc(100vh - 32px);
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+.narrador-panel {
+  --nar-accent: #c084fc;
+  --nar-accent-light: #d8b4fe;
+  --nar-accent-glow: rgba(192, 132, 252, 0.35);
+  --nar-accent-subtle: rgba(192, 132, 252, 0.08);
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  box-sizing: border-box;
+}
+.narrador-panel .container {
+  width: 100%;
+  max-width: 960px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-sizing: border-box;
+}
+.narrador-panel h2 {
+  background: linear-gradient(135deg, #ffffff 0%, #d8b4fe 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* texto */
+.nar-text-row { display:flex; justify-content: space-between; align-items:center; margin-top:10px; gap:10px; flex-wrap:wrap; }
+.nar-count { font-size:0.8rem; color: var(--text-muted); }
+.nar-mini-btn {
+  font: inherit; font-size:0.78rem; font-weight:700;
+  color:#e9d5ff; background: rgba(192,132,252,0.14);
+  border:1px solid rgba(192,132,252,0.35); border-radius:999px; padding:6px 14px; cursor:pointer; transition: all .2s;
+}
+.nar-mini-btn:hover { background: rgba(192,132,252,0.28); }
+
+/* motores */
+.nar-engines { display:flex; gap:9px; flex-wrap:wrap; }
+.nar-engine-chip {
+  font:inherit; font-size:0.86rem; font-weight:700;
+  display:inline-flex; align-items:center; gap:8px; text-align:left;
+  color: var(--text-main); background: rgba(0,0,0,0.25);
+  border:1px solid var(--border-color); border-radius: var(--radius-md);
+  padding:10px 14px; cursor:pointer; transition: all .2s;
+}
+.nar-engine-chip small { display:block; font-weight:500; font-size:0.7rem; color: var(--text-muted); margin-top:2px; }
+.nar-engine-chip:hover { border-color: rgba(192,132,252,0.6); }
+.nar-engine-chip.selected {
+  background: linear-gradient(135deg, rgba(192,132,252,0.28), rgba(139,92,246,0.14));
+  border-color: var(--nar-accent);
+  box-shadow: 0 0 0 3px rgba(192,132,252,0.18);
+}
+.nar-engine-chip .nar-spark { color: #fbbf24; }
+
+/* vozes */
+.nar-voices { display:grid; gap:10px; }
+.nar-voice {
+  display:flex; align-items:center; gap:14px;
+  padding:12px 14px; border-radius: var(--radius-md); cursor:pointer;
+  background: rgba(0,0,0,0.25); border:1px solid var(--border-color);
+  transition: border-color .2s, background .2s, transform .15s;
+}
+.nar-voice:hover { transform: translateY(-1px); background: rgba(0,0,0,0.35); }
+.nar-voice input { position:absolute; opacity:0; pointer-events:none; }
+.nar-voice.selected {
+  border-color: var(--nar-accent);
+  background: linear-gradient(135deg, rgba(192,132,252,0.18), rgba(34,211,238,0.08));
+  box-shadow: 0 0 0 3px rgba(192,132,252,0.18);
+}
+.nar-avatar {
+  width:44px; height:44px; border-radius:50%; flex:0 0 auto;
+  display:flex; align-items:center; justify-content:center;
+  font-weight:800; font-size:1.1rem; color:#fff;
+}
+.nar-avat-rosa { background: linear-gradient(135deg,#f472b6,#fb7185); }
+.nar-avat-azul { background: linear-gradient(135deg,#60a5fa,#818cf8); }
+.nar-avat-roxa { background: linear-gradient(135deg,#a78bfa,#e879f9); }
+.nar-voice-info { flex:1; min-width:0; }
+.nar-voice-name { font-weight:700; font-size:0.95rem; }
+.nar-voice-desc { font-size:0.78rem; color: var(--text-muted); margin-top:2px; }
+.nar-sample-btn {
+  flex:0 0 auto; font:inherit; font-size:0.76rem; font-weight:700;
+  display:inline-flex; align-items:center; gap:6px;
+  color:#e0f2fe; background: rgba(34,211,238,0.12);
+  border:1px solid rgba(34,211,238,0.35); border-radius:999px; padding:7px 12px; cursor:pointer; transition:background .2s;
+}
+.nar-sample-btn:hover { background: rgba(34,211,238,0.25); }
+.nar-sample-btn:disabled { opacity:.5; cursor:wait; }
+
+/* painéis Gemini / HF */
+.nar-hidden { display:none !important; }
+.nar-sel-row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+.nar-sel { max-width:100%; }
+.nar-key-row { display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
+.nar-key-row input { flex:1; min-width:220px; }
+.nar-key-status { font-size:0.78rem; color: var(--text-muted); margin-top:8px; }
+.nar-key-status.ok { color:#6ee7b7; }
+.nar-key-status.bad { color:#fecaca; }
+.nar-note { font-size:0.76rem; color: var(--text-muted); margin-top:10px; line-height:1.5; }
+.nar-note a { color:#c084fc; }
+
+/* estilos */
+.nar-chips { display:flex; flex-wrap:wrap; gap:9px; }
+.nar-chip {
+  font:inherit; font-size:0.84rem; font-weight:700;
+  color: var(--text-main); background: rgba(0,0,0,0.25);
+  border:1px solid var(--border-color); border-radius:999px; padding:9px 16px; cursor:pointer; transition:all .2s;
+}
+.nar-chip:hover { border-color: rgba(192,132,252,0.6); }
+.nar-chip.selected {
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+  border-color: transparent; color:#fff;
+  box-shadow: 0 6px 18px rgba(139,92,246,0.4);
+}
+.nar-style-hint { margin-top:12px; font-size:0.82rem; color: var(--text-muted); min-height:1.2em; line-height:1.45; }
+
+/* gerar */
+.narrator-theme .btn-action.nar-gen-btn {
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+  box-shadow: 0 4px 20px rgba(139,92,246,0.4);
+}
+.narrator-theme .btn-action.nar-gen-btn:hover { box-shadow: 0 6px 25px rgba(139,92,246,0.6); }
+.narrator-theme .download-link.nar-dl-btn {
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+  box-shadow: 0 4px 16px rgba(139,92,246,0.35);
+}
+.nar-status { display:none; align-items:center; justify-content:center; gap:10px; font-size:0.88rem; color:#d8b4fe; font-weight:600; margin-top:14px; }
+.nar-status.on { display:flex; }
+.nar-spinner { width:18px; height:18px; border-radius:50%; border:2.5px solid rgba(216,180,254,0.25); border-top-color:#c084fc; animation: narSpin .8s linear infinite; flex:0 0 auto; }
+@keyframes narSpin { to { transform: rotate(360deg); } }
+.nar-hint-kbd { font-size:0.75rem; color: var(--text-dim); text-align:center; margin-top:10px; }
+
+.nar-error-box { display:none; margin-top:16px; background: rgba(244,63,94,0.1); border:1px solid rgba(244,63,94,0.4); border-radius: var(--radius-md); padding:14px 16px; }
+.nar-error-box.on { display:block; }
+.nar-error-box p { font-size:0.88rem; color:#fecaca; line-height:1.5; margin:0; }
+.nar-error-actions { display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; }
+.nar-err-btn { font:inherit; font-size:0.82rem; font-weight:700; border-radius:10px; padding:8px 15px; cursor:pointer; border:none; }
+.nar-err-btn.primary { background: var(--accent-rose); color:#fff; }
+.nar-err-btn.ghost { background: rgba(255,255,255,0.08); color: var(--text-main); border:1px solid rgba(255,255,255,0.2); }
+
+.nar-result { display:none; margin-top:16px; }
+.nar-result.on { display:block; animation: narFadeUp .4s ease; }
+@keyframes narFadeUp { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+.nar-result audio { width:100%; margin-top:12px; accent-color:#8b5cf6; border-radius: var(--radius-md); }
+.nar-result-head { display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+.nar-result-head .nar-ok-dot { width:10px; height:10px; border-radius:50%; background:#34d399; box-shadow:0 0 12px rgba(52,211,153,0.8); }
+.nar-result-head strong { font-size:1rem; }
+.nar-result-head small { color: var(--text-muted); margin-left:auto; font-weight:600; }
+.nar-dl-row { display:flex; align-items:center; gap:12px; margin-top:16px; flex-wrap:wrap; }
+.nar-dl-meta { font-size:0.8rem; color: var(--text-muted); }
+
+/* ajuda */
+.nar-help { font-size:0.86rem; color: var(--text-muted); line-height:1.65; }
+.nar-help summary { cursor:pointer; font-weight:700; color:#d8b4fe; font-size:0.9rem; outline:none; }
+.nar-help[open] summary { margin-bottom:10px; }
+.nar-help p { margin-bottom:10px; }
+.nar-help b { color: var(--text-main); }
+.nar-help code, .nar-help pre {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  background: rgba(2,6,23,0.6); border:1px solid rgba(255,255,255,0.12);
+  border-radius:10px; font-size:0.8rem; color:#a5f3fc;
+}
+.nar-help code { padding:2px 8px; }
+.nar-help pre { padding:12px 14px; margin:8px 0 12px; overflow-x:auto; }
+
 /* Responsive Breakpoints */
 @media (max-width: 1050px) {
   body { height: auto; overflow: auto; flex-direction: column; }
@@ -1628,6 +1819,9 @@ video#sourceVideo { display: none; }
   .preview-wrapper { max-width: 260px; }
   .ai-grid-container { grid-template-columns: 1fr; height: auto; }
   #tabAiContent { height: auto; overflow: visible; }
+  #tabNarradorContent { height: auto; overflow: visible; }
+  .nar-voice { flex-wrap: wrap; }
+  .nar-sample-btn { width: 100%; justify-content: center; }
 }
 
   </style>
@@ -1685,6 +1879,16 @@ video#sourceVideo { display: none; }
         <div class="nav-btn-text">
           <span class="nav-btn-title">Downloads Sociais</span>
           <span class="nav-btn-sub">YouTube • Instagram • TikTok</span>
+        </div>
+      </button>
+
+      <button class="nav-btn narrator-tab" id="tabBtnNarrador">
+        <div class="nav-btn-icon-wrap">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4a2 2 0 012 2v8a2 2 0 01-2 2 2 2 0 01-2-2V6a2 2 0 012-2zM5 10v0a7 7 0 0014 0v0M12 17v3m-3 0h6"></path></svg>
+        </div>
+        <div class="nav-btn-text">
+          <span class="nav-btn-title">Narrador IA</span>
+          <span class="nav-btn-sub">Vozes Humanizadas • TTS</span>
         </div>
       </button>
     </nav>
@@ -2310,6 +2514,28 @@ video#sourceVideo { display: none; }
                 <p style="font-size:0.74rem;color:var(--text-muted);margin:4px 0 0;line-height:1.45;">Assim que o corte terminar, a tela rola sozinha até o card "🎙️ Sincronizar Narração" já com o vídeo cortado pronto — você só escolhe a narração (MP3 do ElevenLabs ou gerar pela IA) e clica em "Sincronizar e Baixar".</p>
               </div>
 
+              <!-- MODO AUTOMÁTICO: Roteirista → Narrador → Sincronizar -->
+              <div class="form-group" style="margin-top: 16px; border:1px solid rgba(192,132,252,0.3); background: rgba(192,132,252,0.05); border-radius: var(--radius-md); padding: 12px 14px;">
+                <div class="control-title" style="color:#c084fc; margin-bottom:6px;">🤖 Modo Automático (Roteirista → Narrador → Sincronizar)</div>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;font-weight:600;">
+                  <input type="checkbox" id="aiAutoNarrator" style="width:16px;height:16px;margin:0;">
+                  🎙️ Enviar a narração para a aba Narrador gerar o áudio (usa a voz + estilo + motor que você salvou lá) e depois sincronizar com o vídeo cortado
+                </label>
+                <p style="font-size:0.74rem;color:var(--text-muted);margin:6px 0 0;line-height:1.45;">Quando marcado, o fluxo vira <b>roteiro → Narrador (sua escolha de voz/estilo) → Sincronizar → (opcional) aba Dorama</b>, sem você precisar copiar nada. A voz escolhida no Narrador substitui o Tom da Narração deste card — deixe o Narrador configurado como quiser na aba <b>Narrador IA</b>.</p>
+
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;font-weight:600; margin-top:12px;">
+                  <input type="checkbox" id="aiFullAutopilot" style="width:16px;height:16px;margin:0;">
+                  🛫 Piloto Automático total — se eu colocar <b>2 ou mais vídeos</b>, ele faz todo o processo sozinho (roteiro → narração → cortar → sincronizar), sem clicar em nada
+                </label>
+                <p style="font-size:0.74rem;color:var(--text-muted);margin:6px 0 0;line-height:1.45;">Com 1 vídeo, ele pergunta; com 2+, roda a fila inteira no automático. O áudio é gerado pelo mesmo motor/voz/estilo do Narrador e sincronizado.</p>
+
+                <div style="display:flex;align-items:center;gap:8px;margin-top:12px;padding:9px 10px;border-radius:8px;background:rgba(0,0,0,0.25);border:1px solid rgba(192,132,252,0.2);">
+                  <span style="font-size:0.75rem;color:var(--text-muted);font-weight:700;">🎚️ Narrador atualmente:</span>
+                  <span id="aiNarratorStatusChip" style="font-size:0.75rem;color:#c084fc;font-weight:800;">carregando…</span>
+                </div>
+                <p style="font-size:0.72rem;color:var(--text-muted);margin:6px 0 0;line-height:1.4;">Configure a voz, o estilo e o motor na aba <b>Narrador IA</b> — esta escolha fica salva e é usada aqui automaticamente.</p>
+              </div>
+
               <p style="font-size:0.76rem; color:var(--text-muted); margin: 18px 0 0; line-height:1.5;">💳 Cada processamento consome a cota/saldo da <strong>sua</strong> chave de API do Gemini — o upload do vídeo, a geração do roteiro e a narração de cada cena são chamadas pagas (a chave tem uma cota gratuita limitada; acima dela, cobra por uso). Acompanhe o consumo em <a href="https://aistudio.google.com/app/apikey" target="_blank" class="apiKey-link">aistudio.google.com</a>.</p>
 
               <div style="display:flex; gap:12px; margin-top: 14px;">
@@ -2551,6 +2777,188 @@ video#sourceVideo { display: none; }
         </div>
       </div>
 
+      <!-- ABA 5: NARRADOR IA -->
+      <div class="tab-content" id="tabNarradorContent">
+        <div class="narrador-panel">
+          <div class="container">
+            <div class="module-header">
+              <div class="module-badge-row">
+                <span class="module-badge purple">🎙️ Módulo Narrador IA</span>
+              </div>
+              <h2>Narrador IA — Vozes Humanizadas</h2>
+              <p class="desc">Cole o seu texto, escolha a voz e o estilo de narração, e ouça uma narração com qualidade de estúdio — pronta para baixar em MP3/WAV e usar no seu vídeo.</p>
+            </div>
+
+            <!-- Texto -->
+            <div class="pro-card">
+              <div class="control-title">📝 Seu texto</div>
+              <label for="narText">Texto da narração</label>
+              <textarea id="narText" maxlength="8000" placeholder="Escreva ou cole aqui o texto que você quer transformar em narração…"></textarea>
+              <div class="nar-text-row">
+                <span class="nar-count" id="narCount">0 caracteres</span>
+                <button class="nar-mini-btn" id="narSampleText" type="button">📄 Usar texto de exemplo</button>
+              </div>
+            </div>
+
+            <!-- Motor -->
+            <div class="pro-card">
+              <div class="control-title">🧠 Motor de voz</div>
+              <div class="nar-engines" id="narEngines">
+                <button class="nar-engine-chip selected" type="button" data-engine="free">
+                  <span>🎙️ Grátis (Edge)<small>Francisca, Antonio, Thalita, Duarte e Raquel · sem cadastro</small></span>
+                </button>
+                <button class="nar-engine-chip" type="button" data-engine="gemini">
+                  <span class="nar-spark">✦</span>
+                  <span>Gemini (voz tipo Puck)<small>Puck, Kore, Aoede… · grátis com chave do Google (limite diário)</small></span>
+                </button>
+                <button class="nar-engine-chip" type="button" data-engine="hf">
+                  <span>🎤</span>
+                  <span>Clone de voz — a sua voz<small>grátis, sem chave — a partir de 1 áudio seu</small></span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Voz -->
+            <div class="pro-card">
+              <div class="control-title">🎤 Voz</div>
+
+              <div id="narPanelFree">
+                <div class="nar-voices" id="narVoices">
+                  <label class="nar-voice selected" data-voice="pt-BR-FranciscaNeural">
+                    <input type="radio" name="narVoice" value="pt-BR-FranciscaNeural" checked>
+                    <span class="nar-avatar nar-avat-rosa">F</span>
+                    <span class="nar-voice-info">
+                      <span class="nar-voice-name">Francisca</span>
+                      <span class="nar-voice-desc">Feminina · calorosa e natural — ótima para quase tudo</span>
+                    </span>
+                    <button class="nar-sample-btn" type="button" data-sample="pt-BR-FranciscaNeural" data-name="Francisca">🔊 Ouvir amostra</button>
+                  </label>
+                  <label class="nar-voice" data-voice="pt-BR-AntonioNeural">
+                    <input type="radio" name="narVoice" value="pt-BR-AntonioNeural">
+                    <span class="nar-avatar nar-avat-azul">A</span>
+                    <span class="nar-voice-info">
+                      <span class="nar-voice-name">Antonio</span>
+                      <span class="nar-voice-desc">Masculina · firme e profissional — ideal para notícias e vídeos</span>
+                    </span>
+                    <button class="nar-sample-btn" type="button" data-sample="pt-BR-AntonioNeural" data-name="Antonio">🔊 Ouvir amostra</button>
+                  </label>
+                  <label class="nar-voice" data-voice="pt-BR-ThalitaMultilingualNeural">
+                    <input type="radio" name="narVoice" value="pt-BR-ThalitaMultilingualNeural">
+                    <span class="nar-avatar nar-avat-roxa">T</span>
+                    <span class="nar-voice-info">
+                      <span class="nar-voice-name">Thalita</span>
+                      <span class="nar-voice-desc">Feminina · versátil e multilíngue — boa para trechos misturados</span>
+                    </span>
+                    <button class="nar-sample-btn" type="button" data-sample="pt-BR-ThalitaMultilingualNeural" data-name="Thalita">🔊 Ouvir amostra</button>
+                  </label>
+                  <label class="nar-voice" data-voice="pt-PT-DuarteNeural">
+                    <input type="radio" name="narVoice" value="pt-PT-DuarteNeural">
+                    <span class="nar-avatar nar-avat-azul">D</span>
+                    <span class="nar-voice-info">
+                      <span class="nar-voice-name">Duarte <span style="color:var(--text-muted);font-weight:500">· Portugal</span></span>
+                      <span class="nar-voice-desc">Masculina · pt-PT — para textos em português europeu</span>
+                    </span>
+                    <button class="nar-sample-btn" type="button" data-sample="pt-PT-DuarteNeural" data-name="Duarte">🔊 Ouvir amostra</button>
+                  </label>
+                  <label class="nar-voice" data-voice="pt-PT-RaquelNeural">
+                    <input type="radio" name="narVoice" value="pt-PT-RaquelNeural">
+                    <span class="nar-avatar nar-avat-roxa">R</span>
+                    <span class="nar-voice-info">
+                      <span class="nar-voice-name">Raquel <span style="color:var(--text-muted);font-weight:500">· Portugal</span></span>
+                      <span class="nar-voice-desc">Feminina · pt-PT — para textos em português europeu</span>
+                    </span>
+                    <button class="nar-sample-btn" type="button" data-sample="pt-PT-RaquelNeural" data-name="Raquel">🔊 Ouvir amostra</button>
+                  </label>
+                </div>
+              </div>
+
+              <div id="narPanelGemini" class="nar-hidden">
+                <div class="nar-sel-row">
+                  <select class="nar-sel" id="narGeminiVoice" title="Voz Gemini"></select>
+                  <button class="nar-mini-btn" id="narGeminiSample" type="button">🔊 Ouvir amostra</button>
+                </div>
+                <div class="nar-key-row">
+                  <input type="password" id="narGeminiKey" placeholder="Sua chave gratuita do Google AI Studio (AIza…)">
+                  <button class="nar-mini-btn" id="narGeminiSave" type="button">Salvar chave</button>
+                </div>
+                <div class="nar-key-status" id="narGeminiStatus"></div>
+                <p class="nar-note">✦ As vozes <b>Puck</b>, <b>Kore</b>, <b>Aoede</b> e as outras 27 do motor Gemini usam a mesma tecnologia do Gemini. Para usar: crie uma chave grátis em <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>, cole acima e salve. A chave fica somente no seu navegador (localStorage) e não é enviada a nenhum outro lugar além da API do Google.</p>
+              </div>
+
+              <div id="narPanelHf" class="nar-hidden">
+                <div class="nar-sel-row">
+                  <input type="file" id="narHfFile" accept="audio/*,.mp3,.wav,.m4a,.ogg,.aac,.flac">
+                </div>
+                <div class="nar-key-status" id="narHfSampleStatus" style="margin-top:10px"></div>
+                <div class="nar-key-row">
+                  <button class="nar-mini-btn" id="narHfRemoveSample" type="button">🗑 Remover áudio salvo</button>
+                  <button class="nar-mini-btn" id="narHfTest" type="button">🔊 Testar clone (frase de exemplo)</button>
+                </div>
+                <div class="nar-key-row">
+                  <input type="password" id="narHfToken" placeholder="Opcional: token gratuito do Hugging Face (hf_…) — libera mais cota de GPU">
+                  <button class="nar-mini-btn" id="narHfSave" type="button">Salvar token</button>
+                </div>
+                <div class="nar-key-status" id="narHfStatus"></div>
+                <p class="nar-note">🎤 <b>Grátis, sem cadastro.</b> Envie <b>6 segundos a 2 minutos</b> de áudio limpo (mp3/wav/m4a/ogg) com <b>somente a voz a clonar</b>. O clone roda no modelo aberto <b>Chatterbox Multilingual</b> na GPU gratuita do Space público do Hugging Face. A GPU é compartilhada: pode haver fila (alguns segundos a ~1 min).</p>
+              </div>
+            </div>
+
+            <!-- Estilo -->
+            <div class="pro-card">
+              <div class="control-title">🎨 Estilo de narração</div>
+              <div class="nar-chips" id="narChips">
+                <button class="nar-chip selected" type="button" data-rate="+0%" data-pitch="+0Hz" data-desc="Equilibrado e neutro — funciona bem para qualquer tipo de texto.">Natural</button>
+                <button class="nar-chip" type="button" data-rate="-18%" data-pitch="-4Hz" data-desc="Lento e grave, com peso — o tom clássico de documentários e vídeos institucionais.">Documental</button>
+                <button class="nar-chip" type="button" data-rate="+8%" data-pitch="+2Hz" data-desc="Ritmo firme e claro, estilo telejornal — ideal para notícias e atualizações.">Jornalístico</button>
+                <button class="nar-chip" type="button" data-rate="-8%" data-pitch="+3Hz" data-desc="Melódico e envolvente, como quem conta uma boa história.">Contação de histórias</button>
+                <button class="nar-chip" type="button" data-rate="+16%" data-pitch="+6Hz" data-desc="Rápido, animado e cheio de energia — perfeito para anúncios e promoções.">Anúncio / Enérgico</button>
+              </div>
+              <p class="nar-style-hint" id="narStyleHint">Equilibrado e neutro — funciona bem para qualquer tipo de texto.</p>
+            </div>
+
+            <!-- Gerar -->
+            <div class="pro-card">
+              <div class="control-title">🔊 Gerar narração</div>
+              <button class="btn-action nar-gen-btn" id="narGenerate" type="button">🎙️ Gerar narração</button>
+              <div class="nar-status" id="narStatus"><span class="nar-spinner"></span><span id="narStatusText">Preparando…</span></div>
+              <p class="nar-hint-kbd">Dica: <kbd>Ctrl</kbd> + <kbd>Enter</kbd> também gera a narração</p>
+              <div class="nar-error-box" id="narErrorBox">
+                <p id="narErrorMsg"></p>
+                <div class="nar-error-actions">
+                  <button class="nar-err-btn primary" id="narRetry" type="button">Tentar novamente</button>
+                  <button class="nar-err-btn ghost" id="narFallback" type="button">Usar voz do navegador (somente ouvir)</button>
+                </div>
+              </div>
+              <div class="nar-result" id="narResult">
+                <div class="nar-result-head">
+                  <span class="nar-ok-dot"></span>
+                  <strong>Narração pronta!</strong>
+                  <small id="narResultMeta"></small>
+                </div>
+                <audio id="narPlayer" controls></audio>
+                <div class="nar-dl-row">
+                  <a class="download-link nar-dl-btn" id="narDownload" href="#" download>
+                    ⬇️ <span id="narDlLabel">Baixar MP3</span>
+                  </a>
+                  <span class="nar-dl-meta" id="narDlMeta"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Ajuda -->
+            <div class="pro-card">
+              <details class="nar-help">
+                <summary>⚙️ Como usar este narrador no seu projeto</summary>
+                <p><b>Motor Gemini (vozes tipo Puck — qualidade máxima):</b> crie uma chave grátis em <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style="color:#c084fc">aistudio.google.com/apikey</a>, cole no card “Voz” (motor Gemini) e salve. Não precisa de servidor nem de Edge — funciona direto na sua conexão. A chave gratuita tem limite diário.</p>
+                <p><b>Clone de voz (a sua própria voz, grátis, sem cadastro):</b> no motor “Clone de voz”, envie um áudio de 6s a 2 min com a sua voz e gere. O clone roda no modelo aberto Chatterbox Multilingual na GPU gratuita do Space público do Hugging Face — não precisa de chave nem conta. O resultado é baixado em WAV.</p>
+                <p><b>Motor Grátis:</b> funciona direto no navegador <b>Microsoft Edge</b> (a síntese acontece sem servidor) ou via `<code>tts_server.py</code>` local (recomendado para qualquer navegador). Em outros navegadores, sem o servidor, só fica disponível o modo de voz do navegador (sem download).</p>
+                <p style="margin-bottom:0">Tudo 100% gratuito: nenhum cadastro, nenhum custo oculto.</p>
+              </details>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </main>
 
@@ -2590,11 +2998,13 @@ video#sourceVideo { display: none; }
   const tabBtnDorama = document.getElementById('tabBtnDorama');
   const tabBtnAi = document.getElementById('tabBtnAi');
   const tabBtnDownloader = document.getElementById('tabBtnDownloader');
+  const tabBtnNarrador = document.getElementById('tabBtnNarrador');
 
   const tabFoundContent = document.getElementById('tabFoundContent');
   const tabDoramaContent = document.getElementById('tabDoramaContent');
   const tabAiContent = document.getElementById('tabAiContent');
   const tabDownloaderContent = document.getElementById('tabDownloaderContent');
+  const tabNarradorContent = document.getElementById('tabNarradorContent');
 
   const appDashboard = document.getElementById('appDashboard');
   const blindPreviewColumn = document.getElementById('blindPreviewColumn');
@@ -2610,8 +3020,8 @@ video#sourceVideo { display: none; }
   let isExportingVideo = false;
 
   function resetNavTabs() {
-    [tabBtnFound, tabBtnDorama, tabBtnAi, tabBtnDownloader].forEach(btn => btn.classList.remove('active'));
-    [tabFoundContent, tabDoramaContent, tabAiContent, tabDownloaderContent].forEach(c => c.classList.remove('active'));
+    [tabBtnFound, tabBtnDorama, tabBtnAi, tabBtnDownloader, tabBtnNarrador].forEach(btn => btn.classList.remove('active'));
+    [tabFoundContent, tabDoramaContent, tabAiContent, tabDownloaderContent, tabNarradorContent].forEach(c => c.classList.remove('active'));
   }
 
   // A Aba 3 agora usa o mesmo monitor lateral das Abas 1 e 2. Esta função
@@ -2718,6 +3128,19 @@ video#sourceVideo { display: none; }
     tabDownloaderContent.classList.add('active');
     
     appDashboard.className = 'dashboard downloader-theme full-mode';
+    setSharedPreviewMode('hidden');
+    blindPreviewColumn.style.display = 'none';
+    mainControlsColumn.style.display = 'none';
+  });
+
+  tabBtnNarrador.addEventListener('click', () => {
+    if (isExportingVideo) { alert('⏳ Aguarde o processamento do vídeo atual terminar antes de trocar de aba — trocar agora gera um MP4 incompleto.'); return; }
+    activeTab = 'narrator';
+    resetNavTabs();
+    tabBtnNarrador.classList.add('active');
+    tabNarradorContent.classList.add('active');
+    
+    appDashboard.className = 'dashboard narrator-theme full-mode';
     setSharedPreviewMode('hidden');
     blindPreviewColumn.style.display = 'none';
     mainControlsColumn.style.display = 'none';
@@ -4685,6 +5108,18 @@ ctx.fillStyle = '#000000';
 
     document.getElementById('aiProcessBtn').addEventListener('click', async () => {
         const files = document.getElementById('aiVideoFile').files;
+        // Modo Automático (Roteirista → Narrador → Sincronizar) ou Piloto
+        // Automático total (2+ vídeos). Quando qualquer um está marcado,
+        // despachamos pro pipeline automático, que gera o roteiro, corta,
+        // gera a narração com o Narrador e sincroniza — sem clicar em nada.
+        const autoNarrator = document.getElementById('aiAutoNarrator');
+        const fullAutopilot = document.getElementById('aiFullAutopilot');
+        const useAuto = (autoNarrator && autoNarrator.checked) || (fullAutopilot && fullAutopilot.checked);
+        if (useAuto) {
+            await runAutoPipeline(Array.from(files), { useNarratorEngine: autoNarrator && autoNarrator.checked });
+            return;
+        }
+
         if (files.length > 1) {
             runBatchQueue(Array.from(files));
         } else {
@@ -5410,13 +5845,15 @@ ctx.fillStyle = '#000000';
     const TTS_MODEL = 'gemini-3.1-flash-tts-preview';
     const TTS_SAMPLE_RATE = 24000;
 
-    async function processVideo(fileOverride) {
+    async function processVideo(fileOverride, skipNarrOverride) {
         const apiKey = document.getElementById('aiApiKey').value.trim();
         const fileInput = document.getElementById('aiVideoFile');
         const targetTime = document.getElementById('aiTargetTime').value;
         const tone = document.getElementById('aiTone').value;
         const voiceName = document.getElementById('aiVoice').value;
-        const skipNarration = document.getElementById('aiSkipNarration').checked;
+        // No fluxo automático (Narrador), mandamos gerar o roteiro SEM a narração
+        // sintética interna do Gemini — a voz vai ser criada pela aba Narrador.
+        const skipNarration = document.getElementById('aiSkipNarration').checked || !!skipNarrOverride;
         const status = document.getElementById('aiStatus');
         const processBtn = document.getElementById('aiProcessBtn');
         const resultOutput = document.getElementById('aiResultOutput');
@@ -5816,6 +6253,132 @@ ${nextRuleNumber}. Além das cenas, escreva também uma "fraseCuriosidade": uma 
         if (confirmButtons) confirmButtons.style.display = '';
         processBtn.disabled = false;
     }
+
+    // ===== PILOTO AUTOMÁTICO: Roteirista → Narrador → Sincronizar =========
+    // Roda quando "Modo Automático" ou "Piloto Automático total" está ligado.
+    // Para CADA vídeo da fila (1 ou N): gera o roteiro (sem a narração interna
+    // do Gemini, que vai ser substituída pela voz do Narrador), corta o vídeo,
+    // gera a narração com o Narrador (motor + voz + estilo salvos na aba
+    // Narrador), sincroniza a narração com o vídeo cortado e baixa o resultado
+    // junto com a legenda .srt. Sim, o vídeo passa por 2 passos do ffmpeg
+    // (corte e depois sync) — é mais lento, mas é o que garante a voz do
+    // Narrador por cima do corte.
+    async function runAutoPipeline(files, { useNarratorEngine = true, syncStatusEl } = {}) {
+        const processBtn = document.getElementById('aiProcessBtn');
+        const batchStatus = document.getElementById('aiBatchStatus');
+        const status = document.getElementById('aiStatus');
+        const confirmBox = document.getElementById('aiConfirmBox');
+        const videoResultCard = document.getElementById('aiVideoResultCard');
+        const finalVideoEl = document.getElementById('aiFinalVideo');
+        const confirmQuestion = confirmBox.querySelector('p');
+        const confirmButtons = confirmBox.querySelector('.confirm-buttons');
+        syncStatusEl = syncStatusEl || batchStatus;
+
+        processBtn.disabled = true;
+        batchStatus.style.display = 'block';
+        await acquireWakeLock();
+        if (!('wakeLock' in navigator)) {
+            batchStatus.innerText = '⚠️ Este navegador não suporta manter a tela ligada automaticamente — deixe o celular na tomada até a fila terminar.';
+        }
+        if (confirmQuestion) confirmQuestion.style.display = 'none';
+        if (confirmButtons) confirmButtons.style.display = 'none';
+
+        let sucessos = 0;
+        let falhas = 0;
+        try {
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                batchStatus.innerText = `🤖 Piloto automático: vídeo ${i + 1} de ${files.length} — ${file.name}`;
+
+                // 1) Roteiro + cortes. skipNarrOverride=true faz o roteiro sair
+                // SEM a narração sintética interna (o texto de cada cena é
+                // mantido), pois a voz será produzida pelo Narrador abaixo.
+                const roteiroOk = await processVideo(file, true);
+                if (!roteiroOk) { falhas++; continue; }
+
+                // 2) Corta o vídeo com os cortes do roteiro (áudio original).
+                batchStatus.innerText = `🤖 Cortando e narrando vídeo ${i + 1} de ${files.length} — ${file.name}`;
+                const corteOk = await cortarVideo();
+                if (!corteOk) { falhas++; continue; }
+
+                // 3) Gera a narração única com o Narrador (voz + estilo + motor salvos).
+                let audioFile = null;
+                if (useNarratorEngine && window.NARRATOR) {
+                    batchStatus.innerText = `🤖 Gerando narração com o Narrador (${window.NARRATOR.getConfig()}) — vídeo ${i + 1}...`;
+                    try {
+                        // Concatena toda a narração do roteiro num único texto,
+                        // usando a frase-gancho da cena 0 na frente.
+                        const gancho = (currentCuts[0] && (currentCuts[0].gancho || '').trim()) ? (currentCuts[0].gancho.trim() + ' ') : '';
+                        const textoNarracao = gancho + currentCuts.map(c => (c.narracao || '').trim()).filter(Boolean).join(' ');
+                        if (!textoNarracao.trim()) throw new Error('O roteiro não tem texto de narração para o Narrador falar.');
+                        const gen = await window.NARRATOR.generateNarrationFile(textoNarracao, (i2, n) => {
+                            batchStatus.innerText = `🤖 Narrador: parte ${i2} de ${n} — vídeo ${i + 1}…`;
+                        });
+                        audioFile = gen.file;
+                    } catch (narrErr) {
+                        console.warn('Não foi possível gerar pela aba Narrador, caindo no TTS do Gemini:', narrErr);
+                        audioFile = await generateAutoSyncNarrationFile((msg) => { batchStatus.innerText = '🤖 ' + msg; });
+                    }
+                } else {
+                    audioFile = await generateAutoSyncNarrationFile((msg) => { batchStatus.innerText = '🤖 ' + msg; });
+                }
+
+                // 4) Sincroniza a narração sobre o vídeo cortado.
+                batchStatus.innerText = `🤖 Sincronizando narração com o vídeo ${i + 1} de ${files.length}...`;
+                let videoSourceBlob;
+                if (finalVideoEl.src && finalVideoEl.src !== window.location.href) {
+                    const resp = await fetch(finalVideoEl.src);
+                    videoSourceBlob = await resp.blob();
+                } else {
+                    videoSourceBlob = file;
+                }
+                const syncResult = await runSyncCore({
+                    videoSourceBlob, audioFile,
+                    mode: 'audio_to_video',
+                    bgmFile: null, bgmVolume: 0,
+                    statusEl: syncStatusEl,
+                });
+
+                if (!syncResult.ok) {
+                    falhas++;
+                    batchStatus.innerText = `❌ Vídeo ${i + 1}: falha ao sincronizar — ${syncResult.error}`;
+                    continue;
+                }
+
+                // 5) Baixa o vídeo sincronizado (respeitando a pasta escolhida)
+                // e a legenda .srt, com o mesmo nome-base do arquivo original.
+                await window.saveProcessedBlob(syncResult.blob, `${currentFileBaseName}_narrado.mp4`);
+                await sleep(500);
+                if (currentCuts.some(c => (c.narracao || '').trim())) {
+                    downloadLegendaSrt();
+                    await sleep(500);
+                }
+                sucessos++;
+                await recycleFFmpeg(logFFmpeg, () => {});
+                status.innerText = `✅ Vídeo ${i + 1} finalizado e sincronizado.`;
+            }
+            batchStatus.innerText = `🤖 Piloto automático concluído: ${sucessos} de ${files.length} vídeo(s) sincronizados` +
+                (falhas > 0 ? `, ${falhas} falharam (veja os detalhes acima).` : '.');
+        } finally {
+            releaseWakeLock();
+            if (confirmQuestion) confirmQuestion.style.display = '';
+            if (confirmButtons) confirmButtons.style.display = '';
+            processBtn.disabled = false;
+        }
+    }
+
+    // Atualiza o indicador "Narrador atualmente" no card de Modo Automático,
+    // lendo a config salva na aba Narrador e mostrando ela no Roteirista.
+    function refreshNarratorStatusChip() {
+        const chip = document.getElementById('aiNarratorStatusChip');
+        if (!chip) return;
+        chip.textContent = (window.NARRATOR && window.NARRATOR.getConfig)
+            ? window.NARRATOR.getConfig()
+            : 'não configurado';
+    }
+    // Reflete no chip as alterações feitas na aba Narrador.
+    window.addEventListener('narrator-config-changed', refreshNarratorStatusChip);
+    refreshNarratorStatusChip();
 
     // Lê a velocidade de leitura calibrada pelo usuário (palavras/minuto) —
     // é ela que decide o tamanho de cada corte quando não temos a duração
@@ -7280,63 +7843,17 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
         return new File([wavBlob], 'narracao_automatica_ia.wav', { type: 'audio/wav' });
     }
 
-    document.getElementById('aiSyncBtn').addEventListener('click', async () => {
-        const syncBtn = document.getElementById('aiSyncBtn');
-        const syncStatus = document.getElementById('aiSyncStatus');
-        const videoOverrideInput = document.getElementById('aiSyncVideoOverride');
-        const audioInput = document.getElementById('aiSyncAudioInput');
-        const finalVideoEl = document.getElementById('aiFinalVideo');
-        const resultBox = document.getElementById('aiSyncResultBox');
-        const resultVideo = document.getElementById('aiSyncResultVideo');
-        const resultDownload = document.getElementById('aiSyncDownloadLink');
-        const mode = document.querySelector('input[name="aiSyncMode"]:checked').value;
-        const sourceMode = document.querySelector('input[name="aiSyncSource"]:checked').value;
-
-        let audioFile = null;
-        if (sourceMode === 'upload') {
-            audioFile = audioInput.files && audioInput.files[0];
-            if (!audioFile) {
-                alert('Escolha o arquivo de narração (MP3/WAV) primeiro, ou marque uma das opções de narração automática.');
-                return;
-            }
-        }
-
-        // Música de fundo (opcional): lê a opção, o arquivo e o volume, e
-        // valida ANTES de qualquer coisa pesada (download do motor ffmpeg).
-        let bgmFile = null;
-        let bgmVolume = 0;
-        const bgmChk = document.getElementById('aiSyncBgmChk');
-        const bgmInput = document.getElementById('aiSyncBgmInput');
-        if (bgmChk && bgmChk.checked) {
-            bgmFile = bgmInput.files && bgmInput.files[0];
-            if (!bgmFile) {
-                alert('Você marcou "Adicionar música de fundo" mas não selecionou o arquivo — escolha o MP3/WAV (ou desmarque a opção).');
-                return;
-            }
-            const volEl = document.getElementById('aiSyncBgmVolume');
-            bgmVolume = Math.max(0, Math.min(1, parseFloat(volEl.value) || 0));
-        }
-
-        let videoSourceBlob = videoOverrideInput.files && videoOverrideInput.files[0];
-        if (!videoSourceBlob) {
-            if (!finalVideoEl.src || finalVideoEl.src === window.location.href) {
-                alert('Nenhum vídeo cortado disponível ainda nesta sessão. Corte um vídeo acima primeiro, ou envie um vídeo manualmente no campo "Vídeo a sincronizar".');
-                return;
-            }
-            syncStatus.innerText = 'Lendo o vídeo cortado acima...';
-            const resp = await fetch(finalVideoEl.src);
-            videoSourceBlob = await resp.blob();
-        }
-
-        syncBtn.disabled = true;
-        resultBox.style.display = 'none';
+    // ===== Núcleo de sincronização reutilizável ==========================
+    // Extraído do handler do botão "Sincronizar e Baixar" pra ser chamado
+    // tanto no fluxo manual quanto no Piloto Automático. Faz todo o trabalho
+    // de medir durações, montar os filtros do ffmpeg e devolver o blob final.
+    // Retorna { ok, blob, url, videoDuration, audioDuration, error }.
+    async function runSyncCore({ videoSourceBlob, audioFile, mode, bgmFile, bgmVolume, statusEl }) {
+        statusEl = statusEl || document.getElementById('aiSyncStatus');
+        const setStatus = (msg) => { if (statusEl) statusEl.innerText = msg; };
         let ff, videoName, audioName, outputName, bgmName = null;
         try {
-            if (sourceMode === 'auto') {
-                audioFile = await generateAutoSyncNarrationFile((msg) => { syncStatus.innerText = msg; });
-            }
-
-            syncStatus.innerText = 'Medindo duração do vídeo e da narração...';
+            setStatus('Medindo duração do vídeo e da narração...');
             const [videoDuration, audioDuration] = await Promise.all([
                 probeMediaDuration(videoSourceBlob, 'video'),
                 probeMediaDuration(audioFile, 'audio')
@@ -7345,18 +7862,18 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
             const diff = Math.abs(audioDuration - videoDuration);
             const diffPct = (diff / videoDuration) * 100;
 
-            syncStatus.innerText = `Vídeo: ${videoDuration.toFixed(1)}s · Narração: ${audioDuration.toFixed(1)}s (diferença de ${diffPct.toFixed(0)}%). Carregando motor de edição...`;
+            setStatus(`Vídeo: ${videoDuration.toFixed(1)}s · Narração: ${audioDuration.toFixed(1)}s (diferença de ${diffPct.toFixed(0)}%). Carregando motor de edição...`);
 
             ff = await getFFmpeg(
                 (msg) => { /* log silencioso aqui, igual ao restante do app */ },
-                (pct) => { syncStatus.innerText = `Baixando motor de edição... ${pct}%`; }
+                (pct) => { setStatus(`Baixando motor de edição... ${pct}%`); }
             );
 
             videoName = 'sync_input.mp4';
             audioName = 'sync_narration.' + (audioFile.name.split('.').pop() || 'mp3');
             outputName = 'sync_output.mp4';
 
-            syncStatus.innerText = 'Preparando arquivos...';
+            setStatus('Preparando arquivos...');
             await ff.writeFile(videoName, (await fetchFile(videoSourceBlob)).slice());
             await ff.writeFile(audioName, (await fetchFile(audioFile)).slice());
             if (bgmFile) {
@@ -7364,9 +7881,9 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
                 await ff.writeFile(bgmName, (await fetchFile(bgmFile)).slice());
             }
 
-            syncStatus.innerText = bgmName
+            setStatus(bgmName
                 ? 'Sincronizando, exportando e mixando a música de fundo (pode levar um pouco)...'
-                : 'Sincronizando e exportando (pode levar um pouco)...';
+                : 'Sincronizando e exportando (pode levar um pouco)...');
 
             // Com música de fundo, o áudio final é montado num filter_complex:
             //  [n] = narração ajustada, com exatamente a duração do resultado (T)
@@ -7380,7 +7897,7 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
             const totalStr = totalSeconds.toFixed(3);
             const fadeStartStr = Math.max(0, totalSeconds - 1).toFixed(3);
             const bgmMixFilter =
-                `[2:a]volume=${bgmVolume.toFixed(3)},atrim=0:${totalStr},asetpts=PTS-STARTPTS,afade=t=out:st=${fadeStartStr}:d=1[b];` +
+                `[2:a]volume=${(bgmVolume || 0).toFixed(3)},atrim=0:${totalStr},asetpts=PTS-STARTPTS,afade=t=out:st=${fadeStartStr}:d=1[b];` +
                 `[n][b]amix=inputs=2:duration=first:dropout_transition=0,volume=2[aout]`;
 
             if (mode === 'audio_to_video') {
@@ -7443,6 +7960,80 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
             const data = await ff.readFile(outputName);
             const blob = new Blob([data.buffer], { type: 'video/mp4' });
             const url = trackObjectURL(URL.createObjectURL(blob));
+            return { ok: true, blob, url, videoDuration, audioDuration, bgmName };
+        } catch (err) {
+            console.error('Erro ao sincronizar narração:', err);
+            return { ok: false, error: err.message || String(err) };
+        } finally {
+            if (ff) {
+                for (const f of [videoName, audioName, outputName, bgmName]) {
+                    if (f) await safeDeleteFile(ff, f);
+                }
+            }
+        }
+    }
+
+    document.getElementById('aiSyncBtn').addEventListener('click', async () => {
+        const syncBtn = document.getElementById('aiSyncBtn');
+        const syncStatus = document.getElementById('aiSyncStatus');
+        const videoOverrideInput = document.getElementById('aiSyncVideoOverride');
+        const audioInput = document.getElementById('aiSyncAudioInput');
+        const finalVideoEl = document.getElementById('aiFinalVideo');
+        const resultBox = document.getElementById('aiSyncResultBox');
+        const resultVideo = document.getElementById('aiSyncResultVideo');
+        const resultDownload = document.getElementById('aiSyncDownloadLink');
+        const mode = document.querySelector('input[name="aiSyncMode"]:checked').value;
+        const sourceMode = document.querySelector('input[name="aiSyncSource"]:checked').value;
+
+        let audioFile = null;
+        if (sourceMode === 'upload') {
+            audioFile = audioInput.files && audioInput.files[0];
+            if (!audioFile) {
+                alert('Escolha o arquivo de narração (MP3/WAV) primeiro, ou marque uma das opções de narração automática.');
+                return;
+            }
+        }
+
+        // Música de fundo (opcional): lê a opção, o arquivo e o volume, e
+        // valida ANTES de qualquer coisa pesada (download do motor ffmpeg).
+        let bgmFile = null;
+        let bgmVolume = 0;
+        const bgmChk = document.getElementById('aiSyncBgmChk');
+        const bgmInput = document.getElementById('aiSyncBgmInput');
+        if (bgmChk && bgmChk.checked) {
+            bgmFile = bgmInput.files && bgmInput.files[0];
+            if (!bgmFile) {
+                alert('Você marcou "Adicionar música de fundo" mas não selecionou o arquivo — escolha o MP3/WAV (ou desmarque a opção).');
+                return;
+            }
+            const volEl = document.getElementById('aiSyncBgmVolume');
+            bgmVolume = Math.max(0, Math.min(1, parseFloat(volEl.value) || 0));
+        }
+
+        let videoSourceBlob = videoOverrideInput.files && videoOverrideInput.files[0];
+        if (!videoSourceBlob) {
+            if (!finalVideoEl.src || finalVideoEl.src === window.location.href) {
+                alert('Nenhum vídeo cortado disponível ainda nesta sessão. Corte um vídeo acima primeiro, ou envie um vídeo manualmente no campo "Vídeo a sincronizar".');
+                return;
+            }
+            syncStatus.innerText = 'Lendo o vídeo cortado acima...';
+            const resp = await fetch(finalVideoEl.src);
+            videoSourceBlob = await resp.blob();
+        }
+
+        syncBtn.disabled = true;
+        resultBox.style.display = 'none';
+        try {
+            if (sourceMode === 'auto') {
+                audioFile = await generateAutoSyncNarrationFile((msg) => { syncStatus.innerText = msg; });
+            }
+
+            const result = await runSyncCore({ videoSourceBlob, audioFile, mode, bgmFile, bgmVolume, statusEl: syncStatus });
+            if (!result.ok) {
+                syncStatus.innerText = '❌ Erro ao sincronizar: ' + result.error;
+                return;
+            }
+            const { blob, url, videoDuration, audioDuration, bgmName } = result;
 
             resultVideo.src = url;
             resultDownload.href = url;
@@ -7467,11 +8058,6 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
                 const syncedFile = new File([blob], 'resumo_narrado_sincronizado.mp4', { type: 'video/mp4' });
                 fileQueues.dorama = [syncedFile];
 
-                // Título = frase-gancho curta da cena 0 (ex: manchete de até 8
-                // palavras); Subtítulo = frase de curiosidade sobre o vídeo
-                // inteiro. Ambos vêm do roteiro já gerado no card acima —
-                // caem de volta pro valor atual do campo se a IA não tiver
-                // gerado nenhum dos dois nesta rodada.
                 const doramaTitleInput = tabDoramaContent.querySelector('.hook-text-input');
                 const primeiroGancho = (currentCuts && currentCuts[0] && currentCuts[0].gancho || '').trim();
                 if (doramaTitleInput && primeiroGancho) doramaTitleInput.value = primeiroGancho;
@@ -7482,9 +8068,6 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
                 if (!switched) {
                     syncStatus.innerText += ' (não foi possível trocar de aba automaticamente agora — troque manualmente quando puder).';
                 } else {
-                    // Pequeno atraso pra deixar o preview/crop box da aba
-                    // Dorama terminar de montar (loadPreviewForTab é
-                    // parcialmente assíncrono) antes de disparar o processamento.
                     setTimeout(() => {
                         const doramaProcessBtn = tabDoramaContent.querySelector('.process-btn');
                         if (doramaProcessBtn && !doramaProcessBtn.disabled) doramaProcessBtn.click();
@@ -7495,11 +8078,6 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
             console.error('Erro ao sincronizar narração externa:', err);
             syncStatus.innerText = '❌ Erro ao sincronizar: ' + (err.message || err);
         } finally {
-            if (ff) {
-                for (const f of [videoName, audioName, outputName, bgmName]) {
-                    if (f) await safeDeleteFile(ff, f);
-                }
-            }
             syncBtn.disabled = false;
         }
     });
@@ -8727,5 +9305,1139 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
   window.wireDownloadLinkToSaveFolder(document.getElementById('aiSyncDownloadLink'));
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a30f88381d91b707',t:'MTc4NzcxMjY1OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+  <!-- Script 5: Narrador IA (aba 5) -->
+  <script>
+  (function () {
+    "use strict";
+    /* ============================================================
+     * NÚCLEO DE TTS — síntese neural via WebSocket (sem chave)
+     * Protocolo: speech.platform.bing.com (consumer Edge TTS)
+     * Funciona direto no navegador quando a UA é do Microsoft Edge;
+     * em outros navegadores a página usa o servidor tts_server.py.
+     * ============================================================ */
+    const TTS = (() => {
+      const WIN_EPOCH = 11644473600n;
+      const TOKEN = "6A5AA1D4EAFF4E9FB37E23D68491D6F4";
+      const BASE = "speech.platform.bing.com/consumer/speech/synthesize/readaloud";
+      const CHROMIUM = "143.0.3650.75";
+      const enc = new TextEncoder();
+      const dec = new TextDecoder("utf-8");
+
+      async function secMsGec() {
+        const secs = BigInt(Math.floor(Date.now() / 1000)) + WIN_EPOCH;
+        const ticks = ((secs - (secs % 300n)) * 10000000n).toString();
+        const buf = await crypto.subtle.digest("SHA-256", enc.encode(ticks + TOKEN));
+        return Array.from(new Uint8Array(buf))
+          .map(b => b.toString(16).padStart(2, "0")).join("").toUpperCase();
+      }
+
+      function uuidHex() {
+        const b = crypto.getRandomValues(new Uint8Array(16));
+        b[6] = (b[6] & 0x0f) | 0x40; b[8] = (b[8] & 0x3f) | 0x80;
+        return Array.from(b, x => x.toString(16).padStart(2, "0")).join("");
+      }
+
+      function xmlEscape(s) {
+        return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;");
+      }
+
+      function cleanText(s) {
+        return s.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, " ");
+      }
+
+      function chunkText(text, maxBytes = 3000) {
+        const bytes = enc.encode(text);
+        const out = [];
+        let start = 0;
+        while (bytes.length - start > maxBytes) {
+          let end = start + maxBytes;
+          while (end > start && (bytes[end] & 0xC0) === 0x80) end--;
+          let cut = end;
+          for (let i = end; i > start && i > end - 120; i--) {
+            if (bytes[i] === 0x20 || bytes[i] === 0x0a) { cut = i; break; }
+          }
+          out.push(dec.decode(bytes.slice(start, cut)));
+          start = cut > start ? cut : start + 1;
+        }
+        const rest = dec.decode(bytes.slice(start));
+        if (rest.trim()) out.push(rest.trim());
+        return out.filter(s => s.trim());
+      }
+
+      const DOW = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+      const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      function rfcDate() {
+        const d = new Date();
+        const p = n => String(n).padStart(2, "0");
+        return `${DOW[d.getUTCDay()]} ${MON[d.getUTCMonth()]} ${d.getUTCDate()} ${d.getUTCFullYear()} ` +
+               `${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())} GMT+0000 (Coordinated Universal Time)`;
+      }
+
+      function synthesizeChunk({ voice, rate, pitch, text }) {
+        return new Promise(async (resolve, reject) => {
+          let ws, cid;
+          try {
+            const token = await secMsGec();
+            cid = uuidHex();
+            const url = `wss://${BASE}/edge/v1?TrustedClientToken=${TOKEN}&ConnectionId=${cid}` +
+                        `&Sec-MS-GEC=${token}&Sec-MS-GEC-Version=1-${CHROMIUM}`;
+            ws = new WebSocket(url);
+            ws.binaryType = "arraybuffer";
+          } catch (e) { return reject(e); }
+
+          const chunks = [];
+          let settled = false;
+          const fail = err => {
+            if (settled) return; settled = true;
+            clearTimeout(timer);
+            try { ws.close(); } catch (_) {}
+            reject(err);
+          };
+          const ok = () => {
+            if (settled) return; settled = true;
+            clearTimeout(timer);
+            try { ws.close(); } catch (_) {}
+            resolve(chunks);
+          };
+          const timer = setTimeout(() => fail(new Error("Tempo esgotado aguardando o serviço de voz.")), 90000);
+
+          ws.onopen = () => {
+            ws.send(
+              `X-Timestamp:${rfcDate()}\r\n` +
+              "Content-Type:application/json; charset=utf-8\r\n" +
+              "Path:speech.config\r\n\r\n" +
+              '{"context":{"synthesis":{"audio":{"metadataoptions":{"sentenceBoundaryEnabled":"false","wordBoundaryEnabled":"false"},' +
+              '"outputFormat":"audio-24khz-48kbitrate-mono-mp3"}}}}\r\n'
+            );
+            const ssml =
+              `<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='pt-BR'>` +
+              `<voice name='${voice}'>` +
+              `<prosody pitch='${pitch}' rate='${rate}' volume='+0%'>${text}</prosody>` +
+              `</voice></speak>`;
+            ws.send(
+              `X-RequestId:${cid}\r\n` +
+              "Content-Type:application/ssml+xml\r\n" +
+              `X-Timestamp:${rfcDate()}Z\r\n` +
+              "Path:ssml\r\n\r\n" + ssml
+            );
+          };
+
+          ws.onmessage = ev => {
+            const data = ev.data;
+            if (typeof data === "string") {
+              if (data.includes("Path:error")) {
+                const body = data.split("\r\n\r\n").slice(1).join("\r\n");
+                fail(new Error(body ? `Serviço de voz: ${body.slice(0, 160)}` : "Erro no serviço de voz."));
+                return;
+              }
+              if (data.includes("turn.end")) ok();
+              return;
+            }
+            let u8;
+            if (data instanceof ArrayBuffer) u8 = new Uint8Array(data);
+            else if (data instanceof Uint8Array) u8 = data;
+            else u8 = new Uint8Array(data);
+            if (u8.length < 4) return;
+            const hl = (u8[0] << 8) | u8[1];
+            if (hl + 2 >= u8.length) return;
+            const head = dec.decode(u8.subarray(0, hl));
+            if (/^Path:audio$/m.test(head)) chunks.push(u8.slice(hl + 2));
+          };
+
+          ws.onerror = () => fail(new Error("Falha na conexão com o serviço de voz."));
+          ws.onclose = ev => {
+            if (settled) return;
+            fail(new Error(ev && ev.code === 1006 ? "Conexão encerrada pelo serviço. Tente novamente." : "Serviço encerrou a conexão."));
+          };
+        });
+      }
+
+      async function synthesize({ voice, rate, pitch, text, onProgress }) {
+        const pieces = chunkText(cleanText(text).trim());
+        if (!pieces.length) throw new Error("Escreva um texto para narrar.");
+        const all = [];
+        for (let i = 0; i < pieces.length; i++) {
+          if (onProgress) onProgress(i + 1, pieces.length);
+          const ch = await synthesizeChunk({ voice, rate, pitch, text: xmlEscape(pieces[i]) });
+          if (!ch.length) throw new Error("O serviço não retornou áudio. Tente novamente em instantes.");
+          for (const c of ch) all.push(c);
+        }
+        return all;
+      }
+
+      return { synthesize, synthesizeChunk, chunkText, secMsGec, xmlEscape, cleanText };
+    })();
+    if (typeof globalThis !== "undefined") globalThis.__TTS = TTS;
+
+    /* ============================================================
+     * MOTOR GEMINI TTS — vozes Puck, Kore, Aoede… (API do Google)
+     * Grátis com chave do AI Studio (limite diário). CORS liberado.
+     * ============================================================ */
+    const GEMINI = (() => {
+      const VOICES = [
+        ["Puck", "M"], ["Kore", "F"], ["Aoede", "F"], ["Charon", "M"],
+        ["Acherner", "F"], ["Achird", "M"], ["Algenib", "M"], ["Algieba", "M"],
+        ["Alnilam", "M"], ["Autonoe", "F"], ["Callirrhoe", "F"], ["Despina", "F"],
+        ["Enceladus", "M"], ["Erinome", "F"], ["Fenrir", "M"], ["Gacrux", "F"],
+        ["Iapetus", "M"], ["Laomedeia", "F"], ["Leda", "F"], ["Orus", "M"],
+        ["Pulcherrima", "F"], ["Rasalgethi", "M"], ["Sadachbia", "M"], ["Sadaltager", "M"],
+        ["Schedar", "M"], ["Sulafat", "F"], ["Umbriel", "M"], ["Vindemiatrix", "F"],
+        ["Zephyr", "F"], ["Zubenelgenubi", "M"],
+      ];
+      const MODELS = ["gemini-3.1-flash-tts-preview", "gemini-2.5-flash-preview-tts"];
+      const STYLE_INSTRUCTIONS = {
+        "+0%|+0Hz": "Narrate the transcript in a natural, neutral, clear narration tone.",
+        "-18%|-4Hz": "Narrate the transcript in a slow, deep and weighty documentary style, like a nature documentary.",
+        "+8%|+2Hz": "Narrate the transcript in a firm, crisp news anchor style with a steady pace.",
+        "-8%|+3Hz": "Narrate the transcript as an engaging story, warm and melodic, with light dramatic emphasis.",
+        "+16%|+6Hz": "Narrate the transcript with high energy and excitement, like an upbeat advertisement.",
+      };
+
+      function base64ToBytes(b64) {
+        const bin = atob(b64);
+        const out = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+        return out;
+      }
+
+      function pcmToWav(pcm, sampleRate = 24000) {
+        const buffer = new ArrayBuffer(44 + pcm.length);
+        const v = new DataView(buffer);
+        const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+        w(0, "RIFF"); v.setUint32(4, 36 + pcm.length, true); w(8, "WAVE");
+        w(12, "fmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+        v.setUint32(24, sampleRate, true); v.setUint32(28, sampleRate * 2, true);
+        v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+        w(36, "data"); v.setUint32(40, pcm.length, true);
+        new Uint8Array(buffer, 44).set(pcm);
+        return new Uint8Array(buffer);
+      }
+
+      async function synthesize({ key, voice, text, rate, pitch, onProgress }) {
+        const instruction = STYLE_INSTRUCTIONS[`${rate}|${pitch}`] || STYLE_INSTRUCTIONS["+0%|+0Hz"];
+        const prompt =
+          "Synthesize speech of the transcript below. " + instruction +
+          "\nSpeak in Brazilian Portuguese. Do NOT read these instructions aloud. Only narrate the transcript.\n\n" +
+          "Transcript:\n\n" + text;
+        const body = {
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseModalities: ["AUDIO"],
+            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } },
+          },
+        };
+
+        for (const model of MODELS) {
+          let r, j = null;
+          try {
+            onProgress && onProgress(1, 1);
+            r = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+                body: JSON.stringify(body),
+              }
+            );
+            j = await r.json().catch(() => null);
+          } catch (_) {
+            throw new Error("Sem conexão com a API do Gemini (verifique a internet).");
+          }
+          if (r.ok) {
+            const data = j && j.candidates && j.candidates[0] &&
+                         j.candidates[0].content && j.candidates[0].content.parts &&
+                         j.candidates[0].content.parts[0] &&
+                         j.candidates[0].content.parts[0].inlineData &&
+                         j.candidates[0].content.parts[0].inlineData.data;
+            if (!data) throw new Error("O Gemini não retornou áudio (conteúdo bloqueado?). Tente reformular o texto.");
+            return pcmToWav(base64ToBytes(data));
+          }
+          const msg = (j && j.error && j.error.message) || "";
+          const reason = (j && j.error && j.error.details && j.error.details[0] && j.error.details[0].reason) || "";
+          if (r.status === 404 && /not found|not available|no such model/i.test(msg + reason)) continue;
+          if (r.status === 429 || /RESOURCE_EXHAUSTED|quota/i.test(reason + msg))
+            throw new Error("Limite diário da chave gratuita do Gemini atingido (algumas narrações/dia). Tente mais tarde — ou use o motor Grátis, que é ilimitado.");
+          if (r.status === 400 && /API_KEY_INVALID|API key not valid|authentication/i.test(msg + reason))
+            throw new Error("Chave do Gemini inválida. Confira em aistudio.google.com/apikey.");
+          throw new Error(`Gemini: ${msg.slice(0, 150) || ("erro HTTP " + r.status)}`);
+        }
+        throw new Error("Nenhum modelo Gemini TTS disponível para a sua chave.");
+      }
+
+      return { VOICES, synthesize, pcmToWav, base64ToBytes, STYLE_INSTRUCTIONS };
+    })();
+    if (typeof globalThis !== "undefined") globalThis.__GEMINI = GEMINI;
+
+    /* ============================================================
+     * MOTOR CLONE DE VOZ — Chatterbox Multilingual (ResembleAI),
+     * na GPU gratuita do Space público do Hugging Face.
+     * ============================================================ */
+    const CLONE = (() => {
+      const SPACES = [
+        { id: "v2", origin: "https://resembleai-chatterbox-multilingual-tts.hf.space" },
+        { id: "v3", origin: "https://resembleai-chatterbox-multilingual-tts-v3.hf.space" },
+      ];
+      const API = "/gradio_api";
+      const LANG = "pt";
+      const MAX_PIECE = 280;
+
+      function splitText(text, max = MAX_PIECE) {
+        const out = [];
+        let rest = String(text).trim();
+        while (rest.length > max) {
+          let cut = rest.lastIndexOf(".", max);
+          for (const a of [rest.lastIndexOf("!", max), rest.lastIndexOf("?", max), rest.lastIndexOf("\n", max), rest.lastIndexOf(" ", max)])
+            if (a > cut) cut = a;
+          if (cut < max / 2) cut = max;
+          out.push(rest.slice(0, cut + 1).trim());
+          rest = rest.slice(cut + 1).trim();
+        }
+        if (rest) out.push(rest);
+        return out.filter(Boolean);
+      }
+
+      function parseWav(u8) {
+        if (u8.length < 44) return null;
+        const v = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+        const tag = (o) => String.fromCharCode(u8[o], u8[o+1], u8[o+2], u8[o+3]);
+        if (tag(0) !== "RIFF" || tag(8) !== "WAVE") return null;
+        let off = 12, rate = 24000, ch = 1, bits = 16, pcm = null;
+        while (off + 8 <= v.byteLength) {
+          const id = tag(off);
+          const size = v.getUint32(off + 4, true);
+          if (id === "fmt ") {
+            ch = v.getUint16(off + 10, true);
+            rate = v.getUint32(off + 12, true);
+            bits = v.getUint16(off + 22, true);
+          } else if (id === "data") {
+            pcm = new Uint8Array(u8.buffer, u8.byteOffset + off + 8, Math.min(size, v.byteLength - off - 8));
+            break;
+          }
+          off += 8 + size + (size % 2);
+        }
+        if (!pcm) return null;
+        return { pcm, rate, ch, bits };
+      }
+      function makeWav(pcm, rate, ch, bits) {
+        const out = new Uint8Array(44 + pcm.length);
+        const v = new DataView(out.buffer);
+        const w = (o, s) => { for (let i = 0; i < s.length; i++) out[o + i] = s.charCodeAt(i); };
+        w(0, "RIFF"); v.setUint32(4, 36 + pcm.length, true); w(8, "WAVE");
+        w(12, "fmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, ch, true);
+        v.setUint32(24, rate, true); v.setUint32(28, rate * ch * (bits / 8), true);
+        v.setUint16(32, ch * (bits / 8), true); v.setUint16(34, bits, true);
+        w(36, "data"); v.setUint32(40, pcm.length, true);
+        out.set(pcm, 44);
+        return out;
+      }
+      function concatAudio(list) {
+        if (list.length === 1) return list[0];
+        const parsed = list.map(parseWav);
+        if (parsed.every(Boolean)) {
+          const total = parsed.reduce((s, p) => s + p.pcm.length, 0);
+          const pcm = new Uint8Array(total);
+          let off = 0;
+          for (const p of parsed) { pcm.set(p.pcm, off); off += p.pcm.length; }
+          return makeWav(pcm, parsed[0].rate, parsed[0].ch, parsed[0].bits);
+        }
+        const total = list.reduce((s, b) => s + b.length, 0);
+        const out = new Uint8Array(total);
+        let off = 0;
+        for (const b of list) { out.set(b, off); off += b.length; }
+        return out;
+      }
+
+      const configCache = {};
+      async function loadSpaceConfig(space) {
+        if (configCache[space.id]) return configCache[space.id];
+        const r = await fetch(space.origin + "/config", { cache: "no-store" });
+        if (!r.ok) throw new Error("config HTTP " + r.status);
+        const cfg = await r.json();
+        const dep = (cfg.dependencies || []).find(d => d.api_name === "generate_tts_audio");
+        if (!dep) throw new Error("função generate_tts_audio não encontrada");
+        const comps = {};
+        for (const c of cfg.components || []) comps[c.id] = c;
+        const slots = (dep.inputs || []).map(id => {
+          const c = comps[id] || {};
+          const label = ((c.props || {}).label || "").toLowerCase();
+          const t = c.type;
+          if (t === "textbox") return "text";
+          if (t === "dropdown") return "language";
+          if (t === "audio") return "audio";
+          if (t === "number") return "seed";
+          if (t === "slider") {
+            if (label.includes("exaggerat") || label.includes("express")) return "exaggeration";
+            if (label.includes("temp")) return "temperature";
+            if (label.includes("cfg") || label.includes("pace")) return "cfg";
+            return "exaggeration";
+          }
+          return "skip";
+        });
+        configCache[space.id] = { fnIndex: dep.id != null ? dep.id : dep.inputs ? (cfg.dependencies.indexOf(dep)) : 1, slots };
+        return configCache[space.id];
+      }
+
+      function buildArgs(slots, { piece, refFile, exaggeration, temperature, cfg }) {
+        const args = {};
+        args.text = piece;
+        args.language = LANG;
+        args.audio = { path: refFile.path, orig_name: refFile.name, meta: { _type: "gradio.FileData" } };
+        args.exaggeration = exaggeration;
+        args.temperature = temperature;
+        args.seed = 0;
+        args.cfg = cfg;
+        return slots.map(s => (s === "skip" ? null : args[s]));
+      }
+
+      async function synthesizePiece({ space, sessionHash, refFile, piece, exaggeration, cfg, token, onLog, deadline }) {
+        const base = space.origin + API;
+        const conf = await loadSpaceConfig(space);
+        const body = {
+          data: buildArgs(conf.slots, { piece, refFile, exaggeration, temperature: 0.8, cfg }),
+          fn_index: conf.fnIndex,
+          session_hash: sessionHash,
+        };
+        const authHeaders = token ? { Authorization: "Bearer " + token } : {};
+        const jr = await fetch(base + "/queue/join", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...authHeaders },
+          body: JSON.stringify(body),
+        });
+        let ev;
+        try {
+          const j = await jr.json();
+          ev = j.event_id;
+        } catch (_) { ev = null; }
+        if (!jr.ok || !ev) {
+          const t = await jr.text().catch(() => "");
+          if (jr.status === 429) throw new Error("Fila do Space gratuita cheia agora — aguarde um minutinho e tente de novo.");
+          throw new Error("Space: " + (t.slice(0, 150) || ("erro HTTP " + jr.status)));
+        }
+
+        const resp = await fetch(base + "/queue/data?session_hash=" + encodeURIComponent(sessionHash));
+        if (!resp.ok) throw new Error("Não consegui abrir o stream do Space (HTTP " + resp.status + ").");
+        const reader = resp.body.getReader();
+        const dec = new TextDecoder();
+        let buf = "";
+        try {
+          while (Date.now() < deadline) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buf += dec.decode(value, { stream: true });
+            while (buf.includes("\n\n")) {
+              const idx = buf.indexOf("\n\n");
+              const raw = buf.slice(0, idx);
+              buf = buf.slice(idx + 2);
+              for (const ln of raw.split("\n")) {
+                if (!ln.startsWith("data: ")) continue;
+                let m;
+                try { m = JSON.parse(ln.slice(6)); } catch (_) { continue; }
+                if (m.event_id !== ev) continue;
+                if (m.msg === "log" && m.log && onLog) onLog(m.log);
+                if (m.msg === "process_completed") {
+                  if (!m.success) {
+                    const detail = m.output && (m.output.error || (Array.isArray(m.output.data) && m.output.data.length === 0 ? "" : ""));
+                    throw new Error(detail && typeof detail === "string" ? detail : "O modelo de clone retornou um erro. Tente outro áudio de referência ou reformule o texto.");
+                  }
+                  const out = m.output && (m.output.data ? m.output.data[0] : m.output[0]);
+                  const url = out && (out.url || (out.path ? space.origin + API + "/file=" + out.path : null));
+                  if (!url) throw new Error("Resposta do Space sem áudio.");
+                  const ar = await fetch(url);
+                  if (!ar.ok) throw new Error("Falha ao baixar o áudio do Space (HTTP " + ar.status + ").");
+                  return new Uint8Array(await ar.arrayBuffer());
+                }
+                if (m.msg === "error") throw new Error(m.message || "Erro no modelo de clone.");
+              }
+            }
+          }
+          throw new Error("Tempo esgotado aguardando o clone (a GPU gratuita estava ocupada). Tente de novo.");
+        } finally {
+          try { reader.cancel(); } catch (_) {}
+        }
+      }
+
+      async function synthesize({ sampleBlob, sampleName, text, exaggeration, cfg, token, onLog, onPiece }) {
+        const pieces = splitText(text);
+        const parts = [];
+
+        let space = null, lastErr = null;
+        for (const s of SPACES) {
+          try {
+            const r = await fetch(s.origin + "/config", { method: "GET", cache: "no-store" });
+            if (r.ok) { space = s; break; }
+            lastErr = new Error("Space " + s.id + " HTTP " + r.status);
+          } catch (e) { lastErr = e; }
+        }
+        if (!space) throw new Error("O serviço gratuito de clone está inacessível agora (" + (lastErr && lastErr.message || "sem rede") + "). Tente de novo em instantes.");
+
+        const sessionHash = (crypto.randomUUID ? crypto.randomUUID() : "narrador-" + Date.now() + "-" + Math.random().toString(36).slice(2));
+        const hbCtrl = new AbortController();
+        const authHeaders = token ? { Authorization: "Bearer " + token } : {};
+        let hbPump = Promise.resolve();
+        try {
+          const hbResp = await fetch(space.origin + API + "/heartbeat/" + sessionHash, { signal: hbCtrl.signal, headers: authHeaders });
+          if (hbResp.body && hbResp.body.getReader) {
+            const r = hbResp.body.getReader();
+            hbPump = (async () => { while (true) { const { done } = await r.read(); if (done) break; } })().catch(() => {});
+          }
+        } catch (_) { }
+
+        const fd = new FormData();
+        fd.append("files", sampleBlob, sampleName || "referencia.mp3");
+        fd.append("metadata", JSON.stringify({
+          name: sampleName || "referencia.mp3",
+          size: sampleBlob.size,
+          mime_type: sampleBlob.type || "audio/mpeg",
+          origin: "browser",
+        }));
+        let savedPath;
+        try {
+          const up = await fetch(space.origin + API + "/upload", { method: "POST", body: fd, headers: authHeaders });
+          const list = await up.json();
+          savedPath = Array.isArray(list) ? list[0] : null;
+          if (!up.ok || !savedPath) throw new Error("upload HTTP " + up.status);
+        } catch (e) {
+          hbCtrl.abort();
+          throw new Error("Não consegui enviar o áudio de referência (" + (e.message || e) + "). Verifique a internet.");
+        }
+        const refFile = { path: savedPath, name: sampleName || "referencia.mp3" };
+
+        const deadline = Date.now() + 5 * 60 * 1000;
+        try {
+          for (let i = 0; i < pieces.length; i++) {
+            if (onPiece) onPiece(i + 1, pieces.length);
+            parts.push(await synthesizePiece({
+              space, sessionHash, refFile,
+              piece: pieces[i], exaggeration, cfg, token,
+              onLog, deadline,
+            }));
+          }
+          return concatAudio(parts);
+        } finally {
+          hbCtrl.abort();
+          try { await hbPump; } catch (_) {}
+        }
+      }
+
+      return { synthesize, splitText, parseWav, makeWav, concatAudio, SPACES };
+    })();
+    if (typeof globalThis !== "undefined") globalThis.__CLONE = CLONE;
+
+    /* ============================================================
+     * INTERFACE
+     * ============================================================ */
+    const $ = id => document.getElementById(id);
+    const textEl = $("narText"), countEl = $("narCount"), chipsEl = $("narChips"),
+          genBtn = $("narGenerate"), statusEl = $("narStatus"), statusText = $("narStatusText"),
+          errorBox = $("narErrorBox"), errorMsg = $("narErrorMsg"),
+          resultEl = $("narResult"), player = $("narPlayer"), downloadBtn = $("narDownload"),
+          resultMeta = $("narResultMeta"), dlMeta = $("narDlMeta");
+
+    let blobUrl = null;
+    let style = { rate: "+0%", pitch: "+0Hz" };
+    let sampleAudio = null;
+
+    const SAMPLE_TEXT = name =>
+      `Olá! Esta é a ${name}. É um prazer narrar o seu texto com qualidade profissional — e o melhor de tudo: de graça!`;
+
+    const EXAMPLE =
+      "Olá! Este é um exemplo de narração gerada por inteligência artificial, com uma voz neural humanizada.\n\n" +
+      "Você pode escolher entre diferentes vozes e estilos de leitura — mais lento para documentários, " +
+      "mais rápido para anúncios, ou natural para qualquer texto. Quando terminar, é só baixar o áudio em MP3 " +
+      "e usá-lo no seu vídeo, podcast, aula ou apresentação.";
+
+    const updateCount = () => {
+      const n = textEl.value.length;
+      countEl.textContent = n === 1 ? "1 caractere" : `${n} caracteres`;
+    };
+    textEl.addEventListener("input", updateCount);
+    updateCount();
+
+    $("narSampleText").addEventListener("click", () => {
+      textEl.value = EXAMPLE;
+      updateCount();
+      textEl.focus();
+    });
+
+    document.querySelectorAll(".nar-voice").forEach(card => {
+      card.addEventListener("click", e => {
+        if (e.target.closest(".nar-sample-btn")) return;
+        document.querySelectorAll(".nar-voice").forEach(c => c.classList.remove("selected"));
+        card.classList.add("selected");
+        card.querySelector("input").checked = true;
+        saveNarratorConfig();
+      });
+    });
+    const selectedVoice = () => document.querySelector(".nar-voice input:checked").value;
+
+    function browserIsEdge() {
+      try { return /Edg\//.test((navigator && navigator.userAgent) || ""); }
+      catch (_) { return false; }
+    }
+
+    const NO_SERVER_MSG = "Serviço de vozes indisponível no momento.";
+    const NO_SERVER_MSG_HINT =
+      NO_SERVER_MSG +
+      " Nenhum servidor de vozes respondeu. Alternativas: abrir a página no Microsoft Edge (funciona sem servidor) ou rodar o tts_server.py no seu computador (guia ⚙️ abaixo).";
+    async function tryBackend(base, method, opts) {
+      let url, init;
+      if (method === "POST") {
+        url = base + "/api/tts";
+        init = { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(opts) };
+      } else {
+        const q = new URLSearchParams({ voice: opts.voice, rate: opts.rate, pitch: opts.pitch, text: opts.text });
+        url = base + "/api/tts?" + q.toString();
+        init = { method: "GET" };
+      }
+      let r;
+      try { r = await fetch(url, init); }
+      catch (_) { return { state: "unreachable" }; }
+      if (r.status === 200) {
+        const bytes = new Uint8Array(await r.arrayBuffer());
+        if (!bytes.length) return { state: "blocked" };
+        return { state: "ok", bytes };
+      }
+      const text = await r.text().catch(() => "");
+      let j = null;
+      try { j = JSON.parse(text); } catch (_) {}
+      if (j && j.error) return { state: "fatal", message: j.error };
+      if (r.status === 404) return { state: "missing" };
+      return { state: "blocked" };
+    }
+
+    async function synthesizeSmart(opts, onProgress, shortMsg) {
+      const bases = [];
+      if (location.protocol === "http:" || location.protocol === "https:") bases.push(location.origin);
+      if (location.protocol === "file:" || location.protocol === "http:") bases.push("http://localhost:8000");
+
+      for (const base of bases) {
+        for (const method of ["POST", "GET"]) {
+          if (method === "GET" && opts.text.length > 4000) continue;
+          const res = await tryBackend(base, method, opts);
+          if (res.state === "ok") return { bytes: res.bytes, engine: "servidor local" };
+          if (res.state === "fatal") throw new Error(res.message);
+        }
+      }
+
+      if (!browserIsEdge()) {
+        throw new Error(shortMsg ? NO_SERVER_MSG : NO_SERVER_MSG_HINT);
+      }
+
+      const chunks = await TTS.synthesize({ ...opts, onProgress });
+      const total = chunks.reduce((s, c) => s + c.length, 0);
+      const out = new Uint8Array(total);
+      let off = 0;
+      for (const c of chunks) { out.set(c, off); off += c.length; }
+      return { bytes: out, engine: "direto no navegador (Edge)" };
+    }
+
+    document.querySelectorAll(".nar-sample-btn").forEach(btn => {
+      btn.addEventListener("click", async e => {
+        e.preventDefault();
+        const name = btn.dataset.name, voice = btn.dataset.sample;
+        if (sampleAudio) { sampleAudio.pause(); sampleAudio = null; }
+        document.querySelectorAll(".nar-sample-btn").forEach(b => b.disabled = true);
+        const prev = btn.innerHTML;
+        btn.innerHTML = "⏳ Gerando…";
+        try {
+          const { bytes } = await synthesizeSmart(
+            { voice, rate: "+0%", pitch: "+0Hz", text: SAMPLE_TEXT(name) },
+            () => {},
+            true
+          );
+          const blob = new Blob([bytes], { type: "audio/mpeg" });
+          sampleAudio = new Audio(URL.createObjectURL(blob));
+          await sampleAudio.play();
+        } catch (err) {
+          alert("Não foi possível gerar a amostra agora: " + err.message);
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = prev;
+        }
+      });
+    });
+
+    let styleDesc = $("narStyleHint").textContent;
+    chipsEl.addEventListener("click", e => {
+      const chip = e.target.closest(".nar-chip");
+      if (!chip) return;
+      chipsEl.querySelectorAll(".nar-chip").forEach(c => c.classList.remove("selected"));
+      chip.classList.add("selected");
+      style = { rate: chip.dataset.rate, pitch: chip.dataset.pitch };
+      styleDesc = chip.dataset.desc;
+      applyStyleHint();
+      saveNarratorConfig();
+    });
+    function applyStyleHint() {
+      if (engineMode === "hf") {
+        $("narStyleHint").textContent = "No motor de clone, o estilo ajusta a EXPRESSÃO (exageração) e o RITMO (CFG) da voz clonada — cada chip tem uma combinação própria.";
+      } else {
+        $("narStyleHint").textContent = styleDesc;
+      }
+    }
+
+    let engineMode = "free";
+    const lk = {
+      get(name) { try { return localStorage.getItem(name) || ""; } catch (_) { return ""; } },
+      set(name, v) { try { v ? localStorage.setItem(name, v) : localStorage.removeItem(name); } catch (_) {} },
+    };
+    const store = {
+      get k() { return lk.get("narrador_gemini_key"); },
+      set k(v) { lk.set("narrador_gemini_key", v); },
+      get hfToken() { return lk.get("narrador_hf_token"); },
+      set hfToken(v) { lk.set("narrador_hf_token", v); },
+    };
+
+    const geminiVoiceSel = $("narGeminiVoice");
+    const geminiKeyInput = $("narGeminiKey");
+    const geminiStatus = $("narGeminiStatus");
+
+    GEMINI.VOICES.forEach(([name, g]) => {
+      const o = document.createElement("option");
+      o.value = name;
+      o.textContent = `${name} — ${g === "M" ? "masculina" : "feminina"}`;
+      geminiVoiceSel.appendChild(o);
+    });
+    geminiVoiceSel.value = "Puck";
+
+    function refreshGeminiStatus() {
+      const key = store.k;
+      if (key) {
+        geminiStatus.textContent = "✓ Chave salva neste navegador (" + key.slice(0, 8) + "…)";
+        geminiStatus.className = "nar-key-status ok";
+      } else {
+        geminiStatus.textContent = "Nenhuma chave salva. Cole acima e clique em Salvar.";
+        geminiStatus.className = "nar-key-status";
+      }
+    }
+    $("narGeminiSave").addEventListener("click", () => {
+      store.k = geminiKeyInput.value.trim();
+      geminiKeyInput.value = "";
+      refreshGeminiStatus();
+    });
+    refreshGeminiStatus();
+
+    document.querySelectorAll(".nar-engine-chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        document.querySelectorAll(".nar-engine-chip").forEach(c => c.classList.remove("selected"));
+        chip.classList.add("selected");
+        engineMode = chip.dataset.engine;
+        $("narPanelFree").classList.toggle("nar-hidden", engineMode !== "free");
+        $("narPanelGemini").classList.toggle("nar-hidden", engineMode !== "gemini");
+        $("narPanelHf").classList.toggle("nar-hidden", engineMode !== "hf");
+        $("narDlLabel").textContent = engineMode === "free" ? "Baixar MP3" : "Baixar WAV";
+        applyStyleHint();
+        saveNarratorConfig();
+      });
+    });
+
+    let geminiSampleAudio = null;
+    $("narGeminiSample").addEventListener("click", async e => {
+      e.preventDefault();
+      const btn = e.currentTarget;
+      const key = store.k;
+      if (!key) {
+        alert("Para ouvir a amostra, cole sua chave gratuita do Gemini (aistudio.google.com/apikey) acima e clique em Salvar.");
+        return;
+      }
+      if (geminiSampleAudio) { geminiSampleAudio.pause(); geminiSampleAudio = null; }
+      const prev = btn.textContent;
+      btn.textContent = "⏳ Gerando…";
+      btn.disabled = true;
+      try {
+        const bytes = await GEMINI.synthesize({
+          key,
+          voice: geminiVoiceSel.value,
+          rate: "+0%", pitch: "+0Hz",
+          text: `Olá! Esta é a voz ${geminiVoiceSel.value}, do motor Gemini. Posso narrar o seu texto com esse timbre natural, e depois você baixa o áudio.`,
+          onProgress: () => {},
+        });
+        geminiSampleAudio = new Audio(URL.createObjectURL(new Blob([bytes], { type: "audio/wav" })));
+        await geminiSampleAudio.play();
+      } catch (err) {
+        alert("Não foi possível gerar a amostra: " + err.message);
+      } finally {
+        btn.textContent = prev;
+        btn.disabled = false;
+      }
+    });
+
+    let hfSample = null;
+    let hfSampleName = "";
+
+    const idbStore = {
+      db: null,
+      open() {
+        if (this.db) return Promise.resolve(this.db);
+        return new Promise((res, rej) => {
+          if (typeof indexedDB === "undefined") return rej(new Error("sem indexedDB"));
+          const r = indexedDB.open("narrador-ia", 1);
+          r.onupgradeneeded = () => r.result.createObjectStore("kv");
+          r.onsuccess = () => { this.db = r.result; res(this.db); };
+          r.onerror = () => rej(r.error || new Error("indexedDB"));
+        });
+      },
+      async put(k, v) {
+        const db = await this.open();
+        return new Promise((res, rej) => {
+          const tx = db.transaction("kv", "readwrite");
+          tx.objectStore("kv").put(v, k);
+          tx.oncomplete = res;
+          tx.onerror = () => rej(tx.error);
+        });
+      },
+      async get(k) {
+        const db = await this.open();
+        return new Promise((res, rej) => {
+          const rq = db.transaction("kv").objectStore("kv").get(k);
+          rq.onsuccess = () => res(rq.result);
+          rq.onerror = () => rej(rq.error);
+        });
+      },
+      async del(k) {
+        const db = await this.open();
+        return new Promise((res, rej) => {
+          const tx = db.transaction("kv", "readwrite");
+          tx.objectStore("kv").delete(k);
+          tx.oncomplete = res;
+          tx.onerror = () => rej(tx.error);
+        });
+      },
+    };
+
+    function refreshHfStatus() {
+      $("narHfSampleStatus").textContent = hfSample
+        ? "🎧 Áudio de referência: " + hfSampleName + " (" + (hfSample.size / 1024).toFixed(0) + " KB) — pronto para clonar."
+        : "Nenhum áudio de referência carregado ainda. Envie acima para habilitar o clone.";
+      $("narHfSampleStatus").className = "nar-key-status" + (hfSample ? " ok" : "");
+      const tk = store.hfToken;
+      $("narHfStatus").textContent = tk
+        ? "✓ Token salvo neste navegador — cota pessoal de GPU liberada."
+        : "Sem token: a cota grátis é pequena (limitada pelo seu IP). Opcional, mas recomendado.";
+      $("narHfStatus").className = "nar-key-status" + (tk ? " ok" : "");
+    }
+
+    $("narHfSave").addEventListener("click", () => {
+      store.hfToken = $("narHfToken").value.trim();
+      $("narHfToken").value = "";
+      refreshHfStatus();
+    });
+
+    function friendlyCloneError(msg) {
+      if (/exceeded your ZeroGPU runs limit/i.test(msg)) {
+        return "Limite de uso gratuito da GPU (ZeroGPU) atingido para o seu IP. Crie um token gratuito em huggingface.co/settings/tokens e cole no campo “Opcional” acima — isso libera a cota pessoal. Ou tente de novo amanhã.";
+      }
+      if (/queue is full|too many requests/i.test(msg)) {
+        return "A GPU gratuita do Space está ocupada agora. Aguarde um minutinho e tente de novo.";
+      }
+      return msg;
+    }
+
+    function cloneStyleParams() {
+      const map = {
+        "+0%|+0Hz":  { exaggeration: 0.5,  cfg: 0.5 },
+        "-18%|-4Hz": { exaggeration: 0.4,  cfg: 0.35 },
+        "+8%|+2Hz":  { exaggeration: 0.6,  cfg: 0.55 },
+        "-8%|+3Hz":  { exaggeration: 0.85, cfg: 0.5 },
+        "+16%|+6Hz": { exaggeration: 1.1,  cfg: 0.65 },
+      };
+      return map[`${style.rate}|${style.pitch}`] || map["+0%|+0Hz"];
+    }
+
+    $("narHfFile").addEventListener("change", async e => {
+      const f = e.target.files && e.target.files[0];
+      if (!f) return;
+      const okType = /audio\//.test(f.type) || /\.(mp3|wav|m4a|ogg|aac|flac)$/i.test(f.name);
+      if (!okType) { alert("Envie um arquivo de áudio (mp3, wav, m4a, ogg, aac, flac)."); return; }
+      if (f.size > 15 * 1024 * 1024) { alert("Áudio grande demais (máx. 15 MB). Use um trecho de 6s a 2 minutos."); return; }
+      hfSample = f;
+      hfSampleName = f.name;
+      try { await idbStore.put("hf_sample", { name: f.name, blob: f }); } catch (_) {}
+      refreshHfStatus();
+      e.target.value = "";
+    });
+
+    $("narHfRemoveSample").addEventListener("click", async () => {
+      hfSample = null;
+      hfSampleName = "";
+      try { await idbStore.del("hf_sample"); } catch (_) {}
+      refreshHfStatus();
+    });
+
+    (async () => {
+      try {
+        const saved = await idbStore.get("hf_sample");
+        if (saved && saved.blob) { hfSample = saved.blob; hfSampleName = saved.name || "áudio salvo"; }
+      } catch (_) {}
+      refreshHfStatus();
+    })();
+    refreshHfStatus();
+
+    let hfTestAudio = null;
+    $("narHfTest").addEventListener("click", async e => {
+      e.preventDefault();
+      const btn = e.currentTarget;
+      if (!hfSample) { alert("Envie primeiro um áudio de referência (6s a 2 min com a voz a clonar)."); return; }
+      if (hfTestAudio) { hfTestAudio.pause(); hfTestAudio = null; }
+      const prev = btn.textContent;
+      btn.textContent = "⏳ Gerando (a 1ª pode levar ~1 min)…";
+      btn.disabled = true;
+      try {
+        const st = cloneStyleParams();
+        const bytes = await CLONE.synthesize({
+          sampleBlob: hfSample,
+          sampleName: hfSampleName,
+          text: "Olá! Esta é a minha voz, clonada por inteligência artificial. Se você está ouvindo esta frase, o clone está funcionando.",
+          exaggeration: st.exaggeration,
+          cfg: st.cfg,
+          token: store.hfToken,
+          onLog: () => {},
+          onPiece: () => {},
+        });
+        hfTestAudio = new Audio(URL.createObjectURL(new Blob([bytes], { type: "audio/wav" })));
+        await hfTestAudio.play();
+      } catch (err) {
+        alert("Não foi possível testar o clone: " + friendlyCloneError(err.message));
+      } finally {
+        btn.textContent = prev;
+        btn.disabled = false;
+      }
+    });
+
+    function setStatus(on, text) {
+      statusEl.classList.toggle("on", on);
+      if (text) statusText.textContent = text;
+    }
+    function showError(msg) {
+      errorMsg.textContent = msg;
+      errorBox.classList.add("on");
+    }
+    function hideError() { errorBox.classList.remove("on"); }
+
+    async function generate() {
+      const text = textEl.value.trim();
+      if (!text) {
+        textEl.focus();
+        textEl.style.borderColor = "var(--danger)";
+        setTimeout(() => (textEl.style.borderColor = ""), 1200);
+        return;
+      }
+      hideError();
+      resultEl.classList.remove("on");
+      genBtn.disabled = true;
+      if (blobUrl) { URL.revokeObjectURL(blobUrl); blobUrl = null; }
+      player.pause();
+      setStatus(true, "Conectando ao serviço de voz…");
+      try {
+      setStatus(true, engineMode === "hf"
+        ? "Ligando o modelo de clone — a primeira geração pode levar até 1 minuto…"
+        : "Conectando ao serviço de voz…");
+      const onProgress = (i, n) =>
+        setStatus(true, n === 1 ? "Gerando o áudio…" : `Gerando áudio — parte ${i} de ${n}…`);
+      let bytes, engine, ext, mime;
+      if (engineMode === "hf") {
+        if (!hfSample) throw new Error("Envie um áudio de referência (6s a 2 min com a voz a clonar) no card “Voz”.");
+        const st = cloneStyleParams();
+        bytes = await CLONE.synthesize({
+          sampleBlob: hfSample,
+          sampleName: hfSampleName,
+          text,
+          exaggeration: st.exaggeration,
+          cfg: st.cfg,
+          token: store.hfToken,
+          onLog: msg => setStatus(true, `Clone: ${msg}…`),
+          onPiece: (i, n) => onProgress(i, n),
+        });
+        engine = "Clone de voz (Chatterbox)"; ext = "wav"; mime = "audio/wav";
+      } else if (engineMode === "gemini") {
+        const key = store.k;
+        if (!key) throw new Error("Para usar as vozes Gemini (Puck…), cole sua chave gratuita de aistudio.google.com/apikey no card “Voz” e salve — ou volte ao motor Grátis.");
+        bytes = await GEMINI.synthesize({
+          key, voice: geminiVoiceSel.value,
+          rate: style.rate, pitch: style.pitch, text, onProgress,
+        });
+        engine = `Gemini TTS (${geminiVoiceSel.value})`; ext = "wav"; mime = "audio/wav";
+      } else {
+        const r = await synthesizeSmart(
+          { voice: selectedVoice(), rate: style.rate, pitch: style.pitch, text },
+          onProgress
+        );
+        bytes = r.bytes; engine = r.engine; ext = "mp3"; mime = "audio/mpeg";
+      }
+      const blob = new Blob([bytes], { type: mime });
+      blobUrl = URL.createObjectURL(blob);
+      player.src = blobUrl;
+      const stamp = new Date().toISOString().replace(/[:T]/g, "-").slice(0, 16);
+      const fname = `narracao-${stamp}.${ext}`;
+      downloadBtn.href = blobUrl;
+      downloadBtn.download = fname;
+      $("narDlLabel").textContent = ext === "wav" ? "Baixar WAV" : "Baixar MP3";
+      dlMeta.textContent = `${fname} · ${(blob.size / 1024).toFixed(0)} KB · via ${engine}`;
+      player.onloadedmetadata = () => {
+        const s = Math.round(player.duration);
+        resultMeta.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")} de áudio`;
+      };
+      resultEl.classList.add("on");
+      setStatus(true, "Pronto! Você pode ouvir e baixar a narração abaixo. 🎧");
+      player.play().catch(() => {});
+      resultEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      } catch (err) {
+        const base = engineMode === "hf"
+          ? friendlyCloneError(err.message || "Não foi possível clonar a voz.")
+          : (err.message || "Não foi possível gerar a narração.");
+        let hint;
+        if (engineMode === "hf") hint = " Dica: confira o áudio de referência e a cota da GPU gratuita.";
+        else if (engineMode === "gemini") hint = " Dica: confira a chave e a cota diária da sua conta Google.";
+        else hint = " Se isso acontecer no navegador, tente abrir a página no Microsoft Edge ou rode o servidor local (guia ⚙️ abaixo) e tente de novo.";
+        showError(base + hint);
+        console.error(err);
+      } finally {
+        genBtn.disabled = false;
+      }
+    }
+
+    genBtn.addEventListener("click", generate);
+    $("narRetry").addEventListener("click", generate);
+    textEl.addEventListener("keydown", e => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") generate();
+    });
+
+    $("narFallback").addEventListener("click", () => {
+      if (!("speechSynthesis" in window)) {
+        showError("Seu navegador não oferece voz embutida. Tente novamente em instantes — ou use o Microsoft Edge, ou rode o servidor local (veja o guia acima).");
+        return;
+      }
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(textEl.value.trim());
+      u.lang = "pt-BR";
+      const voices = window.speechSynthesis.getVoices();
+      const v = voices.find(v => v.lang === "pt-BR") || voices.find(v => v.lang.startsWith("pt"));
+      if (v) u.voice = v;
+      u.rate = Math.min(2, Math.max(0.5, 1 + parseInt(style.rate) / 100));
+      hideError();
+      resultEl.classList.remove("on");
+      setStatus(true, "Lendo com a voz do seu navegador… (modo alternativo, sem download)");
+      window.speechSynthesis.speak(u);
+      setTimeout(() => setStatus(false), 4000);
+    });
+
+    if ("speechSynthesis" in window) window.speechSynthesis.getVoices();
+
+    if (typeof globalThis !== "undefined") globalThis.__UI = { synthesizeSmart, tryBackend };
+
+    /* ============================================================
+     * PERSISTÊNCIA + API EXTERNA (pra integração com o Roteirista)
+     * Guarda no navegador as ESCOLHAS do usuário (motor, voz, estilo)
+     * no nome salvo logo abaixo, e expõe um NARRATOR.* global que as
+     * outras abas usam pra gerar áudio com a mesma configuração.
+     * ============================================================ */
+    const NARRATOR_STORAGE_KEY = "blind_narrator_config";
+
+    // Restaura as escolhas salvas (motor / voz livre / estilo) ao abrir a aba.
+    function loadNarratorConfig() {
+      let cfg = {};
+      try { cfg = JSON.parse(lk.get(NARRATOR_STORAGE_KEY) || "{}"); } catch (_) { cfg = {}; }
+      if (cfg.engine) {
+        const chip = document.querySelector('.nar-engine-chip[data-engine="' + cfg.engine + '"]');
+        if (chip) chip.click();
+      }
+      if (cfg.freeVoice) {
+        const voiceCard = document.querySelector('.nar-voice[data-voice="' + cfg.freeVoice + '"]');
+        if (voiceCard) {
+          document.querySelectorAll(".nar-voice").forEach(c => c.classList.remove("selected"));
+          voiceCard.classList.add("selected");
+          voiceCard.querySelector("input").checked = true;
+        }
+      }
+      if (cfg.geminiVoice && GEMINI.VOICES.some(v => v[0] === cfg.geminiVoice)) {
+        geminiVoiceSel.value = cfg.geminiVoice;
+      }
+      if (cfg.style) {
+        const chip = document.querySelector('.nar-chip[data-rate="' + cfg.style.rate + '"][data-pitch="' + cfg.style.pitch + '"]');
+        if (chip) chip.click();
+      }
+    }
+
+    function saveNarratorConfig() {
+      try {
+        const cfg = {
+          engine: engineMode,
+          freeVoice: engineMode === "free" ? selectedVoice() : "",
+          geminiVoice: geminiVoiceSel.value,
+          style: { rate: style.rate, pitch: style.pitch },
+        };
+        lk.set(NARRATOR_STORAGE_KEY, JSON.stringify(cfg));
+        // Avisa o Roteirista (aba 3) pra atualizar o chip "Narrador atualmente".
+        try { window.dispatchEvent(new CustomEvent("narrator-config-changed")); } catch (_) {}
+      } catch (_) {}
+    }
+
+    // Descreve as escolhas atuais em texto curto, pra exibir no Roteirista.
+    function describeNarratorConfig() {
+      let voice = "";
+      if (engineMode === "free") {
+        const vc = document.querySelector(".nar-voice.selected");
+        voice = vc ? vc.querySelector(".nar-voice-name").textContent.trim() : "—";
+      } else if (engineMode === "gemini") {
+        voice = geminiVoiceSel.value;
+      } else if (engineMode === "hf") {
+        voice = hfSample ? "Clone: " + hfSampleName : "Clone: (sem áudio)";
+      }
+      const engineLabels = { free: "Grátis (Edge)", gemini: "Gemini", hf: "Clone de voz" };
+      const styleDescs = {
+        "+0%|+0Hz": "Natural", "-18%|-4Hz": "Documental", "+8%|+2Hz": "Jornalístico",
+        "-8%|+3Hz": "Contação", "+16%|+6Hz": "Anúncio",
+      };
+      const styleName = styleDescs[`${style.rate}|${style.pitch}`] || "Natural";
+      return `${engineLabels[engineMode] || engineMode} · ${voice} · ${styleName}`;
+    }
+
+    // Gera o áudio de um texto usando a configuração atual (motor + voz + estilo).
+    // Retorna { file, duration, ext, mime }. Usado tanto pela UI da aba quanto
+    // pelo fluxo automático do Roteirista.
+    async function generateNarrationFile(text, onProgress) {
+      if (!text || !text.trim()) throw new Error("Texto vazio para narrar.");
+      let bytes, ext, mime;
+      if (engineMode === "hf") {
+        if (!hfSample) throw new Error("No motor de Clone de voz é preciso ter um áudio de referência salvo no card Voz.");
+        const st = cloneStyleParams();
+        bytes = await CLONE.synthesize({
+          sampleBlob: hfSample, sampleName: hfSampleName, text,
+          exaggeration: st.exaggeration, cfg: st.cfg, token: store.hfToken,
+          onLog: () => {}, onPiece: onProgress,
+        });
+        ext = "wav"; mime = "audio/wav";
+      } else if (engineMode === "gemini") {
+        const key = store.k;
+        if (!key) throw new Error("No motor Gemini é preciso salvar a chave do Google AI Studio no card Voz.");
+        bytes = await GEMINI.synthesize({
+          key, voice: geminiVoiceSel.value,
+          rate: style.rate, pitch: style.pitch, text, onProgress,
+        });
+        ext = "wav"; mime = "audio/wav";
+      } else {
+        const r = await synthesizeSmart(
+          { voice: selectedVoice(), rate: style.rate, pitch: style.pitch, text },
+          onProgress
+        );
+        bytes = r.bytes; ext = "mp3"; mime = "audio/mpeg";
+      }
+      const file = new File([bytes], "narracao_narrador." + ext, { type: mime });
+      return { file, ext, mime };
+    }
+
+    loadNarratorConfig();
+    saveNarratorConfig();
+
+    // API global para as outras abas (Roteirista / Sincronizador).
+    window.NARRATOR = {
+      getConfig: describeNarratorConfig,
+      generateNarrationFile,
+      saveConfig: saveNarratorConfig,
+    };
+    if (typeof globalThis !== "undefined") globalThis.__NARRATOR = window.NARRATOR;
+  })();
+  </script>
+
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a30f88381d91b707',t:'MTc4NzcxMjY1OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a32f4e263927d824',t:'MTc4ODA0NTgyNA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
