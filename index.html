@@ -2514,6 +2514,21 @@ video#sourceVideo { display: none; }
                 <p style="font-size:0.74rem;color:var(--text-muted);margin:4px 0 0;line-height:1.45;">Assim que o corte terminar, a tela rola sozinha até o card "🎙️ Sincronizar Narração" já com o vídeo cortado pronto — você só escolhe a narração (MP3 do ElevenLabs ou gerar pela IA) e clica em "Sincronizar e Baixar".</p>
               </div>
 
+              <!-- NARRAÇÃO EM ÁUDIO ÚNICO COMPLETO -->
+              <div class="form-group" style="margin-top: 16px; border:1px solid rgba(34,211,238,0.3); background: rgba(34,211,238,0.05); border-radius: var(--radius-md); padding: 12px 14px;">
+                <div class="control-title" style="color:#67e8f9; margin-bottom:6px;">🎙️ Formato da Narração</div>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;font-weight:600;">
+                  <input type="checkbox" id="aiNarracaoUnica" checked style="width:16px;height:16px;margin:0;">
+                  🎧 <b>Áudio ÚNICO completo</b> — o roteiro inteiro é lido de uma vez (uma só narração contínua), e o áudio é sincronizado sobre o vídeo cortado
+                </label>
+                <p style="font-size:0.74rem;color:var(--text-muted);margin:6px 0 0;line-height:1.45;"><b>Desmarcando:</b> o app volta a gerar <b>um áudio por cena</b> (cada cena com seu próprio clip e botão "Gerar narração"). <b>Recomendado:</b> áudio único, especialmente com o <b>Clone de voz</b> — a leitura contínua soa muito mais natural e evita cortes secos entre frases.</p>
+                <div style="display:flex;align-items:center;gap:8px;margin-top:10px;padding:8px 10px;border-radius:8px;background:rgba(0,0,0,0.25);border:1px solid rgba(34,211,238,0.2);">
+                  <span style="font-size:0.75rem;color:var(--text-muted);font-weight:700;">🎚️ Narrador atualmente:</span>
+                  <span id="aiNarratorStatusChip" style="font-size:0.75rem;color:#67e8f9;font-weight:800;">carregando…</span>
+                </div>
+                <p style="font-size:0.72rem;color:var(--text-muted);margin:6px 0 0;line-height:1.4;">Configure a voz, o estilo e o motor na aba <b>Narrador IA</b> — esta escolha fica salva e é usada aqui automaticamente.</p>
+              </div>
+
               <!-- MODO AUTOMÁTICO: Roteirista → Narrador → Sincronizar -->
               <div class="form-group" style="margin-top: 16px; border:1px solid rgba(192,132,252,0.3); background: rgba(192,132,252,0.05); border-radius: var(--radius-md); padding: 12px 14px;">
                 <div class="control-title" style="color:#c084fc; margin-bottom:6px;">🤖 Modo Automático (Roteirista → Narrador → Sincronizar)</div>
@@ -2529,10 +2544,6 @@ video#sourceVideo { display: none; }
                 </label>
                 <p style="font-size:0.74rem;color:var(--text-muted);margin:6px 0 0;line-height:1.45;">Com 1 vídeo, ele pergunta; com 2+, roda a fila inteira no automático. O áudio é gerado pelo mesmo motor/voz/estilo do Narrador e sincronizado.</p>
 
-                <div style="display:flex;align-items:center;gap:8px;margin-top:12px;padding:9px 10px;border-radius:8px;background:rgba(0,0,0,0.25);border:1px solid rgba(192,132,252,0.2);">
-                  <span style="font-size:0.75rem;color:var(--text-muted);font-weight:700;">🎚️ Narrador atualmente:</span>
-                  <span id="aiNarratorStatusChip" style="font-size:0.75rem;color:#c084fc;font-weight:800;">carregando…</span>
-                </div>
                 <p style="font-size:0.72rem;color:var(--text-muted);margin:6px 0 0;line-height:1.4;">Configure a voz, o estilo e o motor na aba <b>Narrador IA</b> — esta escolha fica salva e é usada aqui automaticamente.</p>
               </div>
 
@@ -2804,14 +2815,14 @@ video#sourceVideo { display: none; }
             <div class="pro-card">
               <div class="control-title">🧠 Motor de voz</div>
               <div class="nar-engines" id="narEngines">
-                <button class="nar-engine-chip selected" type="button" data-engine="free">
+                <button class="nar-engine-chip" type="button" data-engine="free">
                   <span>🎙️ Grátis (Edge)<small>Francisca, Antonio, Thalita, Duarte e Raquel · sem cadastro</small></span>
                 </button>
                 <button class="nar-engine-chip" type="button" data-engine="gemini">
                   <span class="nar-spark">✦</span>
                   <span>Gemini (voz tipo Puck)<small>Puck, Kore, Aoede… · grátis com chave do Google (limite diário)</small></span>
                 </button>
-                <button class="nar-engine-chip" type="button" data-engine="hf">
+                <button class="nar-engine-chip selected" type="button" data-engine="hf">
                   <span>🎤</span>
                   <span>Clone de voz — a sua voz<small>grátis, sem chave — a partir de 1 áudio seu</small></span>
                 </button>
@@ -2822,7 +2833,7 @@ video#sourceVideo { display: none; }
             <div class="pro-card">
               <div class="control-title">🎤 Voz</div>
 
-              <div id="narPanelFree">
+              <div id="narPanelFree" class="nar-hidden">
                 <div class="nar-voices" id="narVoices">
                   <label class="nar-voice selected" data-voice="pt-BR-FranciscaNeural">
                     <input type="radio" name="narVoice" value="pt-BR-FranciscaNeural" checked>
@@ -2885,7 +2896,7 @@ video#sourceVideo { display: none; }
                 <p class="nar-note">✦ As vozes <b>Puck</b>, <b>Kore</b>, <b>Aoede</b> e as outras 27 do motor Gemini usam a mesma tecnologia do Gemini. Para usar: crie uma chave grátis em <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>, cole acima e salve. A chave fica somente no seu navegador (localStorage) e não é enviada a nenhum outro lugar além da API do Google.</p>
               </div>
 
-              <div id="narPanelHf" class="nar-hidden">
+              <div id="narPanelHf">
                 <div class="nar-sel-row">
                   <input type="file" id="narHfFile" accept="audio/*,.mp3,.wav,.m4a,.ogg,.aac,.flac">
                 </div>
@@ -5114,9 +5125,15 @@ ctx.fillStyle = '#000000';
         // gera a narração com o Narrador e sincroniza — sem clicar em nada.
         const autoNarrator = document.getElementById('aiAutoNarrator');
         const fullAutopilot = document.getElementById('aiFullAutopilot');
+        const narracaoUnica = document.getElementById('aiNarracaoUnica');
+        // Narração em áudio único completo: gera UM áudio com o roteiro inteiro
+        // (via Narrador / clone) e sincroniza sobre o vídeo cortado — vale para
+        // 1 ou N vídeos. Usa o mesmo pipeline do piloto automático, que já faz
+        // exatamente isso.
+        const useUnico = narracaoUnica && narracaoUnica.checked;
         const useAuto = (autoNarrator && autoNarrator.checked) || (fullAutopilot && fullAutopilot.checked);
-        if (useAuto) {
-            await runAutoPipeline(Array.from(files), { useNarratorEngine: autoNarrator && autoNarrator.checked });
+        if (useAuto || useUnico) {
+            await runAutoPipeline(Array.from(files), { useNarratorEngine: (autoNarrator && autoNarrator.checked) || useUnico });
             return;
         }
 
@@ -6345,8 +6362,18 @@ ${nextRuleNumber}. Além das cenas, escreva também uma "fraseCuriosidade": uma 
                     continue;
                 }
 
-                // 5) Baixa o vídeo sincronizado (respeitando a pasta escolhida)
-                // e a legenda .srt, com o mesmo nome-base do arquivo original.
+                // 5) Mostra o vídeo sincronizado na caixa de resultado (prévia),
+                // baixa o vídeo (respeitando a pasta escolhida) e a legenda .srt,
+                // com o mesmo nome-base do arquivo original.
+                const resultBox = document.getElementById('aiSyncResultBox');
+                const resultVideo = document.getElementById('aiSyncResultVideo');
+                const resultDownload = document.getElementById('aiSyncDownloadLink');
+                if (resultBox && resultVideo && resultDownload) {
+                    resultVideo.src = syncResult.url;
+                    resultDownload.href = syncResult.url;
+                    resultDownload.download = `${currentFileBaseName}_narrado.mp4`;
+                    resultBox.style.display = 'block';
+                }
                 await window.saveProcessedBlob(syncResult.blob, `${currentFileBaseName}_narrado.mp4`);
                 await sleep(500);
                 if (currentCuts.some(c => (c.narracao || '').trim())) {
@@ -6355,7 +6382,7 @@ ${nextRuleNumber}. Além das cenas, escreva também uma "fraseCuriosidade": uma 
                 }
                 sucessos++;
                 await recycleFFmpeg(logFFmpeg, () => {});
-                status.innerText = `✅ Vídeo ${i + 1} finalizado e sincronizado.`;
+                status.innerText = `✅ Vídeo ${i + 1} finalizado e sincronizado — baixe o MP4 (e a legenda .srt) com rolamento suave acima.`;
             }
             batchStatus.innerText = `🤖 Piloto automático concluído: ${sucessos} de ${files.length} vídeo(s) sincronizados` +
                 (falhas > 0 ? `, ${falhas} falharam (veja os detalhes acima).` : '.');
@@ -6655,6 +6682,10 @@ ${nextRuleNumber}. Além das cenas, escreva também uma "fraseCuriosidade": uma 
 
     function renderCutsTable(cuts, narrationAudios, editable) {
         const resultOutput = document.getElementById('aiResultOutput');
+        // Modo "Narração em áudio único completo": o roteiro é lido numa única
+        // leitura contínua e sincronizada sobre o vídeo cortado — não há um
+        // áudio por cena, então não mostramos os botões/players por cena.
+        const narracaoUnicaMode = !!(document.getElementById('aiNarracaoUnica') && document.getElementById('aiNarracaoUnica').checked);
 
         let toolbarHtml;
         if (editable) {
@@ -6682,7 +6713,20 @@ ${nextRuleNumber}. Além das cenas, escreva também uma "fraseCuriosidade": uma 
             </div>`;
         }
 
-        let html = toolbarHtml + hookPhraseHtml + '<table class="cuts-table"><thead><tr>' +
+        // Aviso único quando o modo é "áudio completo": explica que a narração
+        // será UMA leitura contínua (não um áudio por cena) e é sincronizada no
+        // corte. Mantém o texto de cada cena (que serve de legenda/guia).
+        let unifiedNarrationBanner = '';
+        if (!editable && narracaoUnicaMode) {
+            unifiedNarrationBanner = `<div style="background:rgba(34,211,238,0.10);border:1px dashed rgba(34,211,238,0.45);border-radius:8px;padding:11px 13px;margin-bottom:14px;">
+                <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                    <span style="font-size:0.85rem;font-weight:700;color:#a5f3fc;">🎧 Narração em ÁUDIO ÚNICO completo</span>
+                </div>
+                <div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px;line-height:1.45;">O roteiro inteiro será lido de uma vez (voz do Narrador) e sincronizado sobre o vídeo cortado — em vez de um áudio por cena. O texto de cada cena abaixo continua sendo usado como guia de cortes e exportado na legenda .srt.</div>
+            </div>`;
+        }
+
+        let html = toolbarHtml + unifiedNarrationBanner + hookPhraseHtml + '<table class="cuts-table"><thead><tr>' +
             '<th>Cena</th><th>Início</th><th>Fim</th><th>Narração (3ª pessoa)</th><th>Visual</th>' +
             '</tr></thead><tbody>';
 
@@ -6711,26 +6755,31 @@ ${nextRuleNumber}. Além das cenas, escreva também uma "fraseCuriosidade": uma 
             // já foi gerada (não é null) mas ESSA cena especificamente não tem
             // áudio, é porque a narração falhou só nela — mostramos um aviso local
             // em vez do genérico de "narração não gerada".
+            // No modo "Áudio ÚNICO completo" (aiNarracaoUnica) NÃO geramos um
+            // áudio por cena — a leitura é uma só, sobre o vídeo inteiro. Então
+            // escondemos o player/botão por cena nesse modo.
             let audioHtml = '';
-            const pcmBytes = narrationAudios && narrationAudios[i];
-            const temAudio = !!(pcmBytes && pcmBytes.length);
-            if (temAudio) {
-                const url = trackObjectURL(URL.createObjectURL(pcmToWavBlob(pcmBytes)));
-                audioHtml = `<audio controls src="${url}" style="width:100%;margin-top:6px;height:28px;"></audio>`;
-            } else if (narrationAudios && narrationAudios.length === cuts.length) {
-                // Sem áudio nesta cena pode ser por dois motivos bem diferentes:
-                // a IA falhou de verdade ao gerar (c._narracaoFalhou), ou a
-                // narração simplesmente ainda não foi gerada/foi invalidada por
-                // uma edição de texto — nesse 2º caso não é uma "falha".
-                if (c._narracaoFalhou) {
-                    algumaFalhouNarracao = true;
-                    audioHtml = '<div style="font-size:0.75rem;color:#f59e0b;margin-top:4px;">⚠️ Narração falhou nesta cena — vai manter o áudio original.</div>';
-                } else {
-                    audioHtml = '<div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px;">Narração ainda não gerada para esta cena — vai manter o áudio original até você clicar em "Gerar narração".</div>';
+            if (!narracaoUnicaMode) {
+                const pcmBytes = narrationAudios && narrationAudios[i];
+                const temAudio = !!(pcmBytes && pcmBytes.length);
+                if (temAudio) {
+                    const url = trackObjectURL(URL.createObjectURL(pcmToWavBlob(pcmBytes)));
+                    audioHtml = `<audio controls src="${url}" style="width:100%;margin-top:6px;height:28px;"></audio>`;
+                } else if (narrationAudios && narrationAudios.length === cuts.length) {
+                    // Sem áudio nesta cena pode ser por dois motivos bem diferentes:
+                    // a IA falhou de verdade ao gerar (c._narracaoFalhou), ou a
+                    // narração simplesmente ainda não foi gerada/foi invalidada por
+                    // uma edição de texto — nesse 2º caso não é uma "falha".
+                    if (c._narracaoFalhou) {
+                        algumaFalhouNarracao = true;
+                        audioHtml = '<div style="font-size:0.75rem;color:#f59e0b;margin-top:4px;">⚠️ Narração falhou nesta cena — vai manter o áudio original.</div>';
+                    } else {
+                        audioHtml = '<div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px;">Narração ainda não gerada para esta cena — vai manter o áudio original até você clicar em "Gerar narração".</div>';
+                    }
                 }
+                const regenLabel = temAudio ? '🔄 Regenerar narração' : '🔊 Gerar narração';
+                audioHtml += `<button data-action="regen-narracao" data-index="${i}" style="margin-top:6px;font-size:0.72rem;padding:6px 10px;">${regenLabel}</button>`;
             }
-            const regenLabel = temAudio ? '🔄 Regenerar narração' : '🔊 Gerar narração';
-            audioHtml += `<button data-action="regen-narracao" data-index="${i}" style="margin-top:6px;font-size:0.72rem;padding:6px 10px;">${regenLabel}</button>`;
 
             const linhaCor = c._ajustado === 'parcial' ? ' style="background-color:#3f1d1d;"'
                 : (c._ajustado || c._avisoCurto) ? ' style="background-color:#3f2d0f;"' : '';
@@ -9976,7 +10025,7 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
       }
     }
 
-    let engineMode = "free";
+    let engineMode = "hf";
     const lk = {
       get(name) { try { return localStorage.getItem(name) || ""; } catch (_) { return ""; } },
       set(name, v) { try { v ? localStorage.setItem(name, v) : localStorage.removeItem(name); } catch (_) {} },
@@ -10017,18 +10066,21 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
     });
     refreshGeminiStatus();
 
+    function applyEngineUI(mode, { persist = true } = {}) {
+      engineMode = mode;
+      document.querySelectorAll(".nar-engine-chip").forEach(c => c.classList.remove("selected"));
+      const chip = document.querySelector('.nar-engine-chip[data-engine="' + mode + '"]');
+      if (chip) chip.classList.add("selected");
+      $("narPanelFree").classList.toggle("nar-hidden", engineMode !== "free");
+      $("narPanelGemini").classList.toggle("nar-hidden", engineMode !== "gemini");
+      $("narPanelHf").classList.toggle("nar-hidden", engineMode !== "hf");
+      $("narDlLabel").textContent = engineMode === "free" ? "Baixar MP3" : "Baixar WAV";
+      applyStyleHint();
+      if (persist) saveNarratorConfig();
+    }
+
     document.querySelectorAll(".nar-engine-chip").forEach(chip => {
-      chip.addEventListener("click", () => {
-        document.querySelectorAll(".nar-engine-chip").forEach(c => c.classList.remove("selected"));
-        chip.classList.add("selected");
-        engineMode = chip.dataset.engine;
-        $("narPanelFree").classList.toggle("nar-hidden", engineMode !== "free");
-        $("narPanelGemini").classList.toggle("nar-hidden", engineMode !== "gemini");
-        $("narPanelHf").classList.toggle("nar-hidden", engineMode !== "hf");
-        $("narDlLabel").textContent = engineMode === "free" ? "Baixar MP3" : "Baixar WAV";
-        applyStyleHint();
-        saveNarratorConfig();
-      });
+      chip.addEventListener("click", () => applyEngineUI(chip.dataset.engine));
     });
 
     let geminiSampleAudio = null;
@@ -10427,6 +10479,10 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
     }
 
     loadNarratorConfig();
+    // Garante que o painel/label/botão de download correspondam ao motor
+    // ativo (padrão: Clone de voz, que funciona sem chave no GitHub Pages),
+    // mesmo na primeira visita sem config salva.
+    applyEngineUI(engineMode, { persist: false });
     saveNarratorConfig();
 
     // API global para as outras abas (Roteirista / Sincronizador).
@@ -10439,5 +10495,5 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
   })();
   </script>
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a30f88381d91b707',t:'MTc4NzcxMjY1OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a32f4e263927d824',t:'MTc4ODA0NTgyNA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a30f88381d91b707',t:'MTc4NzcxMjY1OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a32faa3a6e59ccfb',t:'MTc4ODA0OTU5Ng=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
