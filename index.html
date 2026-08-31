@@ -2413,7 +2413,7 @@ video#sourceVideo { display: none; }
                 <span class="module-badge indigo">⚡ Módulo IA Studio</span>
               </div>
               <h2>Resumidor de Vídeo & Roteirista IA</h2>
-              <p class="desc">Envie seu vídeo e receba o corte exato com narração em 3ª pessoa, dublada por uma voz sintética humanizada. O roteiro SEMPRE abre com o momento de maior tensão do vídeo e uma frase-gancho (pergunta ou afirmação chocante) nos primeiros 2 segundos.</p>
+              <p class="desc">Envie seu vídeo e receba o corte exato com narração dublada por uma voz sintética humanizada — em <b>3ª, 1ª ou 2ª pessoa</b> (você escolhe). O roteiro SEMPRE abre com o momento de maior tensão do vídeo e uma frase-gancho (pergunta ou afirmação chocante) nos primeiros 2 segundos.</p>
             </div>
 
             <div class="card">
@@ -2451,6 +2451,37 @@ video#sourceVideo { display: none; }
                     <option value="acelerado, hiperenergético, cheio de ganchos e reviravoltas, com frases curtas e quase sem pausas, no estilo de resumo de dorama/novela viral do TikTok" data-turbo="true">🔥 Turbo TikTok / Dorama (acelerado, muitos cortes)</option>
                   </select>
                   <p id="aiToneTurboHint" style="display:none;font-size:0.75rem;color:var(--text-muted);margin:4px 0 0;line-height:1.4;">Roteiro com mais cortes curtos, ganchos e reviravoltas a cada poucos segundos, e narração falada mais rápido — pensado pra prender a atenção como um resumo de dorama que viraliza no TikTok.</p>
+                </div>
+              </div>
+
+              <div class="grid" style="margin-top: 16px;">
+                <div class="form-group">
+                  <label for="aiPersona">Pessoa da Narração</label>
+                  <select id="aiPersona">
+                    <option value="terceira">3ª pessoa (ele/ela) — resumo clássico</option>
+                    <option value="primeira">1ª pessoa (eu) — quem conta fala por si</option>
+                    <option value="segunda">2ª pessoa (você) — fala direto com o espectador</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="aiPersonaHint" style="visibility:hidden;">&nbsp;</label>
+                  <p id="aiPersonaHint" style="font-size:0.76rem;color:var(--text-muted);margin:0;line-height:1.45;">Escolha como a história é contada: <b>3ª pessoa</b> (impessoal, como documentário), <b>1ª pessoa</b> (como se o narrador fosse quem viveu/experienciou, usando "eu") ou <b>2ª pessoa</b> (falando com o espectador, estilo criador de conteúdo, usando "você").</p>
+                </div>
+              </div>
+
+              <div class="grid" style="margin-top: 16px;">
+                <div class="form-group">
+                  <label for="aiIntensidade">Intensidade / Estilo da Narração</label>
+                  <select id="aiIntensidade">
+                    <option value="normal">🎯 Normal — equilibrado, sem exageros</option>
+                    <option value="dramatico" selected>🎭 Dramático — suspense, tensão e emoção</option>
+                    <option value="dinamico">🔥 Dinâmico / Envolvente — acelerado e cheio de ganchos</option>
+                    <option value="engracado">😄 Engraçado / Divertido — com frases engraçadas e tom leve</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="aiIntensidadeHint" style="visibility:hidden;">&nbsp;</label>
+                  <p id="aiIntensidadeHint" style="font-size:0.76rem;color:var(--text-muted);margin:0;line-height:1.45;">Define a energia e o clima da narração. O <b>Normal</b> é sóbrio e direto; o <b>Dramático</b> segura o suspense e intensifica os momentos-chave; o <b>Dinâmico/Envolvente</b> acelera o ritmo e enche de ganchos; o <b>Engraçado/Divertido</b> adota um tom leve, com comentários bem-humorados e frases que descontraem — sempre mantendo o sentido e sem perder a clareza.</p>
                 </div>
               </div>
 
@@ -2517,11 +2548,15 @@ video#sourceVideo { display: none; }
               <!-- NARRAÇÃO EM ÁUDIO ÚNICO COMPLETO -->
               <div class="form-group" style="margin-top: 16px; border:1px solid rgba(34,211,238,0.3); background: rgba(34,211,238,0.05); border-radius: var(--radius-md); padding: 12px 14px;">
                 <div class="control-title" style="color:#67e8f9; margin-bottom:6px;">🎙️ Formato da Narração</div>
-                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;font-weight:600;">
-                  <input type="checkbox" id="aiNarracaoUnica" checked style="width:16px;height:16px;margin:0;">
-                  🎧 <b>Áudio ÚNICO completo</b> — o roteiro inteiro é lido de uma vez (uma só narração contínua), e o áudio é sincronizado sobre o vídeo cortado
+                <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;text-transform:none;font-weight:600;line-height:1.4;">
+                  <input type="radio" name="aiNarracaoFormato" id="aiNarracaoUnica" value="unica" checked style="width:16px;height:16px;margin:2px 0 0;">
+                  <span><b>🎧 Áudio ÚNICO completo</b> — o roteiro inteiro é lido de uma vez (uma só narração contínua, com a voz do Narrador) e sincronizado sobre o vídeo cortado. <b>Recomendado</b>, especialmente com o <b>Clone de voz</b>: a leitura contínua soa bem mais natural e evita cortes secos entre as frases.</span>
                 </label>
-                <p style="font-size:0.74rem;color:var(--text-muted);margin:6px 0 0;line-height:1.45;"><b>Desmarcando:</b> o app volta a gerar <b>um áudio por cena</b> (cada cena com seu próprio clip e botão "Gerar narração"). <b>Recomendado:</b> áudio único, especialmente com o <b>Clone de voz</b> — a leitura contínua soa muito mais natural e evita cortes secos entre frases.</p>
+                <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;text-transform:none;font-weight:600;line-height:1.4;margin-top:12px;">
+                  <input type="radio" name="aiNarracaoFormato" id="aiNarracaoPorCena" value="porCena" style="width:16px;height:16px;margin:2px 0 0;">
+                  <span><b>🎬 Um áudio por cena (como era antes)</b> — cada cena tem seu <b>próprio áudio</b> e botão "Gerar narração", gerado e aplicado separadamente em cada corte.</span>
+                </label>
+                <p style="font-size:0.74rem;color:var(--text-muted);margin:6px 0 0;line-height:1.45;">No modo <b>Áudio único</b> o app usa a voz/estilo/motor salvos na aba <b>Narrador IA</b> pra ler o roteiro inteiro de uma vez e depois sincroniza com o corte. No modo <b>Um áudio por cena</b> ele volta ao fluxo clássico do resumidor: um clip por cena, cada um com seu player e botão.</p>
                 <div style="display:flex;align-items:center;gap:8px;margin-top:10px;padding:8px 10px;border-radius:8px;background:rgba(0,0,0,0.25);border:1px solid rgba(34,211,238,0.2);">
                   <span style="font-size:0.75rem;color:var(--text-muted);font-weight:700;">🎚️ Narrador atualmente:</span>
                   <span id="aiNarratorStatusChip" style="font-size:0.75rem;color:#67e8f9;font-weight:800;">carregando…</span>
@@ -2619,6 +2654,7 @@ video#sourceVideo { display: none; }
               </div>
 
               <label style="margin-top:14px;">O que deve se ajustar?</label>
+              <span id="aiSyncModeLockHint" style="display:none; text-align:center; font-size:0.72rem; color:#67e8f9; margin-bottom:8px; background:rgba(34,211,238,0.08); border:1px dashed rgba(34,211,238,0.35); padding:5px 10px; border-radius:8px;">🤖 No modo automático, "Manter a duração do VÍDEO" fica sempre ativo — a narração se ajusta ao corte.</span>
               <div class="feature-list" style="margin-top:6px;">
                 <label class="checkbox-item">
                   <input type="radio" name="aiSyncMode" value="audio_to_video" checked>
@@ -5132,7 +5168,11 @@ ctx.fillStyle = '#000000';
         // exatamente isso.
         const useUnico = narracaoUnica && narracaoUnica.checked;
         const useAuto = (autoNarrator && autoNarrator.checked) || (fullAutopilot && fullAutopilot.checked);
-        if (useAuto || useUnico) {
+        // No formato "Um áudio por cena" o fluxo usado é o clássico (cada cena
+        // com seu próprio clip e botão "Gerar narração", como era antes) — o
+        // pipeline de áudio único só roda quando "Áudio ÚNICO" está marcado.
+        const perCena = narracaoUnica && !narracaoUnica.checked;
+        if (!perCena && (useAuto || useUnico)) {
             await runAutoPipeline(Array.from(files), { useNarratorEngine: (autoNarrator && autoNarrator.checked) || useUnico });
             return;
         }
@@ -5752,6 +5792,8 @@ ctx.fillStyle = '#000000';
 
         if (saved.targetTime) document.getElementById('aiTargetTime').value = saved.targetTime;
         if (saved.tone) document.getElementById('aiTone').value = saved.tone;
+        if (saved.persona) document.getElementById('aiPersona').value = saved.persona;
+        if (saved.intensidade) document.getElementById('aiIntensidade').value = saved.intensidade;
         if (saved.voice) document.getElementById('aiVoice').value = saved.voice;
         if (saved.aspectRatio) document.getElementById('aiAspectRatio').value = saved.aspectRatio;
         if (saved.readingWpm) document.getElementById('aiReadingWpm').value = saved.readingWpm;
@@ -5771,6 +5813,8 @@ ctx.fillStyle = '#000000';
         const settings = {
             targetTime: document.getElementById('aiTargetTime').value,
             tone: document.getElementById('aiTone').value,
+            persona: document.getElementById('aiPersona').value,
+            intensidade: document.getElementById('aiIntensidade').value,
             voice: document.getElementById('aiVoice').value,
             aspectRatio: document.getElementById('aiAspectRatio').value,
             readingWpm: document.getElementById('aiReadingWpm').value,
@@ -5785,7 +5829,7 @@ ctx.fillStyle = '#000000';
         } catch (e) { /* localStorage indisponível/cheio — ignora silenciosamente */ }
     }
 
-    ['aiTargetTime', 'aiTone', 'aiVoice', 'aiAspectRatio', 'aiReadingWpm', 'aiViralMode', 'aiSkipNarration', 'aiSyncAfterCut', 'aiApiKey', 'aiRememberApiKey'].forEach(id => {
+    ['aiTargetTime', 'aiTone', 'aiPersona', 'aiIntensidade', 'aiVoice', 'aiAspectRatio', 'aiReadingWpm', 'aiViralMode', 'aiSkipNarration', 'aiSyncAfterCut', 'aiApiKey', 'aiRememberApiKey'].forEach(id => {
         document.getElementById(id).addEventListener('change', saveSettings);
     });
     loadSettings();
@@ -5867,6 +5911,8 @@ ctx.fillStyle = '#000000';
         const fileInput = document.getElementById('aiVideoFile');
         const targetTime = document.getElementById('aiTargetTime').value;
         const tone = document.getElementById('aiTone').value;
+        const personaP = getPersonaText(currentPersona());
+        const intensidadeP = getIntensidadeText();
         const voiceName = document.getElementById('aiVoice').value;
         // No fluxo automático (Narrador), mandamos gerar o roteiro SEM a narração
         // sintética interna do Gemini — a voz vai ser criada pela aba Narrador.
@@ -6002,7 +6048,7 @@ ${++ruleNum}. RITMO CONSTANTE: nenhuma cena deve durar mais que ${maxSceneSecond
 Analise este vídeo anexado e crie um roteiro de resumo compactado para exatamente ${targetTime} minutos.
 
 REGRAS OBRIGATÓRIAS:
-1. Narração exclusivamente em TERCEIRA PESSOA, com tom ${tone}.
+1. Narração exclusivamente em ${personaP.label}, com tom ${tone} e intensidade ${intensidadeP.rotulo}: ${intensidadeP.energia} ${personaP.dica}
 2. O texto total de narração deve ter NO MÍNIMO ${targetWords} palavras (pode ter um pouco mais; NUNCA menos). É proibido entregar um roteiro mais curto que isso — se sobrar pouco material forte no vídeo, aprofunde a narração das cenas escolhidas (mais detalhes, mais contexto) em vez de encurtar o total.
 3. Escolha as melhores cenas e mapeie exatamente em qual momento do vídeo original o corte deve acontecer para coincidir com a narração.
 4. MUITO IMPORTANTE: a duração de CADA corte (fim - início) deve ser compatível com o tempo de leitura da narração DAQUELA cena, e não apenas com o total do vídeo. Use como referência ~${(readingWpm / 60).toFixed(2)} palavras por segundo (${readingWpm} palavras/minuto). Se a narração de uma cena tem 20 palavras, o corte dessa cena precisa ter pelo menos ~${Math.ceil(20 / (readingWpm / 60))} segundos — nunca faça um corte mais curto que o tempo de leitura da sua própria narração.
@@ -6036,7 +6082,7 @@ ${nextRuleNumber}. Além das cenas, escreva também uma "fraseCuriosidade": uma 
                                         cena: { type: Type.STRING, description: 'Nome ou número curto da cena.' },
                                         inicio: { type: Type.STRING, description: 'Timestamp de início no vídeo original, formato HH:MM:SS.' },
                                         fim: { type: Type.STRING, description: 'Timestamp de fim no vídeo original, formato HH:MM:SS.' },
-                                        narracao: { type: Type.STRING, description: 'Narração em 3ª pessoa para esse trecho.' },
+                                        narracao: { type: Type.STRING, description: `Narração para esse trecho, sempre em ${personaP.label}.` },
                                         visual: { type: Type.STRING, description: 'Descrição curta do que aparece na cena.' },
                                         gancho: { type: Type.STRING, description: 'Frase-gancho no formato de PERGUNTA ou AFIRMAÇÃO CHOCANTE, de até 8 palavras — preenchida SÓ na primeira cena (índice 0); string vazia nas demais. Será exibida/falada nos primeiros 2 segundos do vídeo final.' }
                                     },
@@ -6280,6 +6326,33 @@ ${nextRuleNumber}. Além das cenas, escreva também uma "fraseCuriosidade": uma 
     // junto com a legenda .srt. Sim, o vídeo passa por 2 passos do ffmpeg
     // (corte e depois sync) — é mais lento, mas é o que garante a voz do
     // Narrador por cima do corte.
+    // Dimensiona cada cena do roteiro proporcionalmente à duração REAL da
+    // narração (áudio único). O vídeo passa a acompanhar a voz: cada cena dura
+    // exatamente a fração da narração que corresponde às palavras dela. Isso
+    // deixa a leitura contínua em sintonia com as cenas (sem o vídeo "sair da
+    // frente" da voz) e evita forçar um grande alongamento/compressão do áudio.
+    // Mantém os "inicio" originais (pontos de corte do roteirista) e só ajusta
+    // o "fim" de cada cena, limitado ao início da cena seguinte/fim do vídeo.
+    function proportionCutsToNarration(cuts, narrDuration, videoDurationSeconds) {
+        if (!cuts || !cuts.length || !narrDuration || narrDuration <= 0) return cuts;
+        const words = cuts.map(c => (c.narracao || '').trim().split(/\s+/).filter(Boolean).length);
+        const totalWords = words.reduce((a, b) => a + b, 0);
+        if (!totalWords) return cuts;
+        const endDefault = videoDurationSeconds || (timeToSeconds(cuts[cuts.length - 1].fim) + 1);
+        for (let i = 0; i < cuts.length; i++) {
+            const start = timeToSeconds(cuts[i].inicio);
+            const target = narrDuration * (words[i] / totalWords);
+            // Mínimo de 0.6s por cena para não sumir com a imagem.
+            let end = start + Math.max(target, 0.6);
+            // Não deixa passar do início da próxima cena nem do fim do vídeo.
+            let maxEnd = endDefault;
+            if (i < cuts.length - 1) maxEnd = Math.min(maxEnd, timeToSeconds(cuts[i + 1].inicio) - 0.05);
+            end = Math.min(end, Math.max(maxEnd, start + 0.6));
+            cuts[i].fim = secondsToTime(end);
+        }
+        return cuts;
+    }
+
     async function runAutoPipeline(files, { useNarratorEngine = true, syncStatusEl } = {}) {
         const processBtn = document.getElementById('aiProcessBtn');
         const batchStatus = document.getElementById('aiBatchStatus');
@@ -6313,20 +6386,29 @@ ${nextRuleNumber}. Além das cenas, escreva também uma "fraseCuriosidade": uma 
                 const roteiroOk = await processVideo(file, true);
                 if (!roteiroOk) { falhas++; continue; }
 
-                // 2) Corta o vídeo com os cortes do roteiro (áudio original).
-                batchStatus.innerText = `🤖 Cortando e narrando vídeo ${i + 1} de ${files.length} — ${file.name}`;
-                const corteOk = await cortarVideo();
-                if (!corteOk) { falhas++; continue; }
-
-                // 3) Gera a narração única com o Narrador (voz + estilo + motor salvos).
+                // 2) Gera a narração ÚNICA com o Narrador (voz + estilo + motor
+                // salvos). Fazemos isso ANTES de cortar para termos a duração
+                // REAL do áudio e, assim, dimensionar cada cena às palavras que
+                // ela tem — o vídeo passa a acompanhar a voz (não o contrário).
                 let audioFile = null;
                 if (useNarratorEngine && window.NARRATOR) {
                     batchStatus.innerText = `🤖 Gerando narração com o Narrador (${window.NARRATOR.getConfig()}) — vídeo ${i + 1}...`;
                     try {
-                        // Concatena toda a narração do roteiro num único texto,
-                        // usando a frase-gancho da cena 0 na frente.
-                        const gancho = (currentCuts[0] && (currentCuts[0].gancho || '').trim()) ? (currentCuts[0].gancho.trim() + ' ') : '';
-                        const textoNarracao = gancho + currentCuts.map(c => (c.narracao || '').trim()).filter(Boolean).join(' ');
+                        // Monta a leitura ÚNICA e contínua do roteiro, na ordem
+                        // das cenas. IMPORTANTE: NÃO podemos simplesmente
+                        // prefixar a frase-gancho — a regra do roteirista já faz
+                        // a narração da CENA 0 começar com essa mesma frase.
+                        // Prefixar de novo duplicava o começo ("repetindo o
+                        // início") e deslocava toda a leitura, deixando o áudio
+                        // fora de sincronia com o vídeo. Só adicionamos o gancho
+                        // no início SE ele não for já a abertura da 1ª narração
+                        // (para não perder o hook quando a IA não o incluir).
+                        const primeiroNarracao = (currentCuts[0] && (currentCuts[0].narracao || '').trim()) || '';
+                        const gancho = (currentCuts[0] && (currentCuts[0].gancho || '').trim()) || '';
+                        let textoNarracao = currentCuts.map(c => (c.narracao || '').trim()).filter(Boolean).join(' ');
+                        if (gancho && textoNarracao && !textoNarracao.toLowerCase().startsWith(gancho.toLowerCase())) {
+                            textoNarracao = gancho + ' ' + textoNarracao;
+                        }
                         if (!textoNarracao.trim()) throw new Error('O roteiro não tem texto de narração para o Narrador falar.');
                         const gen = await window.NARRATOR.generateNarrationFile(textoNarracao, (i2, n) => {
                             batchStatus.innerText = `🤖 Narrador: parte ${i2} de ${n} — vídeo ${i + 1}…`;
@@ -6340,7 +6422,24 @@ ${nextRuleNumber}. Além das cenas, escreva também uma "fraseCuriosidade": uma 
                     audioFile = await generateAutoSyncNarrationFile((msg) => { batchStatus.innerText = '🤖 ' + msg; });
                 }
 
-                // 4) Sincroniza a narração sobre o vídeo cortado.
+                // 3) Mede a duração real da narração e redimensiona cada cena
+                // proporcionalmente às palavras dela — assim o roteiro "cabe"
+                // exato na voz, em vez de o vídeo sair da frente da narração.
+                let narrDuration = 0, videoDurationSeconds = 0;
+                try { narrDuration = await probeMediaDuration(audioFile, 'audio'); } catch (_) { narrDuration = 0; }
+                try { videoDurationSeconds = (await getVideoDurationSeconds(file)) || 0; } catch (_) { videoDurationSeconds = 0; }
+                if (narrDuration > 0) {
+                    const resized = proportionCutsToNarration(currentCuts, narrDuration, videoDurationSeconds);
+                    if (resized) currentCuts = resized;
+                    batchStatus.innerText = `🤖 Narração de ${narrDuration.toFixed(1)}s — redimensionando as ${currentCuts.length} cenas para acompanhar a voz (vídeo ${i + 1} de ${files.length}).`;
+                }
+
+                // 4) Corta o vídeo com os cortes (agora dimensionados à narração).
+                batchStatus.innerText = `🤖 Cortando e narrando vídeo ${i + 1} de ${files.length} — ${file.name}`;
+                const corteOk = await cortarVideo();
+                if (!corteOk) { falhas++; continue; }
+
+                // 5) Sincroniza a narração sobre o vídeo cortado.
                 batchStatus.innerText = `🤖 Sincronizando narração com o vídeo ${i + 1} de ${files.length}...`;
                 let videoSourceBlob;
                 if (finalVideoEl.src && finalVideoEl.src !== window.location.href) {
@@ -6349,10 +6448,26 @@ ${nextRuleNumber}. Além das cenas, escreva também uma "fraseCuriosidade": uma 
                 } else {
                     videoSourceBlob = file;
                 }
+                // 5b) Lê a música de fundo marcada no card "🎙️ Sincronizar
+                // Narração" e aplica também no Piloto Automático — antes ela era
+                // ignorada neste fluxo (bgmFile ficava null).
+                let bgmFile = null, bgmVolume = 0;
+                const bgmChk = document.getElementById('aiSyncBgmChk');
+                const bgmInput = document.getElementById('aiSyncBgmInput');
+                if (bgmChk && bgmChk.checked && bgmInput && bgmInput.files && bgmInput.files[0]) {
+                    bgmFile = bgmInput.files[0];
+                    const volEl = document.getElementById('aiSyncBgmVolume');
+                    bgmVolume = Math.max(0, Math.min(1, parseFloat((volEl && volEl.value) || 0)));
+                    batchStatus.innerText = `🤖 Música de fundo a ${Math.round(bgmVolume * 100)}% — vídeo ${i + 1} de ${files.length}...`;
+                }
+
                 const syncResult = await runSyncCore({
                     videoSourceBlob, audioFile,
-                    mode: 'audio_to_video',
-                    bgmFile: null, bgmVolume: 0,
+                    // No modo automático o radio está travado em
+                    // "audio_to_video" (manter a duração do vídeo), mas lê-se do
+                    // radio para o comportamento ficar sempre de acordo com a UI.
+                    mode: (document.querySelector('input[name="aiSyncMode"]:checked') || {}).value || 'audio_to_video',
+                    bgmFile, bgmVolume,
                     statusEl: syncStatusEl,
                 });
 
@@ -6727,7 +6842,7 @@ ${nextRuleNumber}. Além das cenas, escreva também uma "fraseCuriosidade": uma 
         }
 
         let html = toolbarHtml + unifiedNarrationBanner + hookPhraseHtml + '<table class="cuts-table"><thead><tr>' +
-            '<th>Cena</th><th>Início</th><th>Fim</th><th>Narração (3ª pessoa)</th><th>Visual</th>' +
+            '<th>Cena</th><th>Início</th><th>Fim</th><th>Narração (' + getPersonaText(currentPersona()).rotulo + ')</th><th>Visual</th>' +
             '</tr></thead><tbody>';
 
         let temAjuste = false;
@@ -6908,12 +7023,92 @@ ${nextRuleNumber}. Além das cenas, escreva também uma "fraseCuriosidade": uma 
     // e soar como um narrador humano de verdade. O texto entre aspas é o único
     // trecho que deve ser narrado — isso evita que o modelo "leia" a instrução
     // em voz alta por engano.
-    function buildTtsPrompt(narrationText, tone) {
-        return `Sintetize a fala a seguir em português do Brasil, com uma voz humana muito natural — nunca robótica, apressada ou monótona — como um narrador profissional de vídeo/documentário de verdade, com respiração e entonação realistas.
-Estilo de interpretação: ${tone}.
-Narre em terceira pessoa, num ritmo natural de narração de vídeo.
+    // Descreve a pessoa gramatical da narração (3ª/1ª/2ª) em duas formas:
+    // "label" é a versão em maiúsculas usada na regra do roteiro, e "dica" é a
+    // frase curta explicando como o modelo deve escrever. Usada tanto no prompt
+    // do roteirista quanto no prompt de TTS e nos rótulos da interface.
+    // Regras comuns de NATUREZA (variedade / anti-repetição / tom dramático)
+    // que se somam à pessoa gramatical escolhida. Centralizadas aqui para o
+    // prompt do roteiro, o prompt de TTS e os rótulos usarem a mesma base.
+    // A INTENSIDADE / ESTILO escolhido no card ("Intensidade / Estilo da
+    // Narração") define a energia e o clima: Normal, Dramático, Dinâmico/
+    // Envolvente ou Engraçado/Divertido. Retorna o texto-base da energia e o
+    // rótulo, usados tanto pelo roteirista quanto pela TTS.
+    function getIntensidadeText() {
+        const el = document.getElementById('aiIntensidade');
+        const mode = (el && el.value) || 'dramatico';
+        switch (mode) {
+            case 'normal':
+                return {
+                    rotulo: 'Normal',
+                    energia: 'Narre de forma EQUILIBRADA, clara e direta, sem exageros dramáticos nem humor, num tom sóbrio e profissional, sem adornos.',
+                };
+            case 'dinamico':
+                return {
+                    rotulo: 'Dinâmico/Envolvente',
+                    energia: 'Narre de forma RÁPIDA, ENÉRGICA e ENVOLVENTE: frases curtas e ágeis, cheias de ganchos, reviravoltas e empurrando sempre para "o que vem a seguir". Ritmo acelerado, como um resumo que prende o espectador do início ao fim.',
+                };
+            case 'engracado':
+                return {
+                    rotulo: 'Engraçado/Divertido',
+                    energia: 'Narre com um tom LEVE e DIVERTIDO: use comentários bem-humorados, comparações engraçadas e frases que descontraem, como um amigo contando algo de um jeito engraçado. Mantenha o sentido e a clareza, sem forçar piada em todo trecho nem perder o fio da história.',
+                };
+            default: // dramatico
+                return {
+                    rotulo: 'Dramático',
+                    energia: 'Dê tom DRAMÁTICO, com SUSPENSE e EMOÇÃO de verdade: frases curtas e secas nos momentos de impacto, frases mais longas e descritivas na construção da tensão; perguntas retóricas, pausas dramáticas, verbos e imagens fortes e sensoriais (silêncio, medo, gritos, o coração acelerado), e um gancho de curiosidade fechando cada bloco. Nada de relatório frio ou robótico.',
+                };
+        }
+    }
 
-Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar nem repetir mais nada:
+    function getNarracaoStyle() {
+        const it = getIntensidadeText();
+        return {
+            // Anti-repetição: em português o sujeito pode ficar de fora quando
+            // já está subentendido; a gente troca a estrutura das frases em vez
+            // de repetir o pronome a cada linha. Variação é o que mata a
+            // monotonia ("eu, ela, você, eu...").
+            variedade: 'Reescreva SEM repetir o mesmo pronome ("eu", "ele/ela", "você") no início ou no meio de frases seguidas. Varie as construções: abra algumas frases pelo verbo, outras pelo objeto, use o sujeito oculto (em português dá pra simplesmente omitir o "eu"/"ele"/"você" quando já está claro), use sinônimos, nomes e retomadas ("a mulher", "o rapaz", "aquele momento", "ninguém", "a família"). NUNCA comece duas frases seguidas da mesma palavra, nem repita o pronome mais de uma vez a cada 3 frases.',
+            drama: it.energia,
+            intensidade: it.rotulo,
+        };
+    }
+
+    function getPersonaText(persona) {
+        const st = getNarracaoStyle();
+        switch (persona) {
+            case 'primeira':
+                return {
+                    label: 'PRIMEIRA PESSOA ("eu")',
+                    dica: 'Narre como se fosse você quem viveu ou assistiu, contando pela própria perspectiva e experiência. ' + st.variedade + ' Use "eu" só quando precisar, e prefira falas como "o que eu vi", "não consegui acreditar", "eu sentia". ' + st.drama,
+                    linhaTts: 'Narre em primeira pessoa, como se fôssemos você mesmo contando a história.' + ' ' + st.drama + ' Varie as frases para não ficar repetitivo.',
+                    rotulo: '1ª pessoa'
+                };
+            case 'segunda':
+                return {
+                    label: 'SEGUNDA PESSOA ("você")',
+                    dica: 'Narre falando diretamente com o espectador, como um criador de conteúdo envolvendo o público. ' + st.variedade + ' Use "você" só quando precisar; troque por "a gente", "quem assiste", ou omita o sujeito. ' + st.drama,
+                    linhaTts: 'Narre em segunda pessoa, falando diretamente com quem está ouvindo ("você"), como um criador de conteúdo envolvido.' + ' ' + st.drama + ' Varie as frases para não ficar repetitivo.',
+                    rotulo: '2ª pessoa'
+                };
+            default:
+                return {
+                    label: 'TERCEIRA PESSOA ("ele/ela")',
+                    dica: 'Narração impessoal, como um resumo ou documentário clássico sobre o vídeo. ' + st.variedade + ' Substitua "ele/ela" por nomes, apelidos ou retomadas ("o homem", "a protagonista", "a cena"). ' + st.drama,
+                    linhaTts: 'Narre em terceira pessoa, num ritmo natural de narração de vídeo.' + ' ' + st.drama + ' Varie as frases para não ficar repetitivo.',
+                    rotulo: '3ª pessoa'
+                };
+        }
+    }
+    function currentPersona() {
+        const el = document.getElementById('aiPersona');
+        return (el && el.value) || 'terceira';
+    }
+
+    function buildTtsPrompt(narrationText, tone) {
+        const p = getPersonaText(currentPersona());
+        const it = getIntensidadeText();
+        return `Sintetize a fala a seguir em português do Brasil, com uma voz humana muito natural — nunca robótica, apressada ou monótona — como um narrador profissional de vídeo/documentário de verdade, com respiração e entonação realistas.\nEstilo de interpretação: ${tone}.\n${p.linhaTts}\nIntensidade / estilo da narração (${it.rotulo}): ${it.energia}\nAjuste sua VOZ à intensidade escolhida: adapte o ritmo, as pausas e a energia ao estilo acima (suspense e tensão no Dramático; ritmo ágil e cheio de ganchos no Dinâmico; tom leve e bem-humorado no Engraçado; sobriedade e clareza no Normal). Entregue a fala como quem conta algo de verdade, nunca como quem lê um relatório.\n\nNarre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar nem repetir mais nada:
 "${narrationText}"`;
     }
 
@@ -7836,7 +8031,7 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
     // independente do que estiver selecionado em "Voz do Narrador (IA)" lá
     // em cima (aquele campo é usado no corte principal; este é dedicado).
     const AUTO_SYNC_VOICE = 'Puck';
-    const AUTO_SYNC_TONE = 'muito animado, empolgante e energético, com entusiasmo genuíno, entonação humana bem viva e ritmo vibrante — como um criador de conteúdo super envolvido contando a história, nunca robótico ou monótono';
+    const AUTO_SYNC_TONE = 'muito animado, empolgante e dramático, com entusiasmo genuíno, suspense e emoção de verdade, entonação humana bem viva, ritmo vibrante e pausas de tensão — como um criador de conteúdo super envolvido contando uma história cheia de reviravoltas, nunca robótico, monótono ou repetitivo';
     const AUTO_SYNC_GAP_MS = 280; // silêncio entre cenas concatenadas, pra narração não parecer atropelada
 
     function concatPcmScenesWithGaps(pcmChunks, sampleRate, gapMs) {
@@ -8021,6 +8216,42 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
             }
         }
     }
+
+    // Quando o Modo Automático / Piloto Automático / Áudio Único está ativo,
+    // a sincronização SEMPRE mantém a duração do vídeo (audace→vídeo), deixando
+    // a narração acelerar/desacelerar levemente pra caber exata no corte — nunca
+    // o contrário (que mudaria a velocidade do vídeo). Forçamos E travamos o
+    // radio "Manter a duração do VÍDEO" nesse estado; ao desligar o automático,
+    // as duas opções voltam a ser livremente selecionáveis.
+    function anyAutoModeActive() {
+        const unico = document.getElementById('aiNarracaoUnica');
+        // No formato "Um áudio por cena" o fluxo clássico predomina e não há
+        // o passo de sincronização por duração, então não travamos o modo de
+        // sincronização (as duas opções ficam livres pro uso manual).
+        if (unico && !unico.checked) return false;
+        const autoN = document.getElementById('aiAutoNarrator');
+        const full = document.getElementById('aiFullAutopilot');
+        return !!(autoN && autoN.checked) || !!(full && full.checked) || !!(unico && unico.checked);
+    }
+    function syncAutoModeRadios() {
+        const modeRadios = document.querySelectorAll('input[name="aiSyncMode"]');
+        const isAuto = anyAutoModeActive();
+        if (isAuto) {
+            const v = document.querySelector('input[name="aiSyncMode"][value="audio_to_video"]');
+            if (v) v.checked = true;
+        }
+        // Em modo automático, trava a escolha de modo (só mantém a duração do vídeo).
+        modeRadios.forEach(r => { r.disabled = isAuto; });
+        const hint = document.getElementById('aiSyncModeLockHint');
+        if (hint) hint.style.display = isAuto ? 'inline-block' : 'none';
+    }
+    // Reage às opções do automático sem precisar clicar em "Processar".
+    ['aiAutoNarrator', 'aiFullAutopilot', 'aiNarracaoUnica', 'aiNarracaoPorCena'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('change', syncAutoModeRadios);
+    });
+    // Na entrada da aba Roteirista, reflete o estado atual.
+    syncAutoModeRadios();
 
     document.getElementById('aiSyncBtn').addEventListener('click', async () => {
         const syncBtn = document.getElementById('aiSyncBtn');
@@ -10495,5 +10726,5 @@ Narre em voz alta, exatamente e apenas o texto entre aspas abaixo, sem adicionar
   })();
   </script>
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a30f88381d91b707',t:'MTc4NzcxMjY1OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a32faa3a6e59ccfb',t:'MTc4ODA0OTU5Ng=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a30f88381d91b707',t:'MTc4NzcxMjY1OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a33092f2bf50b54f',t:'MTc4ODA1OTEyOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
